@@ -101,4 +101,4 @@ secrets/*
 !secrets/.gitkeep
 
 # data folder used to debug
-_data
+_dataalex/
