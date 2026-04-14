@@ -206,20 +206,33 @@ def preprocess_gaza_unosat(
     gdf_long.set_index("unosat_id").to_file(out_labels, driver="GeoJSON")
     print(f"Saved {out_labels} ({len(gdf_long):,} rows)")
 
-    # --- Create one AOI polygon per governorate (convex hull of all its points) ---
-    print("Creating AOI polygons ...")
-    aoi_records = []
-    for gov, aoi_id in GOVERNORATE_TO_AOI.items():
-        pts = gdf_raw[gdf_raw["Governorate"] == gov]
-        if len(pts) == 0:
-            print(f"  Warning: no points for {gov}")
-            continue
-        aoi_records.append({
-            "aoi":        aoi_id,
-            "governorate": gov,
-            "geometry":   pts.geometry.unary_union.convex_hull,
-        })
-    gdf_aois = gpd.GeoDataFrame(aoi_records, geometry="geometry", crs="EPSG:4326")
+    # --- Create AOI polygons from official OCHA admin boundaries ---
+    print("Creating AOI polygons from official boundaries ...")
+    admin_fp = DATA_PATH / "raw/pse_admin2.geojson"
+    assert admin_fp.exists(), f"Admin boundaries not found at {admin_fp}"
+    gdf_admin = gpd.read_file(admin_fp)
+
+    # Filter to Gaza Strip governorates only
+    gdf_gaza = gdf_admin[gdf_admin["adm1_name"] == "Gaza Strip"].copy()
+
+    # Normalise spelling difference between OCHA and UNOSAT
+    gdf_gaza["adm2_name"] = gdf_gaza["adm2_name"].replace("Khan Younis", "Khan Yunis")
+
+    # Map to AOI IDs
+    gdf_gaza["aoi"] = gdf_gaza["adm2_name"].map(
+        {v: k for k, v in {
+            "GAZ1": "North Gaza",
+            "GAZ2": "Gaza",
+            "GAZ3": "Deir Al-Balah",
+            "GAZ4": "Khan Yunis",
+            "GAZ5": "Rafah",
+        }.items()}
+    )
+    gdf_aois = gdf_gaza[["aoi", "adm2_name", "geometry"]].rename(
+        columns={"adm2_name": "governorate"}
+    ).reset_index(drop=True)
+
+    # Save
     out_aois = DATA_PATH / "unosat_aois.geojson"
     gdf_aois.to_file(out_aois, driver="GeoJSON")
     print(f"Saved {out_aois} ({len(gdf_aois)} AOIs)")
