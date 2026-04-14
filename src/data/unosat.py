@@ -194,7 +194,7 @@ def preprocess_gaza_unosat(
                 "aoi":       aoi,
                 "damage":    int(damage_class),
                 "ep":        ep_num,
-                "date":      pd.to_datetime(sensor_date).date() if pd.notna(sensor_date) else None,
+                "date": pd.to_datetime(sensor_date).strftime("%Y-%m-%d") if pd.notna(sensor_date) else None,
                 "geometry":  row["geometry"],
             })
 
@@ -241,6 +241,192 @@ def preprocess_gaza_unosat(
     print("\n── Label counts by AOI and damage class ──")
     print(gdf_long.groupby(["aoi", "damage"]).size().to_string())
 
+def export_gaza_unosat_per_aoi() -> None:
+    """
+    Export preprocessed UNOSAT Gaza labels as separate GeoJSON files per AOI,
+    ready for upload to GEE via the earthengine command line tool.
+
+    Output files are saved to data/gee_upload/
+    """
+    import json
+
+    print("Exporting per-AOI GeoJSON files for GEE upload...")
+    labels_fp = DATA_PATH / "unosat_labels.geojson"
+    aois_fp   = DATA_PATH / "unosat_aois.geojson"
+    assert labels_fp.exists(), "Run preprocess_gaza_unosat() first"
+    assert aois_fp.exists(),   "Run preprocess_gaza_unosat() first"
+
+    gdf_labels = gpd.read_file(labels_fp)
+    gdf_aois   = gpd.read_file(aois_fp)
+
+    out_dir = DATA_PATH / "gee_upload"
+    out_dir.mkdir(exist_ok=True, parents=True)
+
+    for aoi in GOVERNORATE_TO_AOI.values():
+        print(f"\nProcessing {aoi} ...")
+
+        # Labels (classes 1+2, latest epoch per point)
+        pts = gdf_labels[
+            (gdf_labels["aoi"] == aoi) &
+            (gdf_labels["damage"].isin([1, 2]))
+        ].copy()
+        pts = pts.loc[pts.groupby(pts.geometry.to_wkt())["ep"].idxmax()]
+        fp = out_dir / f"UNOSAT_labels_{aoi}.geojson"
+        pts.to_file(fp, driver="GeoJSON")
+        print(f"  Saved {len(pts)} points to {fp}")
+
+        # Labels full (all classes, latest epoch per point)
+        pts_full = gdf_labels[gdf_labels["aoi"] == aoi].copy()
+        pts_full = pts_full.loc[pts_full.groupby(pts_full.geometry.to_wkt())["ep"].idxmax()]
+        fp_full = out_dir / f"UNOSAT_labels_{aoi}_full.geojson"
+        pts_full.to_file(fp_full, driver="GeoJSON")
+        print(f"  Saved {len(pts_full)} points (all classes) to {fp_full}")
+
+        # AOI boundary
+        aoi_row = gdf_aois[gdf_aois["aoi"] == aoi].copy()
+        fp_aoi = out_dir / f"AOI_{aoi}.geojson"
+        aoi_row.to_file(fp_aoi, driver="GeoJSON")
+        print(f"  Saved AOI boundary to {fp_aoi}")
+
+    print(f"\nAll files saved to {out_dir}")
+    print("\nTo upload to GEE, run the following commands:")
+    print("source alex/bin/activate")
+    for aoi in GOVERNORATE_TO_AOI.values():
+        asset_path = ASSETS_PATH + f"UNOSAT_labels/{aoi}"
+        fp = out_dir / f"UNOSAT_labels_{aoi}.geojson"
+        print(f"earthengine upload table --asset_id={asset_path} {fp}")
+
+        asset_path_full = ASSETS_PATH + f"UNOSAT_labels/{aoi}_full"
+        fp_full = out_dir / f"UNOSAT_labels_{aoi}_full.geojson"
+        print(f"earthengine upload table --asset_id={asset_path_full} {fp_full}")
+
+        asset_path_aoi = ASSETS_PATH + f"AOIs/{aoi}"
+        fp_aoi = out_dir / f"AOI_{aoi}.geojson"
+        print(f"earthengine upload table --asset_id={asset_path_aoi} {fp_aoi}")
+
+def upload_gaza_unosat_to_gee() -> None:
+    """
+    Upload preprocessed UNOSAT Gaza labels and AOI boundaries to GEE assets.
+    Files under 10MB upload directly; larger files are uploaded in chunks and merged.
+    """
+    import time
+    import geemap
+    from src.utils.gee import asset_exists, create_folder, init_gee
+    init_gee(project="gaza-damage-mapping")
+
+    labels_fp = DATA_PATH / "unosat_labels.geojson"
+    aois_fp   = DATA_PATH / "unosat_aois.geojson"
+    assert labels_fp.exists(), "Run preprocess_gaza_unosat() first"
+    assert aois_fp.exists(),   "Run preprocess_gaza_unosat() first"
+
+    gdf_labels = gpd.read_file(labels_fp)
+    gdf_aois   = gpd.read_file(aois_fp)
+
+    # Ensure folders exist
+    for folder in ["UNOSAT_labels", "AOIs"]:
+        folder_path = ASSETS_PATH + folder
+        if not asset_exists(folder_path):
+            create_folder(folder_path)
+
+    def upload_direct(gdf, asset_id, description):
+        """Upload a small GeoDataFrame directly to GEE."""
+        if asset_exists(asset_id):
+            print(f"  {asset_id.split('/')[-1]} already exists, skipping")
+            return
+        fc = geemap.geopandas_to_ee(gdf)
+        task = ee.batch.Export.table.toAsset(
+            collection=fc,
+            description=description,
+            assetId=asset_id,
+        )
+        task.start()
+        print(f"  Uploading {len(gdf)} features → {asset_id.split('/')[-1]}")
+        while not asset_exists(asset_id):
+            time.sleep(5)
+        print(f"  ✓ Done")
+
+    def upload_chunked(gdf, asset_id, description, chunk_size=400):
+        """Upload a large GeoDataFrame in chunks, then merge into one asset."""
+        if asset_exists(asset_id):
+            print(f"  {asset_id.split('/')[-1]} already exists, skipping")
+            return
+
+        n = len(gdf)
+        chunks = [gdf.iloc[i:i+chunk_size] for i in range(0, n, chunk_size)]
+        print(f"  Uploading {n} features in {len(chunks)} chunks...")
+
+        chunk_ids = []
+        for i, chunk in enumerate(chunks):
+            chunk_id = asset_id + f"_tmp_chunk{i}"
+            if not asset_exists(chunk_id):
+                fc = geemap.geopandas_to_ee(chunk.copy())
+                task = ee.batch.Export.table.toAsset(
+                    collection=fc,
+                    description=f"{description}_chunk{i}",
+                    assetId=chunk_id,
+                )
+                task.start()
+            chunk_ids.append(chunk_id)
+
+        # Wait for all chunks
+        print(f"  Waiting for chunks to complete...")
+        for chunk_id in chunk_ids:
+            while not asset_exists(chunk_id):
+                time.sleep(5)
+        print(f"  All chunks uploaded, merging...")
+
+        # Merge and export as single asset
+        merged = ee.FeatureCollection(
+            [ee.FeatureCollection(cid) for cid in chunk_ids]
+        ).flatten()
+        merge_task = ee.batch.Export.table.toAsset(
+            collection=merged,
+            description=description,
+            assetId=asset_id,
+        )
+        merge_task.start()
+        while not asset_exists(asset_id):
+            time.sleep(5)
+
+        # Clean up temporary chunks
+        for chunk_id in chunk_ids:
+            ee.data.deleteAsset(chunk_id)
+        print(f"  ✓ Done ({n} features merged)")
+
+    # Feature count threshold above which we use chunked upload
+    CHUNK_THRESHOLD = 30000
+
+    for aoi in GOVERNORATE_TO_AOI.values():
+        print(f"\nProcessing {aoi}...")
+
+        # AOI boundary (always tiny — direct upload)
+        aoi_row = gdf_aois[gdf_aois["aoi"] == aoi].copy()
+        upload_direct(aoi_row, ASSETS_PATH + f"AOIs/{aoi}", f"AOI_{aoi}")
+
+        # Labels (classes 1+2, latest epoch per point)
+        pts = gdf_labels[
+            (gdf_labels["aoi"] == aoi) &
+            (gdf_labels["damage"].isin([1, 2]))
+        ].copy()
+        pts = pts.loc[pts.groupby(pts.geometry.to_wkt())["ep"].idxmax()]
+        asset_id = ASSETS_PATH + f"UNOSAT_labels/{aoi}"
+        if len(pts) > CHUNK_THRESHOLD:
+            upload_chunked(pts, asset_id, f"UNOSAT_labels_{aoi}")
+        else:
+            upload_direct(pts, asset_id, f"UNOSAT_labels_{aoi}")
+
+        # Labels full (all classes, latest epoch per point)
+        pts_full = gdf_labels[gdf_labels["aoi"] == aoi].copy()
+        pts_full = pts_full.loc[pts_full.groupby(pts_full.geometry.to_wkt())["ep"].idxmax()]
+        asset_id_full = ASSETS_PATH + f"UNOSAT_labels/{aoi}_full"
+        if len(pts_full) > CHUNK_THRESHOLD:
+            upload_chunked(pts_full, asset_id_full, f"UNOSAT_labels_{aoi}_full")
+        else:
+            upload_direct(pts_full, asset_id_full, f"UNOSAT_labels_{aoi}_full")
+
+    print("\nAll uploads complete.")
 
 if __name__ == "__main__":
     preprocess_gaza_unosat()
+    export_gaza_unosat_per_aoi()
+    upload_gaza_unosat_to_gee()
