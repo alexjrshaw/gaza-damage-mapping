@@ -142,11 +142,15 @@ def preprocess_gaza_unosat(
     This function converts it to long format (one row per site per epoch),
     which matches the schema used by load_unosat_labels() above.
 
-    Damage classes:
-        1 = Destroyed
-        2 = Severely Damaged
-        3 = Moderately Damaged
-        4 = Possibly Damaged
+    Damage classes (from Main_Damage_Site_Class field):
+        1 = Destroyed (123,464 structures as of Oct 2025)
+        2 = Severely Damaged (17,116)
+        3 = Moderately Damaged (33,857)
+        4 = Possibly Damaged (21,669)
+        11 = Possible Damage From Adjacent Impact/Debris (2,167) - excluded
+        6 = No Visible Damage (35) - excluded
+    Pipeline uses labels_to_keep=[1, 2] by default, matching Ukraine methodology
+    combine_epoch='last' in load_unosat_labels() selects epoch 14 as definitive label
 
     Args:
         gdb_path (Path): Path to the raw .gdb folder.
