@@ -1,12 +1,12 @@
 import ee
 
 
-def init_gee(project: str = "rmac-ethz") -> None:
+def init_gee(project: str = "gaza-damage-mapping") -> None:
     """
     Initialize GEE. Works also when working through ssh
 
     Args:
-        project (str, optional): Name of the project. Defaults to "rmac-ethz".
+        project (str, optional): Name of the project. Defaults to "gaza-damage-mapping".
     """
     try:
         ee.Initialize(project=project)
