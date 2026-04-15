@@ -17,7 +17,7 @@ from src.data.overture.preprocessing import OVERTURE_PROCESSED_FP as OVERTURE_FP
 from src.data.utils import read_fp_within_geo
 from src.postprocessing.utils import find_post_dates, vectorize_xarray_3d
 from src.utils.gdrive import drive_to_local, get_files_in_folder
-from src.utils.geo import load_ukraine_admin_polygons
+from src.utils.geo import load_gaza_admin_polygons
 from src.utils.time import timeit
 
 
@@ -133,7 +133,7 @@ def create_all_gdf_overture_with_preds_mp(run_name: str, cpu: int = 5, verbose: 
         verbose (int): The verbosity level. Defaults to 0.
     """
 
-    gdf_admin = load_ukraine_admin_polygons(adm_level=3)
+    gdf_admin = load_gaza_admin_polygons(adm_level=2)
     folder_preds = DATA_PATH / run_name / "admin_preds"
     folder_preds.mkdir(exist_ok=True, parents=True)
 
@@ -159,7 +159,7 @@ def create_all_gdf_overture_with_preds(run_name: str, verbose: int = 1) -> None:
         verbose (int): The verbosity level. Defaults to 1.
     """
 
-    gdf_admin = load_ukraine_admin_polygons(adm_level=3)
+    gdf_admin = load_gaza_admin_polygons(adm_level=2)
     folder_preds = DATA_PATH / run_name / "admin_preds"
     folder_preds.mkdir(exist_ok=True, parents=True)
 
@@ -274,7 +274,7 @@ def get_overture_buildings_for_admin(admin_id: str) -> gpd.GeoDataFrame:
 
 
 def aggregate_all_preds(run_name: str) -> None:
-    gdf_admin = load_ukraine_admin_polygons(adm_level=3).set_index("admin_id")
+    gdf_admin = load_gaza_admin_polygons(adm_level=2).set_index("admin_id")
     folder_preds_admin = DATA_PATH / run_name / "admin_preds"
 
     # Create a dataframe with building_id as index and post_date as columns. Values are the weighted mean
