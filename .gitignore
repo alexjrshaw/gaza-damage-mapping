@@ -103,3 +103,4 @@ secrets/*
 # data folder used to debug
 _dataalex/
 /data/
+upload_log.txt
