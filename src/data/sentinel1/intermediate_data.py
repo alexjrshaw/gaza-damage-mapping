@@ -7,9 +7,9 @@ from src.utils.gee import asset_exists, create_folders_recursively, fill_nan_wit
 
 init_gee()
 
-# In the original code, it was slightly different: '2020-03-01' and '2023-03-01'
-START_DATE = "2020-02-24"
-END_DATE = "2024-02-24"
+# Pre-war baseline start through end of conflict period studied
+START_DATE = "2022-10-07" # One year before conflict start (pre-conflict baseline)
+END_DATE = "2025-10-10" # End of last conflict-period window
 
 
 def create_fc_aoi_orbit(

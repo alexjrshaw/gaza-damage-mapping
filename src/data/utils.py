@@ -18,7 +18,8 @@ def aoi_orbit_iterator():
 
 def get_all_aois():
     """Return all AOIs"""
-    return [f"UKR{i}" for i in range(1, 19)]
+    from src.constants import AOIS
+    return AOIS
 
 
 def read_fp_within_geo(fp: Path, geo: shapely.GeometryType) -> xr.DataArray:
