@@ -1,7 +1,7 @@
 import ee
 
 from src.classification.reducers import get_reducers
-from src.constants import AOIS_TEST, AOIS_TRAIN, ASSETS_PATH, UKRAINE_WAR_START
+from src.constants import AOIS_TEST, AOIS_TRAIN, ASSETS_PATH, GAZA_WAR_START
 from src.data.unosat import load_unosat_labels_gee
 from src.data.utils import aoi_orbit_iterator
 from src.utils.gee import init_gee
@@ -86,7 +86,7 @@ def create_dataset(
     reducer = get_reducers(reducer_names)
 
     end_post_period = d_periods["post"][1]
-    if end_post_period <= UKRAINE_WAR_START:
+    if end_post_period <= GAZA_WAR_START:
         label = 0
     else:
         label = 1  # but need extra filtering to remove unknown ones

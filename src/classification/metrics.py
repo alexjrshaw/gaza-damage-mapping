@@ -2,7 +2,7 @@ import geopandas as gpd
 import numpy as np
 from sklearn import metrics
 
-from src.constants import UKRAINE_WAR_START
+from src.constants import GAZA_WAR_START
 
 
 def get_metrics(
@@ -37,7 +37,7 @@ def get_metrics(
     """
 
     col_dates = [c for c in gdf.columns if c.startswith("pred_")]
-    col_neg = [c for c in col_dates if c.split("_")[-1] < UKRAINE_WAR_START]
+    col_neg = [c for c in col_dates if c.split("_")[-1] < GAZA_WAR_START]
     threshold *= 255
 
     y_preds, y_trues = np.array([]), np.array([])

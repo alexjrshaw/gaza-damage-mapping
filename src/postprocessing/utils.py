@@ -54,7 +54,7 @@ def find_post_dates(run_name: str) -> list[tuple[str, str]]:
     post_dates = []
     date_pattern = re.compile(r"(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})")  # 'YYYY-MM-DD_YYYY-MM-DD'
 
-    for file in local_folder.glob("ukraine_*.tif"):
+    for file in local_folder.glob("gaza_*.tif"):
         match = date_pattern.search(file.stem)
         if match:
             post_dates.append((match.group(1), match.group(2)))

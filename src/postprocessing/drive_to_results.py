@@ -72,7 +72,7 @@ def download_and_merge_all_dates(run_name: str, post_dates: list[tuple[str, str]
         if drive_folder == "cfg.yaml":
             continue
 
-        name_file = f"ukraine_{drive_folder}.tif"
+        name_file = f"gaza_{drive_folder}.tif"
         download_and_merge(drive_folder, local_folder, name_file, save_individual_files=False)
 
 
@@ -201,7 +201,7 @@ def create_gdf_overture_with_preds(admin_id: str, run_name: str, folder_preds: P
     post_dates_ = [p[0] for p in post_dates]  # first date for reference (eg 2023-02-24_2023-05-24 will be 2023-02-24)
 
     # Read and stack preds for each date
-    fp_preds = [DATA_PATH / run_name / f'ukraine_{"_".join(post_date)}.tif' for post_date in post_dates]
+    fp_preds = [DATA_PATH / run_name / f'gaza_{"_".join(post_date)}.tif' for post_date in post_dates]
     dates = xr.Variable("date", pd.to_datetime(post_dates_))
     preds = xr.concat([read_fp_within_geo(fp, total_bounds) for fp in fp_preds], dim=dates).squeeze(dim="band")
     if verbose:
