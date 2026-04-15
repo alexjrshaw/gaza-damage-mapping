@@ -9,6 +9,7 @@ from shapely import GeometryType
 from shapely.geometry import box
 
 from src.constants import ASSETS_PATH, DATA_PATH
+from src.utils.geo import load_gaza_strip_boundary
 from src.utils.gee import asset_exists, create_folders_recursively, init_gee
 from src.utils.time import timeit
 
@@ -22,13 +23,6 @@ MAX_LAT = 85.05112878
 MIN_LON = -180
 MAX_LON = 180
 
-
-def load_gaza_strip_boundary():
-    """Load the official Gaza Strip boundary from local OCHA admin1 file."""
-    fp = DATA_PATH / "raw/pse_admin1.geojson"
-    assert fp.exists(), f"Admin1 boundary not found at {fp}"
-    gdf = gpd.read_file(fp)
-    return gdf[gdf["adm1_name"] == "Gaza Strip"].iloc[0].geometry
 
 def load_gaza_quadkeys_gee(zoom: int) -> ee.FeatureCollection:
     """
