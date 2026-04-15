@@ -151,21 +151,13 @@ def get_fc_ts(aoi: str, orbit: int, extract: str, damages_to_keep: list[int] | N
 
 
 if __name__ == "__main__":
+    from src.constants import PRE_PERIOD, POST_PERIODS
+
     damages_to_keep = [1, 2]
-    extract_winds = "1x1"  # Extract features for 1x1 windows (ie no spatial mean)
+    extract_winds = "1x1"
     time_periods = {
-        "pre": [("2020-02-24", "2021-02-23")],  # always use only this one for Ukraine
-        "post": [
-            ("2021-02-24", "2021-05-23"),
-            ("2021-05-24", "2021-08-23"),
-            ("2021-08-24", "2021-11-23"),
-            ("2021-11-24", "2022-02-23"),
-            ("2022-02-24", "2022-05-23"),
-            ("2022-05-24", "2022-08-23"),
-            ("2022-08-24", "2022-11-23"),
-            ("2022-11-24", "2023-02-23"),
-        ],
-        # "post": [("2021-02-24", "2022-02-23"), ("2022-02-24", "2023-02-23")], # 1 year post period
+        "pre": [PRE_PERIOD],
+        "post": POST_PERIODS,
     }
     reducer_names = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
 
@@ -177,4 +169,11 @@ if __name__ == "__main__":
         reducer_names,
         export=True,
     )
-    create_dataset_ready_all_dates("test", damages_to_keep, time_periods, extract_winds, reducer_names, export=True)
+    create_dataset_ready_all_dates(
+        "test",
+        damages_to_keep,
+        time_periods,
+        extract_winds,
+        reducer_names,
+        export=True,
+    )
