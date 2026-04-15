@@ -345,7 +345,7 @@ def upload_gaza_unosat_to_gee() -> None:
             time.sleep(5)
         print(f"  ✓ Done")
 
-    def upload_chunked(gdf, asset_id, description, chunk_size=400):
+    def upload_chunked(gdf, asset_id, description, chunk_size=5000):
         """Upload a large GeoDataFrame in chunks, then merge into one asset."""
         if asset_exists(asset_id):
             print(f"  {asset_id.split('/')[-1]} already exists, skipping")
@@ -415,14 +415,21 @@ def upload_gaza_unosat_to_gee() -> None:
         else:
             upload_direct(pts, asset_id, f"UNOSAT_labels_{aoi}")
 
-        # Labels full (all classes, latest epoch per point)
-        pts_full = gdf_labels[gdf_labels["aoi"] == aoi].copy()
-        pts_full = pts_full.loc[pts_full.groupby(pts_full.geometry.to_wkt())["ep"].idxmax()]
-        asset_id_full = ASSETS_PATH + f"UNOSAT_labels/{aoi}_full"
-        if len(pts_full) > CHUNK_THRESHOLD:
-            upload_chunked(pts_full, asset_id_full, f"UNOSAT_labels_{aoi}_full")
-        else:
-            upload_direct(pts_full, asset_id_full, f"UNOSAT_labels_{aoi}_full")
+        # Labels full (all classes, latest epoch per point) - skipped for now, not needed for core pipeline
+        #pts_full = gdf_labels[gdf_labels["aoi"] == aoi].copy()
+        #pts_full = pts_full.loc[pts_full.groupby(pts_full.geometry.to_wkt())["ep"].idxmax()]
+        #asset_id_full = ASSETS_PATH + f"UNOSAT_labels/{aoi}_full"
+
+        # upload when needed by changing skip_full=False
+        skip_full = True
+        if not skip_full:
+            pts_full = gdf_labels[gdf_labels["aoi"] == aoi].copy()
+            pts_full = pts_full.loc[pts_full.groupby(pts_full.geometry.to_wkt())["ep"].idxmax()]
+            asset_id_full = ASSETS_PATH + f"UNOSAT_labels/{aoi}_full"
+            if len(pts_full) > CHUNK_THRESHOLD:
+                upload_chunked(pts_full, asset_id_full, f"UNOSAT_labels_{aoi}_full")
+            else:
+                upload_direct(pts_full, asset_id_full, f"UNOSAT_labels_{aoi}_full")
 
     print("\nAll uploads complete.")
 

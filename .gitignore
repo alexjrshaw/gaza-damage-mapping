@@ -102,4 +102,4 @@ secrets/*
 
 # data folder used to debug
 _dataalex/
-data/
+/data/
