@@ -13,7 +13,7 @@ init_gee()
 
 
 @timeit
-def ukraine_full_inference(cfg: DictConfig) -> None:
+def gaza_full_inference(cfg: DictConfig) -> None:
     # Load classifier trained on UNOSAT data
     classifier = load_or_create_classifier(cfg)
 
@@ -150,10 +150,12 @@ def get_description(id_, run_name, time_periods) -> str:
 
 
 if __name__ == "__main__":
-    from src.constants import AOIS_TEST, ASSETS_PATH
-    from src.utils.gee import create_folders_recursively
+    from src.constants import AOIS_TEST, ASSETS_PATH, PRE_PERIOD, POST_PERIODS
+    from src.utils.gee import create_folders_recursively, init_gee
 
-    run_name = "ukraine_full_inference"
+    init_gee(project="gaza-damage-mapping")
+
+    run_name = "gaza_full_inference"
     GEE_FOLDER = ASSETS_PATH + f"predictions/{run_name}"
     create_folders_recursively(GEE_FOLDER)
 
@@ -164,27 +166,18 @@ if __name__ == "__main__":
             model_kwargs=dict(numberOfTrees=50, minLeafPopulation=3, maxNodes=1e4),
             data=dict(
                 s1=dict(subset_bands=None),
-                s2=None,
+                s2=None,  # Sentinel-2 excluded per Dietrich et al. 2025
                 aois_test=AOIS_TEST,
                 damages_to_keep=[1, 2],
                 extract_winds="1x1",
-                time_periods=dict(pre=("2020-02-24", "2021-02-23"), post="3months"),
+                time_periods=dict(pre=PRE_PERIOD, post="2months"),
             ),
             inference=dict(
                 time_periods={
-                    "pre": ("2020-02-24", "2021-02-23"),
-                    "post": [
-                        ("2021-02-24", "2021-05-23"),
-                        ("2021-05-24", "2021-08-23"),
-                        ("2021-08-24", "2021-11-23"),
-                        ("2021-11-24", "2022-02-23"),
-                        ("2022-02-24", "2022-05-23"),
-                        ("2022-05-24", "2022-08-23"),
-                        ("2022-08-24", "2022-11-23"),
-                        ("2022-11-24", "2023-02-23"),
-                    ],
+                    "pre": PRE_PERIOD,
+                    "post": POST_PERIODS,
                 },
-                quadkey_zoom=8,  # zoom level for quadkey grid, balance between number of grids and size of each grid
+                quadkey_zoom=10,  # higher zoom than Ukraine (8) due to Gaza's small size
             ),
             reducer_names=[
                 "mean",
@@ -200,3 +193,5 @@ if __name__ == "__main__":
             run_name=run_name,
         )
     )
+
+    gaza_full_inference(cfg)
