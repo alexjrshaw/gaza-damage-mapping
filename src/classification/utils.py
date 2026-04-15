@@ -7,7 +7,7 @@ def get_run_name(cfg: DictConfig) -> str:
     """
     Generate a run name based on the configuration.
 
-    Ex: rf_s1_only_VV_3months_50trees_1x1_seed0_all7reducers
+    Ex: rf_s1_only_VV_2months_50trees_1x1_seed0_all7reducers
 
     Args:
         cfg (DictConfig): The configuration.

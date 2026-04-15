@@ -7,7 +7,7 @@ from src.utils.gee import asset_exists
 def get_dataset_ready(
     sat: str = "s1",
     split: str = "train",
-    post_dates: str = "3months",
+    post_dates: str = "2months",
     extract_wind: str | list[str] = "1x1",
 ) -> ee.FeatureCollection:
     """
@@ -16,7 +16,7 @@ def get_dataset_ready(
     Args:
         sat (str): The satellite to use (s1, s2 or both). Default to s1.
         split (str): The split to use (train or test).
-        post_dates (str): The post dates to use (3months or 6months).
+        post_dates (str): The post dates to use (2months or 1year).
         extract_wind (str | list[str]): The extraction window to use (1x1, 3x3 or both).
 
     Returns:

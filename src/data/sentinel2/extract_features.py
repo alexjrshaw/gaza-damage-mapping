@@ -1,3 +1,13 @@
+"""
+NOTE: Sentinel-2 is not used in the Gaza adaptation.
+Per Dietrich et al. (2025) Supplementary Note 6, incorporating Sentinel-2
+never enhanced model performance and led to poorer results than Sentinel-1 alone.
+See src/data/sentinel1/extract_features.py for the active script.
+
+Original script: Extract Sentinel-2 features for Ukraine.
+Retained for reference.
+"""
+
 import ee
 
 from src.classification.reducers import get_reducers

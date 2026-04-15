@@ -19,7 +19,7 @@ def load_country_boundaries(country: str) -> tuple[Polygon, MultiPolygon]:
     If file does not exist, download it from OSM.
 
     Args:
-        country (str): Name of the country (eg Ukraine, Iraq, ...)
+        country (str): Name of the country (eg Palestine, Iraq, ...)
 
     Returns:
         Tuple[Polygon, MultiPolygon]: The boundaries

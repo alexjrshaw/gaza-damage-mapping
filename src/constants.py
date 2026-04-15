@@ -14,7 +14,7 @@ S2_BANDS = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B11", 
 GAZA_WAR_START = "2023-10-07"
 
 # ------------------- TIME PERIODS -------------------
-# One year pre-conflict baseline, matching Ukraine methodology
+# One year pre-conflict baseline (Oct 2022 - Oct 2023), consistent with Dietrich et al. (2025)
 PRE_PERIOD = ("2022-10-07", "2023-10-06")
 
 # 12 x 2-month post-conflict windows covering full conflict period

@@ -45,7 +45,7 @@ def create_dataset_ready_all_dates(
     fc = ee.FeatureCollection(fs).flatten()
 
     if export:
-        period = "1year" if len(d_periods["post"]) == 2 else "3months"
+        period = "1year" if len(d_periods["post"]) == 2 else "2months"
         ee.batch.Export.table.toAsset(
             collection=fc,
             description=f"{split} data all {period} dates",

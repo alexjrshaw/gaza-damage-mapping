@@ -1,4 +1,11 @@
-"""Download all buildings from Overture Maps in Ukraine using DuckDB"""
+"""
+NOTE: This script is superseded for the Gaza adaptation.
+Gaza uses HOTOSM building footprints instead of Overture Maps.
+See src/data/hotosm/download.py.
+
+Original script: Download all buildings from Overture Maps in Ukraine using DuckDB.
+Retained for reference and potential future use.
+"""
 
 from pathlib import Path
 

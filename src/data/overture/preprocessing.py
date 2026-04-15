@@ -10,6 +10,15 @@ from src.data.utils import get_all_aois
 from src.utils.geo import get_best_utm_crs_from_gdf, load_country_boundaries, load_ukraine_admin_polygons
 from src.utils.time import timeit
 
+"""
+NOTE: This script is superseded for the Gaza adaptation.
+Gaza uses HOTOSM building footprints instead of Overture Maps.
+See src/data/hotosm/preprocessing.py.
+
+Original script: Preprocess Overture Maps buildings for Ukraine.
+Retained for reference and potential future use.
+"""
+
 OVERTURE_RAW_FP = OVERTURE_PATH / "raw_ukraine_buildings.parquet"
 OVERTURE_PROCESSED_FP = OVERTURE_PATH / "ukraine_buildings.parquet"
 

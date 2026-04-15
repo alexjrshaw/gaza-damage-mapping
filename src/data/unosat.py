@@ -149,7 +149,7 @@ def preprocess_gaza_unosat(
         4 = Possibly Damaged (21,669)
         11 = Possible Damage From Adjacent Impact/Debris (2,167) - excluded
         6 = No Visible Damage (35) - excluded
-    Pipeline uses labels_to_keep=[1, 2] by default, matching Ukraine methodology
+    Pipeline uses labels_to_keep=[1, 2] by default (Destroyed + Severely Damaged), consistent with Dietrich et al. (2025)
     combine_epoch='last' in load_unosat_labels() selects epoch 14 as definitive label
 
     Args:
