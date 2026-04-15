@@ -210,8 +210,10 @@ def get_classifier_trained(cfg: DictConfig, verbose: int = 1) -> ee.Classifier:
 
 if __name__ == "__main__":
     from omegaconf import OmegaConf
+    from src.constants import AOIS_TEST, ASSETS_PATH, DATA_PATH, PRE_PERIOD, POST_PERIODS
+    from src.utils.gee import asset_exists, create_folder, init_gee
 
-    from src.constants import AOIS_TEST, ASSETS_PATH, DATA_PATH
+    init_gee(project="gaza-damage-mapping")
 
     LOCAL_FOLDER = DATA_PATH / "ablation_runs"
     GEE_FOLDER = ASSETS_PATH + "ablation_runs"
@@ -225,11 +227,11 @@ if __name__ == "__main__":
             model_kwargs=dict(numberOfTrees=50, minLeafPopulation=3, maxNodes=1e4),
             data=dict(
                 s1=dict(subset_bands=None),
-                s2=None,
+                s2=None,  # Sentinel-2 excluded per Dietrich et al. 2025
                 aois_test=AOIS_TEST,
                 damages_to_keep=[1, 2],
                 extract_winds="1x1",
-                time_periods=dict(pre=("2020-02-24", "2021-02-23"), post="3months"),
+                time_periods=dict(pre=PRE_PERIOD, post="2months"),
             ),
             reducer_names=[
                 "mean",
@@ -243,7 +245,9 @@ if __name__ == "__main__":
             seed=0,
             gee_folder=GEE_FOLDER,
             local_folder=LOCAL_FOLDER,
+            train_on_all_data=False,
         )
     )
 
     metrics = full_pipeline(cfg, force_recreate=False)
+    
