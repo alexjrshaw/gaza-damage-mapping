@@ -104,3 +104,4 @@ secrets/*
 _dataalex/
 /data/
 upload_log.txt
+intermediate_log.txt
