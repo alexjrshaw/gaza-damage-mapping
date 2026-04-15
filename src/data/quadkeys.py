@@ -10,7 +10,6 @@ from shapely.geometry import box
 
 from src.constants import ASSETS_PATH, DATA_PATH
 from src.utils.gee import asset_exists, create_folders_recursively, init_gee
-from src.utils.geo import load_country_boundaries
 from src.utils.time import timeit
 
 init_gee()
@@ -24,9 +23,16 @@ MIN_LON = -180
 MAX_LON = 180
 
 
-def load_ukraine_quadkeys_gee(zoom: int) -> ee.FeatureCollection:
+def load_gaza_strip_boundary():
+    """Load the official Gaza Strip boundary from local OCHA admin1 file."""
+    fp = DATA_PATH / "raw/pse_admin1.geojson"
+    assert fp.exists(), f"Admin1 boundary not found at {fp}"
+    gdf = gpd.read_file(fp)
+    return gdf[gdf["adm1_name"] == "Gaza Strip"].iloc[0].geometry
+
+def load_gaza_quadkeys_gee(zoom: int) -> ee.FeatureCollection:
     """
-    Load quadkeys grid for Ukraine at a specified zoom level from a GEE asset.
+    Load quadkeys grid for Gaza at a specified zoom level from a GEE asset.
 
     Args:
         zoom (int): The zoom level.
@@ -35,7 +41,7 @@ def load_ukraine_quadkeys_gee(zoom: int) -> ee.FeatureCollection:
         ee.FeatureCollection: The quadkeys grid.
     """
 
-    asset_id = ASSETS_PATH + f"quadkeys_grid/ukraine_zoom{zoom}"
+    asset_id = ASSETS_PATH + f"quadkeys_grid/gaza_zoom{zoom}"
     if not asset_exists(asset_id):
         print(f"Asset {asset_id} does not exist. Creating it now...")
 
@@ -43,13 +49,13 @@ def load_ukraine_quadkeys_gee(zoom: int) -> ee.FeatureCollection:
         create_folders_recursively(asset_id, last_one_is_asset=True)
 
         # Transform to ee.FeatureCollection and export to asset
-        fc = geemap.geopandas_to_ee(load_ukraine_quadkeys(zoom))
+        fc = geemap.geopandas_to_ee(load_gaza_quadkeys(zoom))
         ee.batch.Export.table.toAsset(
             collection=fc,
-            description=f"Ukraine quadkeys grid zoom {zoom}",
+            description=f"Gaza quadkeys grid zoom {zoom}",
             assetId=asset_id,
         ).start()
-        print(f"Exporting Ukraine quadkeys grid zoom {zoom}. Waiting for it to be done...")
+        print(f"Exporting Gaza quadkeys grid zoom {zoom}. Waiting for it to be done...")
 
         while not asset_exists(asset_id):
             time.sleep(5)
@@ -58,9 +64,9 @@ def load_ukraine_quadkeys_gee(zoom: int) -> ee.FeatureCollection:
     return ee.FeatureCollection(asset_id)
 
 
-def load_ukraine_quadkeys(zoom: int, clip_to_border=True) -> gpd.GeoDataFrame:
+def load_gaza_quadkeys(zoom: int, clip_to_border=True) -> gpd.GeoDataFrame:
     """
-    Load quadkeys grid for Ukraine at a specified zoom level.
+    Load quadkeys grid for Gaza at a specified zoom level.
 
     Args:
         zoom (int): The zoom level.
@@ -69,26 +75,28 @@ def load_ukraine_quadkeys(zoom: int, clip_to_border=True) -> gpd.GeoDataFrame:
         gpd.GeoDataFrame: The quadkeys grid.
     """
 
-    fp_qk_grid = DATA_PATH / f"ukraine_qk_grid_zoom{zoom}.geojson"
+    fp_qk_grid = DATA_PATH / f"gaza_qk_grid_zoom{zoom}.geojson"
     if not fp_qk_grid.exists():
         print(f"File {fp_qk_grid} does not exist. Creating it now...")
-        create_ukraine_quadkeys_grid(zoom, fp_to_save=fp_qk_grid)
+        create_gaza_quadkeys_grid(zoom, fp_to_save=fp_qk_grid)
 
     grid = gpd.read_file(fp_qk_grid)
 
     if clip_to_border:
-        grid = grid.clip(load_country_boundaries("Ukraine"))
+        grid = grid.clip(load_gaza_strip_boundary())
 
     return grid
 
 
 @timeit
-def create_ukraine_quadkeys_grid(zoom: int, fp_to_save: str | Path):
-    ukraine = load_country_boundaries("Ukraine")
-    quadkeys = get_intersecting_quadkeys(ukraine, zoom)
-    quadkeys["area_in_ukraine"] = quadkeys.geometry.apply(lambda geo: geo.intersection(ukraine).area / geo.area)
+def create_gaza_quadkeys_grid(zoom: int, fp_to_save: str | Path):
+    """Create a quadkeys grid for Gaza at a specific zoom level."""
+    gaza = load_gaza_strip_boundary()
+    quadkeys = get_intersecting_quadkeys(gaza, zoom)
+    quadkeys["area_in_gaza"] = quadkeys.geometry.apply(
+        lambda geo: geo.intersection(gaza).area / geo.area)
     quadkeys.to_file(fp_to_save, driver="GeoJSON")
-    print(f"Saved quadkeys grid for Ukraine at zoom level {zoom}.")
+    print(f"Saved quadkeys grid for Gaza at zoom level {zoom}.")
 
 
 def get_intersecting_quadkeys(polygon: GeometryType, zoom: int) -> gpd.GeoDataFrame:

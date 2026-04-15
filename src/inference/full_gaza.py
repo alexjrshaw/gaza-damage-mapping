@@ -3,7 +3,7 @@ from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
 from src.classification.main import load_or_create_classifier
-from src.data.quadkeys import load_ukraine_quadkeys_gee
+from src.data.quadkeys import load_gaza_quadkeys_gee
 from src.inference.dense_inference import predict_geo
 from src.utils.gdrive import create_drive_folder, create_yaml_file_in_drive_from_config_dict, get_files_in_folder
 from src.utils.gee import init_gee
@@ -76,7 +76,7 @@ def predict_and_export_all_grids(
     n_limit: int | None = None,
 ) -> None:
     # Load quadkey grid
-    grids = load_ukraine_quadkeys_gee(zoom=zoom_level)
+    grids = load_gaza_quadkeys_gee(zoom=zoom_level)
 
     # Get all quadkeys to predict (target_ids and n_limit are used for debugging)
     if target_ids is None:
@@ -177,7 +177,7 @@ if __name__ == "__main__":
                     "pre": PRE_PERIOD,
                     "post": POST_PERIODS,
                 },
-                quadkey_zoom=10,  # higher zoom than Ukraine (8) due to Gaza's small size
+                quadkey_zoom=12,  # Higher zoom than Ukraine (8) due to Gaza's small size. Zoom 12 (~2.4km2 tiles) appropriate for Gaza's small area and high building density
             ),
             reducer_names=[
                 "mean",
