@@ -43,7 +43,7 @@ def create_fc_aoi_orbit(
     create_folders_recursively(folder)
 
     # Load UNOSAT labels and geometry
-    labels = load_unosat_labels_gee(aoi, True)
+    labels = load_unosat_labels_gee(aoi, False)
     # labels = labels.filter(ee.Filter.inList("damage", [1,2])) # now we extract for all labels in case we need them
     geo = load_unosat_geo_gee(aoi)
 
