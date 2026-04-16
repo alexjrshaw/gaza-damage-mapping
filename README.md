@@ -1,186 +1,234 @@
-# An Open-Source Tool for Mapping War Destruction at Scale in Ukraine using Sentinel-1 Time Series
+# An Open-Source Tool for Mapping War Destruction in Gaza using Sentinel-1 Time Series
 
-<div align="center">
+**Alex Shaw**, MSc GIS, University of Edinburgh
 
-**Olivier Dietrich<sup>*,1</sup>**, **Torben Peters<sup>1</sup>**, **Vivien Sainte Fare Garnot<sup>2</sup>**, **Valerie Sticher<sup>2</sup>**, **Thao Ton-That Whelan<sup>3</sup>**, **Konrad Schindler<sup>1</sup>**, **Jan Dirk Wegner<sup>2</sup>**
+This project adapts the open-source war damage mapping tool developed by Dietrich et al. (2025) for Ukraine to the Gaza Strip, using Sentinel-1 SAR time series and UNOSAT damage assessments.
 
-<sup>1</sup> ETH Zurich
-<sup>2</sup> University of Zurich
-<sup>3</sup> International Committee of the Red Cross
+[![Original Paper](https://img.shields.io/badge/arXiv-PDF-b31b1b)](https://arxiv.org/abs/2406.02506)
+[![Original Repo](https://img.shields.io/badge/Original_Repo-link-blue)](https://github.com/prs-eth/ukraine-damage-mapping-tool)
+[![License: MIT](https://img.shields.io/badge/License-MIT-929292.svg)](LICENSE)
 
-<sup>*</sup>Corresponding author: [Olivier Dietrich](mailto:odietrich@ethz.ch)
+---
 
-[![Paper](https://img.shields.io/badge/arXiv-PDF-b31b1b)](https://arxiv.org/abs/2406.02506)
-[![Dashboard 1](https://img.shields.io/badge/Damage_Mapping_Tool-link-blue)](https://olidietrich.users.earthengine.app/view/rapid-damage-assessment-sentinel1)
-[![Dashboard 2](https://img.shields.io/badge/Ukraine_Damage_Explorer-link-gold)](https://olidietrich.users.earthengine.app/view/ukraine-damage-explorer)
-[![Zenodo](https://img.shields.io/badge/Zenodo-link-green)](https://zenodo.org/records/15088349)
-![MIT License](https://img.shields.io/badge/License-MIT-929292.svg)
+## Study Area
 
-![Ukraine Damage Map](doc/ukraine_damage_adm3_agg.png)
+The Gaza Strip, Occupied Palestinian Territory. Five governorates:
 
-</div>
+| AOI  | Governorate   | Role     |
+|------|---------------|----------|
+| GAZ1 | North Gaza    | Training |
+| GAZ2 | Gaza          | Training |
+| GAZ3 | Deir Al-Balah | Test     |
+| GAZ4 | Khan Yunis    | Test     |
+| GAZ5 | Rafah         | Test     |
 
+---
 
+## Data Sources
 
+SAR imagery: Sentinel-1 (Copernicus). VV+VH polarisation, IW mode, via Google Earth Engine
+Damage labels: [UNOSAT Gaza CDA, 11 October 2025](https://unosat.org/products/4213). 198,308 assessed structures.
+Building footprints: [HOTOSM Gaza Buildings](https://data.humdata.org/dataset/hotosm_pse_buildings). 330,079 manually delineated pre-conflict buildings.
+Admin boundaries: [OCHA COD-AB Palestine](https://data.humdata.org/dataset/cod-ab-pse). Governorate level (admin2).
 
+**Key methodological adaptations from Dietrich et al. (2025):**
+- HOTOSM building footprints used instead of Overture Maps (Scher & Van Den Hoek 2025)
+- Sentinel-2 excluded (no performance improvement per Dietrich et al. 2025, Supplementary Note 6)
+- 2-month post-conflict windows instead of 3-month (aligned with UNOSAT revisit cadence)
+- 14 assessment epochs (Oct 2023 – Oct 2025) instead of Ukraine's 2 epochs
+- Damage classes 1 (Destroyed) and 2 (Severely Damaged) used for training
 
-## 🇺🇦 Results
-The results, including heatmaps and building footprints, can be found [here](https://zenodo.org/records/14811504).
+---
 
-## 🎮 Dashboards
-We provide two Google Earth Engine dashboards:
+## Repository Structure
 
-|[![Screenshot Damage Mapping Tool](doc/webapp_damage_mapping_tool.jpg)](https://olidietrich.users.earthengine.app/view/rapid-damage-assessment-sentinel1)<br>[Damage Mapping Tool](https://olidietrich.users.earthengine.app/view/rapid-damage-assessment-sentinel1)|[![Screenshot Results Explorer](doc/webapp_results_explorer.jpg)](https://olidietrich.users.earthengine.app/view/ukraine-damage-explorer)<br>[Ukraine Damage Explorer](https://olidietrich.users.earthengine.app/view/ukraine-damage-explorer)|
-|:-:|:-:|
+notebooks/                     # Jupyter notebooks
+├── classification.ipynb
+├── country_stats.ipynb
+└── evaluation.ipynb
+src/                           # Source code
+├── classification/          # Model training and evaluation
+│     ├── dataset.py
+│     ├── main.py
+│     ├── metrics.py
+│     ├── models.py
+│     ├── reducers.py
+│     └── utils.py
+│
+├── data/                    # Data processing
+│     ├── hotosm/            # HOTOSM building footprints (replaces Overture)
+│     │     ├── download.py
+│     │     └── preprocessing.py
+│     ├── overture/          # Retained for reference (Ukraine only)
+│     ├── sentinel1/         # Sentinel-1 SAR processing
+│     ├── sentinel2/         # Retained for reference (not used for Gaza)
+│     ├── quadkeys.py
+│     ├── unosat.py
+│     └── utils.py
+│
+├── inference/               # Full Gaza inference
+│     ├── dense_inference.py
+│     └── full_gaza.py
+│
+├── postprocessing/          # Results processing
+│     ├── drive_to_results.py
+│     └── utils.py
+│
+├── utils/                   # Utility functions
+│     ├── gdrive.py
+│     ├── gee.py
+│     ├── geo.py
+│     └── time.py
+│
+├── constants.py
+└── init.py
 
+---
 
+## Setup
 
+*Developed on University of Edinburgh Linux (Python 3.10.12) and Windows 11*
 
-
-## 🌲 Repository Structure
-
-```
-notebooks/                     # Jupyter notebooks to reproduce results
-  ├── classification.ipynb
-  ├── country_stats.ipynb
-  └── evaluation.ipynb
-
-src/                            # Source code for data processing, model training, and inference
-  ├── classification/           # Classification script to train and evaluate models
-  │     ├── dataset.py
-  │     ├── main.py
-  │     ├── metrics.py
-  │     ├── models.py
-  │     ├── reducers.py
-  │     └── utils.py
-  │
-  ├── data/                     # Scripts for data processing and handling
-  │     ├── overture/
-  │     ├── sentinel1/
-  │     ├── sentinel2/
-  │     ├── quadkeys.py
-  │     ├── unosat.py
-  │     └── utils.py
-  │
-  ├── inference/                # Script for inference over entire country
-  │     ├── dense_inference.py
-  │     └── full_ukraine.py
-  │
-  ├── postprocessing/           # Download from drive and postprocess results
-  │     ├── drive_to_results.py
-  │     └── utils.py
-  │
-  ├── utils/                    # Utils functions
-  |     ├── gdrive.py
-  |     ├── gee.py
-  |     ├── geo.py
-  |     └── time.py
-  │
-  ├── constants.py
-  └── __init__.py
-```
-
-## 🛠️ Setup
-
-*This was tested on Ubuntu 22.04 LTS with Python 3.12.7 and 64GB RAM*
-
-### 🐑 Clone the repository
-```bash
-git clone https://github.com/odietric/ukraine-mapping-tool.git
-cd ukraine-mapping-tool
-```
-
-### 🐍 Python Environment
-To create the environment, run the following command:
+### 1. Clone the repository
 
 ```bash
-conda create -p ./ukraine_env python=3.12 geopandas gdal -c conda-forge --strict-channel-priority --yes
-conda activate ./ukraine_env
-python -m pip install uv
-python -m uv pip install -r requirements.txt
+git clone https://github.com/alexjrshaw/gaza-damage-mapping.git
+cd gaza-damage-mapping
 ```
-or simply:
+
+### 2. Python environment
 
 ```bash
-make env
+python -m venv alex
+source alex/bin/activate        # Linux/Mac
+alex\Scripts\Activate.ps1       # Windows
+pip install -r requirements.txt
 ```
 
-### 💾 Data
-All project data is publicly available:
+### 3. Google Earth Engine
 
-- [UNOSAT](https://unosat.org/products/)
+You need a GEE account with a registered cloud project.
 
-  Preprocessed UNOSAT labels and AOIs are stored in `data/unosat_labels.geojson` and `data/unosat_aois.geojson`, respectively.
-- [Sentinel-1](https://scihub.copernicus.eu/)
+```bash
+python -c "import ee; ee.Authenticate()"
+earthengine set_project YOUR-PROJECT-ID
+```
 
-  Sentinel-1 images are processed in the cloud via Google Earth Engine.
-- [Overture Maps Building Footprints](https://docs.overturemaps.org/guides/buildings/#14/32.58453/-117.05154/0/60)
+Update `ASSETS_PATH` in `src/constants.py` to point to your GEE project.
 
-  To obtain the preprocessed Overture Maps Building Footprints in Ukraine, you can either download the file `ukraine_buildings.parquet` from the link above and place it in the `data/overture_buildings` folder, or compute it yourself by running the following command:
+### 4. Google Drive credentials
 
-  ```bash
-  bash src/data/overture/download_and_preprocess.sh
-  ```
+Required for downloading inference results. Follow these steps:
 
-### 💽 Google Drive Access Configuration
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → Enable **Google Drive API**
+2. Create an OAuth client ID (Desktop app) → download `client_secrets.json`
+3. Place `client_secrets.json` in the `secrets/` folder
+4. Create `secrets/pydrive_settings.yaml`:
 
-To download the results from Google Drive, you need to configure the Google Drive API and add the files `pydrive_settings.yaml` and `pydrive_credentials.json` to the `secrets` folder.
+```yaml
+client_config_backend: 'file'
+client_config_file: secrets/client_secrets.json
+save_credentials: True
+save_credentials_backend: 'file'
+save_credentials_file: secrets/pydrive_credentials.json
+get_refresh_token: True
+oauth_scope:
+  - "https://www.googleapis.com/auth/drive"
+```
 
-1. **Create Google API Credentials:**
+### 5. Data
 
-    * Go to Google Cloud Console: API & Services > Credentials > Create Credentials > OAuth client ID > Desktop app.
+All data is either downloaded automatically or publicly available:
 
-2. **Download and Configure Credentials:**
+**UNOSAT labels** — download from [unosat.org/products/4213](https://unosat.org/products/4213) and place the GDB in `data/raw/`. Then run:
 
-    * Download the .json credentials file.
+```bash
+python src/data/unosat.py
+```
 
-    * Store the `client_id` and `client_secret` values from this file in pydrive_settings.yaml as follows:
+**HOTOSM buildings** — downloaded automatically when running:
 
-      ```yaml
-      client_config_backend: 'settings'
+```bash
+python src/data/hotosm/preprocessing.py
+```
 
-      client_config:
-        client_id: <your_client_id>
-        client_secret: <your_client_secret>
+**Admin boundaries** — downloaded automatically from OCHA HDX.
 
-      save_credentials: True
-      save_credentials_backend: 'file'
-      save_credentials_file: </path/to/project/>secrets/pydrive_credentials.json
+**Sentinel-1** — processed in the cloud via Google Earth Engine.
 
-      get_refresh_token: True
-      oauth_scope:
-        - "https://www.googleapis.com/auth/drive"
-      ```
+---
 
-    * Replace `<your_client_id>` and `<your_client_secret>` with values from your credentials JSON file.
+## ▶️ Running the Pipeline
 
-    * Replace `/path/to/project/secrets/pydrive_credentials.json` with the full path to the `pydrive_credentials.json` file within your project.\
-    * The pydrive_credentials.json file will be automatically created upon the first authentication attempt.
+### Step 1 — Upload UNOSAT labels to GEE
 
-3. **Example usage in code:**
+```bash
+python src/data/unosat.py
+```
 
-      ```python
-      from pydrive2.auth import GoogleAuth
-      from pydrive2.drive import GoogleDrive
-      from src.constants import SECRETS_PATH
+### Step 2 — Extract Sentinel-1 intermediate data
 
-      # Initialize authentication
-      GoogleAuth.DEFAULT_SETTINGS["client_config_file"] = SECRETS_PATH / "pydrive_credentials.json"
-      gauth = GoogleAuth(settings_file=SECRETS_PATH / "pydrive_settings.yaml")
-      drive = GoogleDrive(gauth)
-      ```
+```bash
+python src/data/sentinel1/intermediate_data.py
+```
 
-## Citation
+### Step 3 — Extract features
+
+```bash
+python src/data/sentinel1/extract_features.py
+```
+
+### Step 4 — Train and evaluate classifier
+
+```bash
+python src/classification/main.py
+```
+
+### Step 5 — Run full Gaza inference
+
+```bash
+python src/inference/full_gaza.py
+```
+
+### Step 6 — Postprocess results
+
+```bash
+python src/postprocessing/drive_to_results.py
+```
+
+---
+
+## CItation
+
+If you use this code, please cite the original Ukraine methodology:
+
 ```bibtex
 @article{Dietrich2025,
-  author={Dietrich, Olivier and Peters, Torben and Sainte Fare Garnot, Vivien and Sticher, Valerie and Ton-That Whelan, Thao and Schindler, Konrad and Wegner, Jan Dirk},
-  title={An open-source tool for mapping war destruction at scale in Ukraine using Sentinel-1 time series},
-  journal={Communications Earth {\&} Environment},
+  author={Dietrich, Olivier and Peters, Torben and Sainte Fare Garnot, Vivien
+          and Sticher, Valerie and Ton-That Whelan, Thao and Schindler, Konrad
+          and Wegner, Jan Dirk},
+  title={An open-source tool for mapping war destruction at scale in Ukraine
+         using Sentinel-1 time series},
+  journal={Communications Earth \& Environment},
   year={2025},
-  doi={10.1038/s43247-025-02183-7},
-  url={https://doi.org/10.1038/s43247-025-02183-7}
+  doi={10.1038/s43247-025-02183-7}
 }
 ```
 
-## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+And the HOTOSM building footprint methodology:
+
+```bibtex
+@article{ScherVanDenHoek2025,
+  author={Scher, Corey and Van Den Hoek, Jamon},
+  title={Active InSAR monitoring of building damage in Gaza during the
+         Israel-Hamas war},
+  year={2025},
+  note={Preprint}
+}
+```
+
+---
+
+## Licence
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
