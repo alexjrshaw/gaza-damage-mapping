@@ -83,65 +83,66 @@ def process_hotosm() -> None:
 
 
 @timeit
+@timeit
 def add_unosat_info(gdf: gpd.GeoDataFrame, buffer_m: int = 5) -> gpd.GeoDataFrame:
     """
     Add UNOSAT damage info to buildings using a 5m buffer overlay.
-
-    For each building, checks if any UNOSAT damage point falls within
-    a 5m buffer of the building polygon. Assigns the most severe
-    damage class if multiple points overlap.
-
-    Args:
-        gdf (gpd.GeoDataFrame): Buildings GeoDataFrame.
-        buffer_m (int): Buffer radius in metres. Defaults to 5.
-
-    Returns:
-        gpd.GeoDataFrame: Buildings with unosat_damage, unosat_date,
-            and unosat_aoi columns added.
+    Processes one AOI at a time to keep memory manageable,
+    following Dietrich et al. (2025) approach.
     """
+    from src.data.unosat import load_unosat_labels, load_unosat_geo
+    from src.utils.geo import get_best_utm_crs_from_gdf
+    from src.constants import AOIS
 
-    # Load UNOSAT labels — all damage classes, latest epoch per point
-    labels = load_unosat_labels(
-        labels_to_keep=None, combine_epoch="last"
-    ).reset_index()
+    gdf_buildings_with_unosat = []
 
-    # Project to UTM for accurate buffering
-    crs_proj = get_best_utm_crs_from_gdf(labels)
-    gdf_proj = gdf.to_crs(crs_proj)
-    labels_proj = labels.to_crs(crs_proj)
+    for aoi in AOIS:
+        print(f"  Processing AOI {aoi}...")
 
-    # Buffer buildings
-    gdf_proj["geometry_buffered"] = gdf_proj.geometry.buffer(buffer_m)
-    gdf_buffered = gdf_proj.set_geometry("geometry_buffered")
+        # Load UNOSAT labels for this AOI (all damage classes)
+        points = load_unosat_labels(aoi=aoi, labels_to_keep=None, combine_epoch="last").reset_index()
 
-    # Overlay buildings with UNOSAT damage points
-    pts_in = gpd.overlay(
-        labels_proj[["unosat_id", "damage", "date", "aoi", "geometry"]],
-        gdf_buffered[["building_id", "geometry_buffered"]].rename(
-            columns={"geometry_buffered": "geometry"}
-        ),
-        how="intersection",
-    )
+        # Get AOI geometry and subset buildings
+        geo = load_unosat_geo(aoi)
+        gdf_aoi = gdf[gdf.geometry.intersects(geo)].copy()
 
-    if len(pts_in) > 0:
-        # Keep most severe damage per building (lowest class number = most severe)
+        if len(gdf_aoi) == 0:
+            print(f"    No buildings found for {aoi}")
+            continue
+
+        # Project to UTM for accurate buffering
+        crs_proj = get_best_utm_crs_from_gdf(points)
+        gdf_aoi.geometry = gdf_aoi.to_crs(crs_proj).buffer(buffer_m).to_crs("EPSG:4326")
+
+        # Overlay buildings with UNOSAT points
+        pts_in = gpd.overlay(
+            points[["unosat_id", "damage", "date", "aoi", "geometry"]],
+            gdf_aoi[["building_id", "geometry"]],
+            how="intersection",
+        )
+
+        if len(pts_in) == 0:
+            continue
+
+        # Keep most severe damage per building
         pts_sorted = pts_in.sort_values("damage")
         buildings_with_unosat = pts_sorted.groupby("building_id").agg(
             {"damage": "first", "unosat_id": "first", "date": "first", "aoi": "first"}
         )
         buildings_with_unosat.rename(
-            columns={
-                "damage": "unosat_damage",
-                "date":   "unosat_date",
-                "aoi":    "unosat_aoi",
-            },
+            columns={"damage": "unosat_damage", "date": "unosat_date", "aoi": "unosat_aoi"},
             inplace=True,
         )
-        gdf = gdf.merge(buildings_with_unosat, on="building_id", how="left")
+        gdf_buildings_with_unosat.append(buildings_with_unosat)
+        print(f"    Found {len(buildings_with_unosat)} buildings with UNOSAT damage in {aoi}")
+
+    if gdf_buildings_with_unosat:
+        all_unosat = pd.concat(gdf_buildings_with_unosat)
+        gdf = gdf.merge(all_unosat, on="building_id", how="left")
     else:
         gdf["unosat_damage"] = None
-        gdf["unosat_date"]   = None
-        gdf["unosat_aoi"]    = None
+        gdf["unosat_date"] = None
+        gdf["unosat_aoi"] = None
 
     print(f"  Buildings with UNOSAT damage label: {gdf['unosat_damage'].notna().sum():,}")
     return gdf
