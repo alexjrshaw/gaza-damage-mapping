@@ -52,14 +52,16 @@ def process_hotosm() -> None:
     print(f"  Total buildings (Palestine): {len(gdf):,}")
 
     gaza_boundary = load_gaza_strip_boundary()
-    gdf = gdf[gdf.geometry.centroid.within(gaza_boundary)].copy()
+    gdf_proj = gdf.to_crs("EPSG:32636")
+gdf = gdf[gdf_proj.geometry.centroid.to_crs("EPSG:4326").within(gaza_boundary)].copy()
     print(f"  Buildings within Gaza Strip: {len(gdf):,}")
 
     # Step 3 — Compute area and filter small buildings
     gdf_proj = gdf.to_crs("EPSG:32636")  # UTM zone 36N covers Gaza
     gdf["area_m2"] = gdf_proj.geometry.area
-    gdf["lon"] = gdf.geometry.centroid.x
-    gdf["lat"] = gdf.geometry.centroid.y
+    centroids = gdf.to_crs("EPSG:32636").geometry.centroid.to_crs("EPSG:4326")
+    gdf["lon"] = centroids.x
+    gdf["lat"] = centroids.y
     gdf = gdf[gdf["area_m2"] >= MIN_BUILDING_AREA_M2].copy()
     print(f"  Buildings >= {MIN_BUILDING_AREA_M2}m2: {len(gdf):,}")
 
