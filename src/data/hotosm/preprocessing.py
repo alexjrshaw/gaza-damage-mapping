@@ -53,7 +53,7 @@ def process_hotosm() -> None:
 
     gaza_boundary = load_gaza_strip_boundary()
     gdf_proj = gdf.to_crs("EPSG:32636")
-gdf = gdf[gdf_proj.geometry.centroid.to_crs("EPSG:4326").within(gaza_boundary)].copy()
+    gdf = gdf[gdf_proj.geometry.centroid.to_crs("EPSG:4326").within(gaza_boundary)].copy()
     print(f"  Buildings within Gaza Strip: {len(gdf):,}")
 
     # Step 3 — Compute area and filter small buildings
