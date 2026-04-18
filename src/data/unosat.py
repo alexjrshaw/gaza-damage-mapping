@@ -490,7 +490,6 @@ def upload_gaza_unosat_to_gee() -> None:
     print("\nAll uploads complete.")
 
 if __name__ == "__main__":
-    if __name__ == "__main__":
     import sys
     preprocess_gaza_unosat()
     if "--upload" in sys.argv:
