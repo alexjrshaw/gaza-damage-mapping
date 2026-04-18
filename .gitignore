@@ -106,3 +106,5 @@ _dataalex/
 upload_log.txt
 intermediate_log.txt
 hotosm_log.txt
+preprocess_log.txt
+hotosm_err.txt
