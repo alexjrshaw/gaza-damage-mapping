@@ -464,7 +464,7 @@ def upload_gaza_unosat_to_gee() -> None:
             (gdf_labels["aoi"] == aoi) &
             (gdf_labels["damage"].isin([1, 2]))
         ].copy()
-        pts = pts.loc[pts.groupby(pts.geometry.to_wkt())["ep"].idxmax()]
+        pts = pts.loc[pts.groupby(pts.geometry.to_wkt())["ep"].idxmin()]
         asset_id = ASSETS_PATH + f"UNOSAT_labels/{aoi}"
         if len(pts) > CHUNK_THRESHOLD:
             upload_chunked(pts, asset_id, f"UNOSAT_labels_{aoi}")
@@ -473,14 +473,14 @@ def upload_gaza_unosat_to_gee() -> None:
 
         # Labels full (all classes, latest epoch per point) - skipped for now, not needed for core pipeline
         #pts_full = gdf_labels[gdf_labels["aoi"] == aoi].copy()
-        #pts_full = pts_full.loc[pts_full.groupby(pts_full.geometry.to_wkt())["ep"].idxmax()]
+        #pts_full = pts_full.loc[pts_full.groupby(pts_full.geometry.to_wkt())["ep"].idxmin()]
         #asset_id_full = ASSETS_PATH + f"UNOSAT_labels/{aoi}_full"
 
         # upload when needed by changing skip_full=False
         skip_full = True
         if not skip_full:
             pts_full = gdf_labels[gdf_labels["aoi"] == aoi].copy()
-            pts_full = pts_full.loc[pts_full.groupby(pts_full.geometry.to_wkt())["ep"].idxmax()]
+            pts_full = pts_full.loc[pts_full.groupby(pts_full.geometry.to_wkt())["ep"].idxmin()]
             asset_id_full = ASSETS_PATH + f"UNOSAT_labels/{aoi}_full"
             if len(pts_full) > CHUNK_THRESHOLD:
                 upload_chunked(pts_full, asset_id_full, f"UNOSAT_labels_{aoi}_full")
