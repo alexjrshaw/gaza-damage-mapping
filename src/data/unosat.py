@@ -173,7 +173,8 @@ def preprocess_gaza_unosat(
 
     print(f"Loading {LAYER_NAME} from {gdb_path} ...")
     gdf_raw = gpd.read_file(gdb_path, layer=LAYER_NAME)
-    gdf_raw.geometry = gdf_raw.geometry.force_2d()
+    from shapely.ops import transform
+    gdf_raw.geometry = gdf_raw.geometry.apply(lambda geom: transform(lambda x, y, *args: (x, y), geom))
     gdf_raw = gdf_raw.to_crs("EPSG:4326")
     print(f"  Loaded {len(gdf_raw):,} points across "
           f"{gdf_raw['Governorate'].nunique()} governorates")
