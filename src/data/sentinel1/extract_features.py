@@ -96,7 +96,7 @@ def create_dataset(
         if aoi not in aois:
             continue
 
-        points = load_unosat_labels_gee(aoi, True)
+        points = load_unosat_labels_gee(aoi, False)
         points = points.filter(ee.Filter.inList("damage", list(damages_to_keep)))
         points = points.map(
             lambda f: f.set(
