@@ -490,12 +490,10 @@ def upload_gaza_unosat_to_gee() -> None:
     print("\nAll uploads complete.")
 
 if __name__ == "__main__":
+    if __name__ == "__main__":
+    import sys
     preprocess_gaza_unosat()
-    
-    response = input("\nExport GeoJSON files for GEE upload? (y/n): ")
-    if response.lower() == "y":
+    if "--upload" in sys.argv:
         export_gaza_unosat_per_aoi()
-        
-        response2 = input("\nUpload to GEE? This will take a long time. (y/n): ")
-        if response2.lower() == "y":
-            upload_gaza_unosat_to_gee()
+        upload_gaza_unosat_to_gee()
+
