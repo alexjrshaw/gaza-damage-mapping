@@ -9,7 +9,7 @@ init_gee()
 
 # Pre-war baseline start through end of conflict period studied
 START_DATE = "2022-10-07" # One year before conflict start (pre-conflict baseline)
-END_DATE = "2025-10-10" # End of last conflict-period window
+END_DATE = "2025-12-07"  # One day after last post window end
 
 
 def create_fc_aoi_orbit(
