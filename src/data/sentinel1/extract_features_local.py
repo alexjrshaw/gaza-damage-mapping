@@ -13,20 +13,21 @@ Follows Dietrich et al. (2025) methodology exactly:
     - Same train/test split by AOI
 
 Gaza-specific adaptation: computation moved from GEE to local pandas.
+Forth HPC compute nodes lack internet access, so pipeline is split:
+    Step 1 (download.py): Run interactively — downloads GEE assets to local parquet
+    Step 2 (this script): Run as Slurm batch job — computes features from local cache
 """
 
-import ee
-import pandas as pd
 import numpy as np
+import pandas as pd
 from pathlib import Path
 from tqdm.auto import tqdm
 
 from src.constants import (
-    AOIS_TRAIN, AOIS_TEST, AOIS,
+    AOIS_TRAIN, AOIS_TEST,
     DATA_PATH, ASSETS_PATH,
     GAZA_WAR_START, PRE_PERIOD, POST_PERIODS,
 )
-from src.utils.gee import init_gee
 
 # Local cache for downloaded intermediate assets
 CACHE_DIR = DATA_PATH / "intermediate_features_cache"
@@ -37,98 +38,54 @@ EXTRACT_WINDOW = "1x1"
 REDUCER_NAMES = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
 
 
-# ==================== DOWNLOAD ====================
-
-def download_intermediate_asset(aoi: str, orbit: int, force: bool = False) -> Path:
-    """
-    Download a GEE intermediate asset to local parquet cache.
-
-    Args:
-        aoi: AOI name e.g. 'GAZ1'
-        orbit: Orbit number e.g. 87
-        force: Re-download even if cache exists
-
-    Returns:
-        Path to local parquet file
-    """
-    CACHE_DIR.mkdir(exist_ok=True, parents=True)
-    fp = CACHE_DIR / f"{aoi}_orbit{orbit}.parquet"
-
-    if fp.exists() and not force:
-        print(f"  {aoi}_orbit{orbit}: cached ✓")
-        return fp
-
-    print(f"  {aoi}_orbit{orbit}: downloading from GEE...")
-    asset_id = ASSETS_PATH + f"intermediate_features/ts_s1_{EXTRACT_WINDOW}/{aoi}_orbit{orbit}"
-    fc = ee.FeatureCollection(asset_id)
-
-    # Download in batches to avoid memory issues
-    total = fc.size().getInfo()
-    batch_size = 50000
-    records = []
-
-    for start in range(0, total, batch_size):
-        batch = fc.toList(batch_size, start).getInfo()
-        for feat in batch:
-            props = feat["properties"]
-            records.append(props)
-
-    df = pd.DataFrame(records)
-    df.to_parquet(fp)
-    print(f"  {aoi}_orbit{orbit}: {len(df):,} rows saved")
-    return fp
-
-
-def download_all_intermediate_assets(aois: list[str] = None) -> None:
-    """Download all intermediate assets for given AOIs."""
-    if aois is None:
-        aois = AOIS
-    print(f"Downloading intermediate assets for {aois}...")
-    for aoi in aois:
-        for orbit in ORBITS:
-            download_intermediate_asset(aoi, orbit)
-
-
 # ==================== FEATURE COMPUTATION ====================
 
 def compute_stats(series: pd.Series) -> dict:
     """
     Compute 7 statistics for a series — mirrors GEE reducers.
-
     Matches Dietrich et al. reducer names exactly.
     """
     return {
-        "mean":    series.mean(),
-        "stdDev":  series.std(),
-        "median":  series.median(),
-        "min":     series.min(),
-        "max":     series.max(),
-        "skew":    series.skew(),
+        "mean":     series.mean(),
+        "stdDev":   series.std(),
+        "median":   series.median(),
+        "min":      series.min(),
+        "max":      series.max(),
+        "skew":     series.skew(),
         "kurtosis": series.kurtosis(),
     }
 
 
-def compute_features_for_asset(
+def compute_features_for_window(
     df: pd.DataFrame,
     pre_period: tuple[str, str],
     post_period: tuple[str, str],
+    orbit: int,
 ) -> pd.DataFrame:
     """
-    Compute pre and post features for one intermediate asset (one AOI, one orbit).
+    Compute pre and post features for one intermediate asset and one time window.
 
     For each UNOSAT point, computes 7 statistics for VV and VH across
     all images within the pre and post date windows.
 
+    Implements Dietrich et al. (2025) eq. 1 label assignment:
+        y = 0  if end_post <= conflict_start
+        y = 1  if end_post > date_first_severe (tunosat equivalent)
+        y = -1 discard (points where damage confirmed after end_post)
+
     Args:
-        df: Intermediate asset dataframe (rows = one image × one point)
+        df: Intermediate asset dataframe (rows = one image x one point)
         pre_period: (start, end) date strings for pre-conflict window
         post_period: (start, end) date strings for post-conflict window
+        orbit: Orbit number
 
     Returns:
-        DataFrame with one row per point, feature columns + label
+        DataFrame with one row per point and feature columns
     """
-    # Convert date column to string for comparison
+
+    df = df.copy()
     df["date"] = df["date"].astype(str)
+    df["date_first_severe"] = df["date_first_severe"].astype(str)
 
     # --- Label assignment — Dietrich et al. eq. 1 ---
     end_post = post_period[1]
@@ -137,56 +94,58 @@ def compute_features_for_asset(
     else:
         label = 1
 
-    # --- Filter points for label=1 ---
-    # Only keep points where damage was confirmed before end of post window
-    # Uses date_first_severe — Gaza adaptation of tunosat in Dietrich et al.
+    # --- Filter points ---
+    # For label=1: only keep points where damage was confirmed
+    # before end of post window (date_first_severe is tunosat)
     if label == 1:
         df = df[df["date_first_severe"] <= end_post].copy()
 
     if len(df) == 0:
         return pd.DataFrame()
 
-    # --- Compute features for pre and post periods ---
-    prefix_pre = f"pre_{EXTRACT_WINDOW}"
+    # --- Compute features per point ---
+    prefix_pre  = f"pre_{EXTRACT_WINDOW}"
     prefix_post = f"post_{EXTRACT_WINDOW}"
 
-    results = []
-    for unosat_id, group in df.groupby("unosat_id"):
-        row = {
-            "unosat_id": unosat_id,
-            "label": label,
-            "aoi": group["aoi"].iloc[0],
-            "damage": group["damage"].iloc[0],
-            "date": group["date_first_severe"].iloc[0],
-            "start_pre": pre_period[0],
-            "end_pre": pre_period[1],
-            "start_post": post_period[0],
-            "end_post": post_period[1],
-        }
+    # Filter to pre and post date ranges
+    pre_df  = df[(df["date"] >= pre_period[0])  & (df["date"] <= pre_period[1])]
+    post_df = df[(df["date"] >= post_period[0]) & (df["date"] <= post_period[1])]
 
-        # Pre-period features
-        pre = group[(group["date"] >= pre_period[0]) & (group["date"] <= pre_period[1])]
-        for band in ["VV", "VH"]:
-            if len(pre) > 0:
-                stats = compute_stats(pre[band].astype(float))
+    # Get unique point metadata
+    meta = df.groupby("unosat_id").first()[
+        ["damage", "aoi", "date_first_severe", "site_id"]
+    ].reset_index()
+    meta = meta.rename(columns={"date_first_severe": "date"})
+
+    results = meta.copy()
+    results["label"] = label
+    results["orbit"] = orbit
+    results["start_pre"]  = pre_period[0]
+    results["end_pre"]    = pre_period[1]
+    results["start_post"] = post_period[0]
+    results["end_post"]   = post_period[1]
+
+    # Compute statistics for each band and period using vectorised groupby
+    for band in ["VV", "VH"]:
+        for period_df, prefix in [(pre_df, prefix_pre), (post_df, prefix_post)]:
+            if len(period_df) > 0:
+                stats = period_df.groupby("unosat_id")[band].astype(float).agg(
+                    mean="mean",
+                    stdDev="std",
+                    median="median",
+                    min="min",
+                    max="max",
+                    skew=lambda x: x.skew(),
+                    kurtosis=lambda x: x.kurtosis(),
+                )
+                stats.columns = [f"{band}_{prefix}_{s}" for s in REDUCER_NAMES]
+                results = results.merge(stats, on="unosat_id", how="left")
             else:
-                stats = {s: np.nan for s in REDUCER_NAMES}
-            for stat, val in stats.items():
-                row[f"{band}_{prefix_pre}_{stat}"] = val
+                # No images in this window — fill with NaN
+                for stat in REDUCER_NAMES:
+                    results[f"{band}_{prefix}_{stat}"] = np.nan
 
-        # Post-period features
-        post = group[(group["date"] >= post_period[0]) & (group["date"] <= post_period[1])]
-        for band in ["VV", "VH"]:
-            if len(post) > 0:
-                stats = compute_stats(post[band].astype(float))
-            else:
-                stats = {s: np.nan for s in REDUCER_NAMES}
-            for stat, val in stats.items():
-                row[f"{band}_{prefix_post}_{stat}"] = val
-
-        results.append(row)
-
-    return pd.DataFrame(results)
+    return results
 
 
 def extract_features_local(
@@ -196,6 +155,8 @@ def extract_features_local(
 ) -> pd.DataFrame:
     """
     Extract features for all AOIs, orbits and time windows for a given split.
+
+    Reads from local parquet cache — no internet connection required.
 
     Args:
         split: 'train' or 'test'
@@ -211,20 +172,20 @@ def extract_features_local(
     for aoi in aois:
         print(f"\nProcessing {aoi}...")
         for orbit in ORBITS:
-            print(f"  Orbit {orbit}...")
-
-            # Load cached asset
             fp = CACHE_DIR / f"{aoi}_orbit{orbit}.parquet"
-            if not fp.exists():
-                print(f"    Cache missing — downloading...")
-                download_intermediate_asset(aoi, orbit)
+            assert fp.exists(), (
+                f"Cache file {fp} not found. "
+                f"Run download_intermediate_assets.py first."
+            )
+
+            print(f"  Loading {aoi}_orbit{orbit}...")
             df = pd.read_parquet(fp)
 
-            # Compute features for each post window
-            for post_period in tqdm(post_periods, desc=f"    {aoi}_orbit{orbit}"):
-                features = compute_features_for_asset(df, pre_period, post_period)
+            for post_period in tqdm(post_periods, desc=f"    windows"):
+                features = compute_features_for_window(
+                    df, pre_period, post_period, orbit
+                )
                 if len(features) > 0:
-                    features["orbit"] = orbit
                     all_features.append(features)
 
     if not all_features:
@@ -239,27 +200,20 @@ def extract_features_local(
 # ==================== MAIN ====================
 
 if __name__ == "__main__":
-    init_gee()
     FEATURES_DIR.mkdir(exist_ok=True, parents=True)
 
-    # Step 1 — Download intermediate assets if not cached
+    # Train split
     print("=" * 60)
-    print("Step 1: Downloading intermediate assets...")
-    print("=" * 60)
-    download_all_intermediate_assets()
-
-    # Step 2 — Extract features for train split
-    print("\n" + "=" * 60)
-    print("Step 2: Extracting train features...")
+    print("Extracting train features...")
     print("=" * 60)
     train_features = extract_features_local("train")
     train_fp = FEATURES_DIR / "s1_1x1_2months_train.parquet"
     train_features.to_parquet(train_fp)
     print(f"Saved train features to {train_fp}")
 
-    # Step 3 — Extract features for test split
+    # Test split
     print("\n" + "=" * 60)
-    print("Step 3: Extracting test features...")
+    print("Extracting test features...")
     print("=" * 60)
     test_features = extract_features_local("test")
     test_fp = FEATURES_DIR / "s1_1x1_2months_test.parquet"
