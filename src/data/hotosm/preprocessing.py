@@ -50,9 +50,9 @@ def process_hotosm() -> None:
     print("Keeping only buildings within Gaza Strip and relevant properties...")
     only_in_gaza_and_relevant_properties()
 
-    # Add UNOSAT info
-    print("Adding UNOSAT info...")
-    add_unosat_info()
+    # Add UNOSAT info - DEFERRED: not needed for core pipeline, ADD BACK LATER
+    # print("Adding UNOSAT info...")
+    # add_unosat_info()
 
     # Add admin info
     print("Adding admin info...")
