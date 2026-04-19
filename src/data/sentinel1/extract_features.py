@@ -151,29 +151,27 @@ def get_fc_ts(aoi: str, orbit: int, extract: str, damages_to_keep: list[int] | N
 
 
 if __name__ == "__main__":
-    from src.constants import PRE_PERIOD, POST_PERIODS
+    from src.constants import AOIS_TEST, AOIS_TRAIN, PRE_PERIOD, POST_PERIODS
 
     damages_to_keep = [1, 2]
     extract_winds = "1x1"
-    time_periods = {
-        "pre": [PRE_PERIOD],
-        "post": POST_PERIODS,
-    }
     reducer_names = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
 
-    create_dataset_ready_all_dates(
-        "train",
-        damages_to_keep,
-        time_periods,
-        extract_winds,
-        reducer_names,
-        export=True,
-    )
-    create_dataset_ready_all_dates(
-        "test",
-        damages_to_keep,
-        time_periods,
-        extract_winds,
-        reducer_names,
-        export=True,
-    )
+    # Export one task per post window per split to avoid GEE computation graph
+    # size limits. Results are merged into a single asset before training.
+    for i, post_period in enumerate(POST_PERIODS):
+        d_periods_ = dict(pre=PRE_PERIOD, post=post_period)
+        window_str = f"w{i+1:02d}_{post_period[0]}_{post_period[1]}"
+
+        for split, aois in [("train", AOIS_TRAIN), ("test", AOIS_TEST)]:
+            fs = create_dataset(aois, damages_to_keep, d_periods_, extract_winds, reducer_names)
+            fc = ee.FeatureCollection(fs).flatten()
+
+            asset_id = ASSETS_PATH + f"features_ready/s1_{extract_winds}_2months_{split}_{window_str}"
+            ee.batch.Export.table.toAsset(
+                collection=fc,
+                description=f"{split} {window_str}",
+                assetId=asset_id,
+            ).start()
+            print(f"Submitted: {split} {window_str}")
+
