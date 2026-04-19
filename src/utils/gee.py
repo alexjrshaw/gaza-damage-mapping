@@ -11,7 +11,7 @@ def init_gee(project: str = "gaza-damage-mapping") -> None:
     try:
         ee.Initialize(project=project)
     except Exception:
-        ee.Authenticate(auth_mode="localhost")
+        ee.Authenticate(auth_mode="gcloud")
         ee.Initialize(project=project)
 
 
