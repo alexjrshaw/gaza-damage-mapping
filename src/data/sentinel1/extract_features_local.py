@@ -28,8 +28,6 @@ from src.constants import (
 )
 from src.utils.gee import init_gee
 
-init_gee()
-
 # Local cache for downloaded intermediate assets
 CACHE_DIR = DATA_PATH / "intermediate_features_cache"
 FEATURES_DIR = DATA_PATH / "features_ready"
@@ -241,6 +239,7 @@ def extract_features_local(
 # ==================== MAIN ====================
 
 if __name__ == "__main__":
+    init_gee()
     FEATURES_DIR.mkdir(exist_ok=True, parents=True)
 
     # Step 1 — Download intermediate assets if not cached
