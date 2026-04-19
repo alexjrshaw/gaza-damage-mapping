@@ -129,7 +129,8 @@ def compute_features_for_window(
     for band in ["VV", "VH"]:
         for period_df, prefix in [(pre_df, prefix_pre), (post_df, prefix_post)]:
             if len(period_df) > 0:
-                stats = period_df.groupby("unosat_id")[band].astype(float).agg(
+                period_df[band] = period_df[band].astype(float)
+                stats = period_df.groupby("unosat_id")[band].agg(
                     mean="mean",
                     stdDev="std",
                     median="median",
