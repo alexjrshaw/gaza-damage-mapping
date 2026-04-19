@@ -23,7 +23,8 @@ EXTRACT_WINDOW = "1x1"
 
 def download_intermediate_asset(aoi: str, orbit: int, force: bool = False) -> Path:
     """
-    Download a GEE intermediate asset to local parquet cache.
+    Download a GEE intermediate asset to local parquet cache via Drive export.
+    Uses Export.table.toDrive() — proven reliable for large collections.
 
     Args:
         aoi: AOI name e.g. 'GAZ1'
@@ -33,6 +34,9 @@ def download_intermediate_asset(aoi: str, orbit: int, force: bool = False) -> Pa
     Returns:
         Path to local parquet file
     """
+    import time
+    from src.utils.gdrive import drive_to_local
+
     CACHE_DIR.mkdir(exist_ok=True, parents=True)
     fp = CACHE_DIR / f"{aoi}_orbit{orbit}.parquet"
 
@@ -40,24 +44,42 @@ def download_intermediate_asset(aoi: str, orbit: int, force: bool = False) -> Pa
         print(f"  {aoi}_orbit{orbit}: already cached ✓")
         return fp
 
-    print(f"  {aoi}_orbit{orbit}: downloading from GEE...")
+    print(f"  {aoi}_orbit{orbit}: exporting to Drive...")
     asset_id = ASSETS_PATH + f"intermediate_features/ts_s1_{EXTRACT_WINDOW}/{aoi}_orbit{orbit}"
     fc = ee.FeatureCollection(asset_id)
-    total = fc.size().getInfo()
-    print(f"    {total:,} rows to download...")
+    description = f"{aoi}_orbit{orbit}_features"
+    drive_folder = "gaza_intermediate_features"
 
-    # Download in batches to avoid memory issues
-    batch_size = 50000
-    records = []
-    for start in range(0, total, batch_size):
-        batch = fc.toList(batch_size, start).getInfo()
-        for feat in batch:
-            records.append(feat["properties"])
-        print(f"    Downloaded {min(start + batch_size, total):,} / {total:,} rows")
+    task = ee.batch.Export.table.toDrive(
+        collection=fc,
+        description=description,
+        folder=drive_folder,
+        fileFormat="CSV",
+    )
+    task.start()
 
-    df = pd.DataFrame(records)
+    # Wait for export to complete
+    print(f"  {aoi}_orbit{orbit}: waiting for export...")
+    while True:
+        status = task.status()
+        state = status["state"]
+        if state == "COMPLETED":
+            break
+        elif state in ["FAILED", "CANCELLED"]:
+            raise RuntimeError(f"Export failed: {status}")
+        time.sleep(30)
+    print(f"  {aoi}_orbit{orbit}: export complete, downloading from Drive...")
+
+    # Download CSV from Drive
+    tmp_dir = CACHE_DIR / "tmp"
+    tmp_dir.mkdir(exist_ok=True)
+    drive_to_local(drive_folder, tmp_dir, delete_in_drive=False, verbose=0)
+
+    # Convert CSV to parquet
+    csv_fp = tmp_dir / f"{description}.csv"
+    df = pd.read_csv(csv_fp)
     df.to_parquet(fp)
-    print(f"  {aoi}_orbit{orbit}: saved {len(df):,} rows to {fp.name} ✓")
+    print(f"  {aoi}_orbit{orbit}: {len(df):,} rows saved ✓")
     return fp
 
 

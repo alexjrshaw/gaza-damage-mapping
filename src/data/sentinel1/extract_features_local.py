@@ -84,7 +84,10 @@ def compute_features_for_window(
     """
 
     df = df.copy()
-    df["date"] = df["date"].astype(str)
+    # Convert S1 acquisition date from Unix milliseconds to date string
+    # system:time_start is the S1 image date — used for pre/post window filtering
+    # date is the UNOSAT assessment date — not used for S1 image filtering
+    df["s1_date"] = pd.to_datetime(df["system:time_start"], unit="ms").dt.date.astype(str)
     df["date_first_severe"] = df["date_first_severe"].astype(str)
 
     # --- Label assignment — Dietrich et al. eq. 1 ---
@@ -108,8 +111,8 @@ def compute_features_for_window(
     prefix_post = f"post_{EXTRACT_WINDOW}"
 
     # Filter to pre and post date ranges
-    pre_df  = df[(df["date"] >= pre_period[0])  & (df["date"] <= pre_period[1])]
-    post_df = df[(df["date"] >= post_period[0]) & (df["date"] <= post_period[1])]
+    pre_df  = df[(df["s1_date"] >= pre_period[0])  & (df["s1_date"] <= pre_period[1])]
+    post_df = df[(df["s1_date"] >= post_period[0]) & (df["s1_date"] <= post_period[1])]
 
     # Get unique point metadata
     meta = df.groupby("unosat_id").first()[
