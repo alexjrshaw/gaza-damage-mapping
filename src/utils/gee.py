@@ -8,11 +8,7 @@ def init_gee(project: str = "gaza-damage-mapping") -> None:
     Args:
         project (str, optional): Name of the project. Defaults to "gaza-damage-mapping".
     """
-    try:
-        ee.Initialize(project=project)
-    except Exception:
-        ee.Authenticate(auth_mode="gcloud")
-        ee.Initialize(project=project)
+    ee.Initialize(project=project)
 
 
 def fc_to_list(fc: ee.FeatureCollection) -> ee.List:
