@@ -183,7 +183,7 @@ def preprocess_gaza_unosat(
     # We convert to long format to match the Ukraine schema exactly.
     print("Converting wide format to long format ...")
     records = []
-    for _, row in gdf_raw.iterrows():
+    for row_idx, row in gdf_raw.iterrows():
         aoi = GOVERNORATE_TO_AOI.get(row["Governorate"])
         if aoi is None:
             continue
@@ -203,8 +203,8 @@ def preprocess_gaza_unosat(
             if pd.isna(damage_class):
                 continue
             point_records.append({
-                "unosat_id":  f"{row['SiteID']}_{ep_num}",
-                "site_id":    row["SiteID"],
+                "unosat_id": f"{row_idx}_{ep_num}",
+                "site_id":   row_idx,
                 "aoi":        aoi,
                 "damage":     int(damage_class),
                 "ep":         ep_num,
