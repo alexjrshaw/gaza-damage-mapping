@@ -34,10 +34,10 @@ def load_unosat_labels(
     if combine_epoch is not None:
         if combine_epoch == "last":
             # Only keep most recent epoch for each point
-            gdf = gdf.loc[gdf.groupby(gdf.geometry.to_wkt())["ep"].idxmax()]
+            gdf = gdf.loc[gdf.groupby("site_id")["ep"].idxmax()]
         elif combine_epoch == "min":
             # Only keep strongest label for each point
-            gdf = gdf.loc[gdf.groupby(gdf.geometry.to_wkt())["damage"].idxmin()]
+            gdf = gdf.loc[gdf.groupby("site_id")["damage"].idxmin()]
         elif combine_epoch == "first_severe":
             # Keep earliest epoch where damage is class 1 or 2.
             # This is tunosat in Dietrich et al. (2025) eq. 1 —
@@ -46,9 +46,7 @@ def load_unosat_labels(
             # so combine_epoch='last' naturally gave the detection date.
             # Gaza has 14 epochs so we must explicitly find first severe.
             severe = gdf[gdf["damage"].isin([1, 2])]
-            gdf = severe.loc[
-                severe.groupby(severe.geometry.to_wkt())["ep"].idxmin()
-            ]
+            gdf = severe.loc[severe.groupby("site_id")["ep"].idxmin()]
         else:
             raise ValueError("combine_epoch must be 'last', 'min' or 'first_severe'")
 
@@ -326,14 +324,14 @@ def export_gaza_unosat_per_aoi() -> None:
             (gdf_labels["aoi"] == aoi) &
             (gdf_labels["damage"].isin([1, 2]))
         ].copy()
-        pts = pts.loc[pts.groupby(pts.geometry.to_wkt())["ep"].idxmin()]
+        pts = pts.loc[pts.groupby("site_id")["ep"].idxmin()]
         fp = out_dir / f"UNOSAT_labels_{aoi}.geojson"
         pts.to_file(fp, driver="GeoJSON")
         print(f"  Saved {len(pts)} points to {fp}")
 
         # Use first epoch per point (for full labels)
         pts_full = gdf_labels[gdf_labels["aoi"] == aoi].copy()
-        pts_full = pts_full.loc[pts_full.groupby(pts_full.geometry.to_wkt())["ep"].idxmin()]
+        pts_full = pts_full.loc[pts_full.groupby("site_id")["ep"].idxmin()]
         fp_full = out_dir / f"UNOSAT_labels_{aoi}_full.geojson"
         pts_full.to_file(fp_full, driver="GeoJSON")
         print(f"  Saved {len(pts_full)} points (all classes) to {fp_full}")
@@ -464,7 +462,7 @@ def upload_gaza_unosat_to_gee() -> None:
             (gdf_labels["aoi"] == aoi) &
             (gdf_labels["damage"].isin([1, 2]))
         ].copy()
-        pts = pts.loc[pts.groupby(pts.geometry.to_wkt())["ep"].idxmin()]
+        pts = pts.loc[pts.groupby("site_id")["ep"].idxmin()]
         asset_id = ASSETS_PATH + f"UNOSAT_labels/{aoi}"
         if len(pts) > CHUNK_THRESHOLD:
             upload_chunked(pts, asset_id, f"UNOSAT_labels_{aoi}")
@@ -480,7 +478,7 @@ def upload_gaza_unosat_to_gee() -> None:
         skip_full = True
         if not skip_full:
             pts_full = gdf_labels[gdf_labels["aoi"] == aoi].copy()
-            pts_full = pts_full.loc[pts_full.groupby(pts_full.geometry.to_wkt())["ep"].idxmin()]
+            pts_full = pts_full.loc[pts_full.groupby("site_id")["ep"].idxmin()]
             asset_id_full = ASSETS_PATH + f"UNOSAT_labels/{aoi}_full"
             if len(pts_full) > CHUNK_THRESHOLD:
                 upload_chunked(pts_full, asset_id_full, f"UNOSAT_labels_{aoi}_full")
