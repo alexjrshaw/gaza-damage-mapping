@@ -108,3 +108,7 @@ intermediate_log.txt
 hotosm_log.txt
 preprocess_log.txt
 hotosm_err.txt
+run_features.sh
+features_log.txt
+features_err.txt
+download_log.txt
