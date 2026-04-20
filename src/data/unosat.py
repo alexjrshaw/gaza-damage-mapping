@@ -462,7 +462,7 @@ def upload_gaza_unosat_to_gee(aois: list[str] | None = None) -> None:
             (gdf_labels["aoi"] == aoi) &
             (gdf_labels["damage"].isin([1, 2]))
         ].copy()
-        pts = pts.loc[pts.groupby("site_id")["ep"].idxmin()]
+        pts = pts.loc[pts.groupby(pts.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))["ep"].idxmin()]
         asset_id = ASSETS_PATH + f"UNOSAT_labels/{aoi}"
         if len(pts) > CHUNK_THRESHOLD:
             upload_chunked(pts, asset_id, f"UNOSAT_labels_{aoi}")
