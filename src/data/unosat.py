@@ -358,7 +358,7 @@ def export_gaza_unosat_per_aoi() -> None:
         fp_aoi = out_dir / f"AOI_{aoi}.geojson"
         print(f"earthengine upload table --asset_id={asset_path_aoi} {fp_aoi}")
 
-def upload_gaza_unosat_to_gee() -> None:
+def upload_gaza_unosat_to_gee(aois: list[str] | None = None) -> None:
     """
     Upload preprocessed UNOSAT Gaza labels and AOI boundaries to GEE assets.
     Files under 10MB upload directly; larger files are uploaded in chunks and merged.
@@ -450,7 +450,8 @@ def upload_gaza_unosat_to_gee() -> None:
     # Feature count threshold above which we use chunked upload
     CHUNK_THRESHOLD = 30000
 
-    for aoi in GOVERNORATE_TO_AOI.values():
+    aois_to_process = aois if aois is not None else list(GOVERNORATE_TO_AOI.values())
+    for aoi in aois_to_process:
         print(f"\nProcessing {aoi}...")
 
         # AOI boundary (always tiny — direct upload)
