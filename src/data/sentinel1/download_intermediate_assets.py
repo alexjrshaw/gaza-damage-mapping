@@ -73,7 +73,7 @@ def download_intermediate_asset(aoi: str, orbit: int, force: bool = False) -> Pa
     # Download CSV from Drive
     tmp_dir = CACHE_DIR / "tmp"
     tmp_dir.mkdir(exist_ok=True)
-    drive_to_local(drive_folder, tmp_dir, delete_in_drive=False, verbose=0)
+    drive_to_local(drive_folder, tmp_dir, delete_in_drive=True, verbose=0)
 
     # Convert CSV to parquet
     csv_fp = tmp_dir / f"{description}.csv"
