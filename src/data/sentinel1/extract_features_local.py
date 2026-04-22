@@ -210,7 +210,8 @@ if __name__ == "__main__":
     print("=" * 60)
     print("Extracting train features...")
     print("=" * 60)
-    train_features = extract_features_local("train")
+    all_periods = [PRE_PERIOD] + list(POST_PERIODS)
+    train_features = extract_features_local("train", post_periods=all_periods)
     train_fp = FEATURES_DIR / "s1_1x1_2months_train.parquet"
     train_features.to_parquet(train_fp)
     print(f"Saved train features to {train_fp}")
@@ -219,7 +220,7 @@ if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("Extracting test features...")
     print("=" * 60)
-    test_features = extract_features_local("test")
+    test_features = extract_features_local("test", post_periods=all_periods)
     test_fp = FEATURES_DIR / "s1_1x1_2months_test.parquet"
     test_features.to_parquet(test_fp)
     print(f"Saved test features to {test_fp}")
