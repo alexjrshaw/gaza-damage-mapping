@@ -8,7 +8,7 @@ from src.utils.gee import asset_exists, create_folders_recursively, fill_nan_wit
 init_gee()
 
 # Pre-war baseline start through end of conflict period studied
-START_DATE = "2022-10-07" # One year before conflict start (pre-conflict baseline)
+START_DATE = "2021-10-07" # One-year pre-conflict baseline
 END_DATE = "2025-12-07"  # One day after last post window end
 
 
