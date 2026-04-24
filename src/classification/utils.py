@@ -63,6 +63,9 @@ def get_run_name(cfg: DictConfig) -> str:
 
     if cfg.train_on_all_data:
         name += "_all_data"
+    
+    if cfg.get("run_suffix", None):
+        name += f"_{cfg.run_suffix}"
     return name
 
 

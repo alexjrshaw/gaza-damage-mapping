@@ -27,7 +27,8 @@ def run_split(strategy: str) -> dict:
 
     cfg = OmegaConf.create(
         dict(
-            aggregation_method=f"mean_{strategy}", # Makes run name unique - added for 20:80 train/test AOI split test
+            aggregation_method="mean"
+            run_suffix=strategy, # Makes name unique - added for 20:80 train/test AOI split test
             model_name="random_forest",
             model_kwargs=dict(numberOfTrees=50, minLeafPopulation=3, maxNodes=1e4),
             data=dict(
