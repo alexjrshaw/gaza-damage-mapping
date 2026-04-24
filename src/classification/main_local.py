@@ -260,7 +260,7 @@ if __name__ == "__main__":
         dict(
             aggregation_method="mean",
             model_name="random_forest",
-            model_kwargs=dict(numberOfTrees=50, minLeafPopulation=3, maxNodes=1e4),
+            model_kwargs=dict(numberOfTrees=50, minLeafPopulation=3, maxNodes=1e4, class_weight="balanced"), # class_weight added after baseline results
             data=dict(
                 s1=dict(subset_bands=None),
                 s2=None,
@@ -276,4 +276,4 @@ if __name__ == "__main__":
         )
     )
 
-    result = full_pipeline_local(cfg, force_recreate=False)
+    result = full_pipeline_local(cfg, force_recreate=True) # force_recreate=False changed to =True after baseline results

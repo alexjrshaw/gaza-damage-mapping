@@ -42,6 +42,7 @@ def classifier_factory_local(
             n_estimators=kwargs.get("numberOfTrees", 50),
             min_samples_leaf=kwargs.get("minLeafPopulation", 3),
             max_leaf_nodes=int(kwargs.get("maxNodes", 10000)),
+            class_weight=kwargs.get("class_weight", None), # Line added after first Gaza results
             n_jobs=-1,
             random_state=seed,
             verbose=verbose,
