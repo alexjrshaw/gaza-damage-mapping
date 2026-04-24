@@ -84,6 +84,7 @@ def full_pipeline_local(cfg: DictConfig, force_recreate: bool = False) -> dict:
             split="test",
             post_dates=cfg.data.time_periods["post"],
             extract_wind=cfg.data.extract_winds,
+            split_strategy=cfg.data.get("split_strategy", "aoi")
         )
 
         # --- Get feature names ---
@@ -182,6 +183,7 @@ def get_classifier_trained_local(cfg: DictConfig, verbose: int = 1) -> object:
         split="train",
         post_dates=cfg.data.time_periods["post"],
         extract_wind=cfg.data.extract_winds,
+        split_strategy=cfg.data.get("split_strategy", "aoi")
     )
 
     feature_cols = get_features_names(cfg)
@@ -260,7 +262,7 @@ if __name__ == "__main__":
         dict(
             aggregation_method="mean",
             model_name="random_forest",
-            model_kwargs=dict(numberOfTrees=50, minLeafPopulation=3, maxNodes=1e4, class_weight="balanced"), # class_weight added after baseline results
+            model_kwargs=dict(numberOfTrees=50, minLeafPopulation=3, maxNodes=1e4), # class_weight='balanced') added after baseline results; commented out for 20:80 train/test AOI split test
             data=dict(
                 s1=dict(subset_bands=None),
                 s2=None,
@@ -268,6 +270,7 @@ if __name__ == "__main__":
                 damages_to_keep=[1, 2],
                 extract_winds="1x1",
                 time_periods=dict(pre=PRE_PERIOD, post="2months"),
+                split_strategy="aoi" # Added after baseline results
             ),
             reducer_names=["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"],
             seed=0,
@@ -276,4 +279,4 @@ if __name__ == "__main__":
         )
     )
 
-    result = full_pipeline_local(cfg, force_recreate=True) # force_recreate=False changed to =True after baseline results
+    result = full_pipeline_local(cfg, force_recreate=False) # force_recreate=False changed to =True after baseline results; changed back to =False for 20:80 train/test AOI split test
