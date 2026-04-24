@@ -159,7 +159,8 @@ if __name__ == "__main__":
 
     # Export one task per post window per split to avoid GEE computation graph
     # size limits. Results are merged into a single asset before training.
-    for i, post_period in enumerate(POST_PERIODS):
+    all_periods = [PRE_PERIOD] + list(POST_PERIODS)
+    for i, post_period in enumerate(all_periods):
         d_periods_ = dict(pre=PRE_PERIOD, post=post_period)
         window_str = f"w{i+1:02d}_{post_period[0]}_{post_period[1]}"
 
