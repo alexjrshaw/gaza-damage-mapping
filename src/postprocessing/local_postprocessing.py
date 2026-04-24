@@ -258,7 +258,7 @@ def local_postprocessing(
     """
     OUT_DIR.mkdir(exist_ok=True, parents=True)
 
-    preds_fp = DATA_PATH / f"runs/{run_name}/{run_name}.geojson"
+    preds_fp = DATA_PATH / f"runs/{run_name}/{run_name}_all_aois.geojson"
 
     # Load data
     gdf_preds, pred_cols = load_predictions(preds_fp)
