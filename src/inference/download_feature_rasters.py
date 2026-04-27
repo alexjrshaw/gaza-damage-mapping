@@ -103,7 +103,7 @@ def download_orbit_folder(
             f = drive.CreateFile({"id": file_id})
             f.GetContentFile(str(local_dir / filename))
             if DELETE_AFTER_DOWNLOAD:
-                f.Trash()
+                f.Delete()
         except Exception as e:
             print(f"    ERROR: {filename}: {e}")
 

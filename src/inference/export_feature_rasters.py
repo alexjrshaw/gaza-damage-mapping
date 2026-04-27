@@ -33,8 +33,9 @@ Usage:
 import ee
 from omegaconf import OmegaConf
 from tqdm import tqdm
+from pathlib import Path
 
-from src.constants import PRE_PERIOD, POST_PERIODS, AOIS
+from src.constants import PRE_PERIOD, POST_PERIODS, AOIS, DATA_PATH
 from src.data.quadkeys import load_gaza_quadkeys_gee
 from src.inference.dense_inference import col_to_features
 from src.data.sentinel1.collection import get_s1_collection
@@ -51,6 +52,7 @@ SCALE = 10              # 10m resolution — same as Dietrich et al.
 ORBITS = [87, 94, 160]  # Gaza S1 orbits
 REDUCER_NAMES = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
 EXTRACT_WINDOW = "1x1"
+LOCAL_BASE = DATA_PATH / "feature_rasters"
 
 
 # ==================== EXPORT ====================
@@ -82,7 +84,8 @@ def export_feature_rasters_for_window(
         drive_folder = f"{drive_folder_base}/{window_str}/orbit{orbit}"
 
         # Filter IDs already exported for this orbit/window
-        ids_to_export = _filter_existing(ids, drive_folder)
+        local_dir = LOCAL_BASE / window_str / f"orbit{orbit}"
+        ids_to_export = _filter_existing(ids, drive_folder, local_dir)
         if not ids_to_export:
             print(f"  orbit{orbit}: all tiles already exported, skipping")
             continue
@@ -117,14 +120,21 @@ def export_feature_rasters_for_window(
             task.start()
 
 
-def _filter_existing(ids: list[str], drive_folder: str) -> list[str]:
-    """Filter out quadkey IDs already exported to Drive."""
+def _filter_existing(ids: list[str], drive_folder: str, local_dir: Path = None) -> list[str]:
+    """Filter out quadkey IDs already exported to Drive or downloaded to scratch."""
+    # Filter already on Drive
     try:
         files = get_files_in_folder(drive_folder, return_names=True)
         existing = {f.split("qk_")[-1].split(".")[0] for f in files if f.startswith("qk_")}
         ids = [i for i in ids if i not in existing]
     except Exception:
-        pass  # folder doesn't exist yet — export all
+        pass
+
+    # Filter already downloaded to scratch
+    if local_dir is not None and local_dir.exists():
+        downloaded = {fp.stem.replace("qk_", "") for fp in local_dir.glob("qk_*.tif")}
+        ids = [i for i in ids if i not in downloaded]
+
     return ids
 
 
