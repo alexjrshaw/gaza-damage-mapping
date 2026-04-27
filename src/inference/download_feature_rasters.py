@@ -23,10 +23,8 @@ Output:
 import time
 from pathlib import Path
 
-from tqdm.auto import tqdm
-
 from src.constants import DATA_PATH
-from src.utils.gdrive import drive_to_local, get_files_in_folder
+from src.utils.gdrive import drive_to_local, get_files_in_folder, get_folder_id, drive
 
 # ==================== CONSTANTS ====================
 
@@ -38,32 +36,37 @@ DELETE_AFTER_DOWNLOAD = True  # free Drive space after download
 
 # ==================== DOWNLOAD ====================
 
-def get_drive_windows() -> list[str]:
-    """List all window folders in Drive base folder."""
+def get_drive_windows() -> list[tuple[str, str]]:
+    """Returns list of (window_name, window_id) tuples."""
     try:
-        items = get_files_in_folder(DRIVE_BASE, return_names=True)
-        return [i for i in items if i.startswith("w")]
+        base_id = get_folder_id(DRIVE_BASE)
+        items = drive.ListFile({
+            "q": f"'{base_id}' in parents and trashed=false"
+        }).GetList()
+        return [(i["title"], i["id"]) for i in items if i["title"].startswith("w")]
     except Exception:
         return []
 
 
-def get_drive_orbits(window_str: str) -> list[str]:
-    """List all orbit folders within a window folder."""
+def get_drive_orbits(window_id: str) -> list[tuple[str, str]]:
+    """Returns list of (orbit_name, orbit_id) tuples within a window folder."""
     try:
-        items = get_files_in_folder(f"{DRIVE_BASE}/{window_str}", return_names=True)
-        return [i for i in items if i.startswith("orbit")]
+        items = drive.ListFile({
+            "q": f"'{window_id}' in parents and trashed=false"
+        }).GetList()
+        return [(i["title"], i["id"]) for i in items if i["title"].startswith("orbit")]
     except Exception:
         return []
 
 
-def get_drive_tiles(window_str: str, orbit_str: str) -> list[str]:
-    """List all tile filenames in a Drive orbit folder."""
+def get_drive_tiles_by_id(orbit_id: str) -> list[tuple[str, str]]:
+    """Returns list of (filename, file_id) tuples within an orbit folder."""
     try:
-        items = get_files_in_folder(
-            f"{DRIVE_BASE}/{window_str}/{orbit_str}",
-            return_names=True,
-        )
-        return [i for i in items if i.startswith("qk_") and i.endswith(".tif")]
+        items = drive.ListFile({
+            "q": f"'{orbit_id}' in parents and trashed=false"
+        }).GetList()
+        return [(i["title"], i["id"]) for i in items
+                if i["title"].startswith("qk_") and i["title"].endswith(".tif")]
     except Exception:
         return []
 
@@ -77,36 +80,28 @@ def already_downloaded(window_str: str, orbit_str: str, filename: str) -> bool:
 def download_orbit_folder(
     window_str: str,
     orbit_str: str,
+    orbit_id: str,
 ) -> int:
-    """
-    Download all completed tiles from one Drive orbit folder to scratch.
-    Deletes from Drive after download.
-    Returns number of files downloaded.
-    """
     local_dir = LOCAL_BASE / window_str / orbit_str
     local_dir.mkdir(exist_ok=True, parents=True)
 
-    drive_folder = f"{DRIVE_BASE}/{window_str}/{orbit_str}"
-
-    # Get tiles in Drive not yet downloaded locally
-    drive_tiles = get_drive_tiles(window_str, orbit_str)
-    new_tiles = [t for t in drive_tiles
-                 if not already_downloaded(window_str, orbit_str, t)]
+    tiles = get_drive_tiles_by_id(orbit_id)
+    new_tiles = [(name, fid) for name, fid in tiles
+                 if not already_downloaded(window_str, orbit_str, name)]
 
     if not new_tiles:
         return 0
 
-    try:
-        drive_to_local(
-            folder_name=drive_folder,
-            local_folder=local_dir,
-            delete_in_drive=DELETE_AFTER_DOWNLOAD,
-            verbose=0,
-        )
-        return len(new_tiles)
-    except Exception as e:
-        print(f"    ERROR downloading {drive_folder}: {e}")
-        return 0
+    for filename, file_id in new_tiles:
+        try:
+            f = drive.CreateFile({"id": file_id})
+            f.GetContentFile(str(local_dir / filename))
+            if DELETE_AFTER_DOWNLOAD:
+                f.Trash()
+        except Exception as e:
+            print(f"    ERROR: {filename}: {e}")
+
+    return len(new_tiles)
 
 
 # ==================== MAIN LOOP ====================
@@ -128,17 +123,11 @@ def run_download_loop() -> None:
     total_skipped = 0
 
     while True:
-        windows = get_drive_windows()
-        if not windows:
-            print(f"No windows found in Drive yet. Waiting {POLL_INTERVAL}s...")
-            time.sleep(POLL_INTERVAL)
-            continue
-
+        
         n_new = 0
-        for window_str in sorted(windows):
-            orbits = get_drive_orbits(window_str)
-            for orbit_str in sorted(orbits):
-                n = download_orbit_folder(window_str, orbit_str)
+        for window_str, window_id in sorted(get_drive_windows()):
+            for orbit_str, orbit_id in sorted(get_drive_orbits(window_id)):
+                n = download_orbit_folder(window_str, orbit_str, orbit_id)
                 n_new += n
 
         if n_new > 0:
