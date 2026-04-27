@@ -36,27 +36,33 @@ DELETE_AFTER_DOWNLOAD = True  # free Drive space after download
 
 # ==================== DOWNLOAD ====================
 
-def get_drive_windows() -> list[tuple[str, str]]:
-    """Returns list of (window_name, window_id) tuples."""
+def get_drive_windows() -> list[str]:
+    """Returns list of window name strings from flat Drive folder names."""
     try:
-        base_id = get_folder_id(DRIVE_BASE)
-        items = drive.ListFile({
-            "q": f"'{base_id}' in parents and trashed=false"
+        all_folders = drive.ListFile({
+            "q": "mimeType='application/vnd.google-apps.folder' and trashed=false",
+            "maxResults": 1000,
         }).GetList()
-        return [(i["title"], i["id"]) for i in items if i["title"].startswith("w")]
-    except Exception:
+        windows = set()
+        for f in all_folders:
+            title = f["title"]
+            if title.startswith(DRIVE_BASE + "/"):
+                parts = title.split("/")
+                if len(parts) == 3:  # DRIVE_BASE/window/orbit
+                    windows.add(parts[1])
+        return sorted(windows)
+    except Exception as e:
+        print(f"Error getting windows: {e}")
         return []
 
 
-def get_drive_orbits(window_id: str) -> list[tuple[str, str]]:
-    """Returns list of (orbit_name, orbit_id) tuples within a window folder."""
+def get_orbit_folder_id(window_str: str, orbit_str: str) -> str | None:
+    """Get folder ID for a flat-named orbit folder."""
+    folder_name = f"{DRIVE_BASE}/{window_str}/{orbit_str}"
     try:
-        items = drive.ListFile({
-            "q": f"'{window_id}' in parents and trashed=false"
-        }).GetList()
-        return [(i["title"], i["id"]) for i in items if i["title"].startswith("orbit")]
+        return get_folder_id(folder_name)
     except Exception:
-        return []
+        return None
 
 
 def get_drive_tiles_by_id(orbit_id: str) -> list[tuple[str, str]]:
@@ -125,8 +131,11 @@ def run_download_loop() -> None:
     while True:
         
         n_new = 0
-        for window_str, window_id in sorted(get_drive_windows()):
-            for orbit_str, orbit_id in sorted(get_drive_orbits(window_id)):
+        for window_str in sorted(get_drive_windows()):
+            for orbit_str in ["orbit87", "orbit94", "orbit160"]:
+                orbit_id = get_orbit_folder_id(window_str, orbit_str)
+                if orbit_id is None:
+                    continue
                 n = download_orbit_folder(window_str, orbit_str, orbit_id)
                 n_new += n
 
