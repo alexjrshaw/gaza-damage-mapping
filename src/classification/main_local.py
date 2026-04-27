@@ -72,6 +72,9 @@ def full_pipeline_local(cfg: DictConfig, force_recreate: bool = False) -> dict:
     fp_preds_local = run_dir / f"{run_name}.geojson"
     run_dir.mkdir(exist_ok=True, parents=True)
 
+    # Save config alongside metrics — mirrors main.py behaviour
+    OmegaConf.save(cfg, run_dir / "cfg.yaml")
+
     if not fp_preds_local.exists() or force_recreate:
 
         # --- Train or load classifier ---
