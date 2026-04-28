@@ -110,7 +110,9 @@ def merge_all_windows(force_recreate: bool = False) -> list[Path]:
 
 def load_buildings() -> gpd.GeoDataFrame:
     """Load HOTOSM building footprints."""
+    from shapely.wkb import loads as wkb_loads
     df = pd.read_parquet(BUILDINGS_FP)
+    df["geometry"] = df["geometry_wkb"].apply(lambda x: wkb_loads(bytes(x)))
     gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
     gdf = gdf[gdf["area_m2"] >= 50].copy()
     return gdf
@@ -330,8 +332,9 @@ def aggregate_all_preds() -> pd.DataFrame:
         summary = df_buildings_with_preds.groupby("adm2_name").agg(
             n_buildings=("max_post_war", "count"),
             mean_damage=("max_post_war", "mean"),
-            pct_over_50=("max_post_war", lambda x: (x > 0.5).mean() * 100),
+            pct_over_50=("max_post_war", lambda x: (x > 127).mean() * 100),
         ).round(3)
+        print("(mean_damage and pct_over_50 use 0-255 scale, threshold=127)")
         print(summary.to_string())
 
     return df_buildings_with_preds
