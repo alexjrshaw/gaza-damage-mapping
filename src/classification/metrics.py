@@ -11,6 +11,7 @@ def get_metrics(
     method: str = "date-wise",
     print_classification_report: bool = False,
     only_2022_for_pos: bool = False,
+    pos_year: str = "2022",
     digits: int = 2,
     return_preds: bool = False,
 ) -> dict[str, float] | tuple[dict[str, float], np.ndarray, np.ndarray]:
@@ -45,7 +46,7 @@ def get_metrics(
         # only takes predictions after date of UNOSAT (effectively discard unknown labels)
         col_pos = [c for c in col_dates if c.split("_")[-1] >= date.strftime("%Y-%m-%d")]
         if only_2022_for_pos:
-            col_pos = [c for c in col_pos if c.split("_")[-1].startswith("2022")]
+            col_pos = [c for c in col_pos if c.split("_")[-1].startswith(pos_year)]
 
         if method == "date-wise":
             y_pred_pos = (grp[col_pos] >= threshold).astype(int).values.flatten()
