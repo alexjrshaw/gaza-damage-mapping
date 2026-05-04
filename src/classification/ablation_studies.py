@@ -409,6 +409,86 @@ def plot_ablation_summary(results: dict) -> None:
     plt.close()
     print(f"\nSaved: ablation_summary.png")
 
+# ==================== STUDY 7: PIXEL-LEVEL THRESHOLD (Dietrich et al. method) ====================
+
+def pixel_level_threshold_sweep() -> dict:
+    """
+    Find optimal threshold using pixel-level raster predictions vs UNOSAT labels.
+    Mirrors Dietrich et al. evaluation.ipynb exactly.
+    Uses window=3 (3x3 pixel spatial window), agg="max".
+    """
+    print("\n=== Study 7: Pixel-level threshold sweep (Dietrich et al. method) ===")
+
+    from collections import defaultdict
+    import geopandas as gpd
+    from src.constants import AOIS_TEST
+
+    # Load pre-computed UNOSAT points with pixel predictions
+    fp = DATA_PATH / "pixel_postprocessing/aoi_preds/unosat_points_with_preds_window_3_max.geojson"
+    if not fp.exists():
+        print(f"  File not found: {fp}")
+        print("  Run evaluation.ipynb first to generate UNOSAT points with pixel predictions.")
+        return {}
+
+    gdf_points = gpd.read_file(fp)
+    gdf_points["date"] = pd.to_datetime(gdf_points["date"])
+    gdf_test = gdf_points[gdf_points["aoi"].isin(AOIS_TEST)]
+    gdf_test = gdf_test[gdf_test["damage"].isin([1, 2])]
+
+    print(f"  Test points: {len(gdf_test):,}")
+
+    thresholds = np.arange(0.1, 0.95, 0.005)
+    d_metrics_list = defaultdict(list)
+
+    for t in thresholds:
+        m = get_metrics(
+            gdf_test,
+            threshold=t,
+            method="date-wise",
+            print_classification_report=False,
+            only_2022_for_pos=False,
+            pos_year="2023",
+            return_preds=False,
+        )
+        for k, v in m.items():
+            d_metrics_list[k].append(v)
+
+    # Find optimal threshold at precision=0.9
+    diff = np.array(d_metrics_list["precision"]) - 0.9
+    idx_min = np.abs(diff).argmin()
+    optimal_t = thresholds[idx_min] if diff[idx_min] > 0 else thresholds[min(idx_min + 1, len(thresholds)-1)]
+    print(f"\n  Optimal threshold (pixel-level, precision>=90%): {optimal_t:.3f}")
+    print(f"  F1={d_metrics_list['f1'][idx_min]:.3f}, "
+          f"Precision={d_metrics_list['precision'][idx_min]:.3f}, "
+          f"Recall={d_metrics_list['recall'][idx_min]:.3f}")
+    print(f"  Dietrich et al. (Ukraine): 0.655")
+    print(f"  Point-level optimal (Gaza): 0.600")
+    print(f"  Pixel-level optimal (Gaza): {optimal_t:.3f}")
+
+    # Plot — mirrors evaluation.ipynb plot
+    fig, ax = plt.subplots(figsize=(12, 6))
+    colors = {"f1": "blue", "precision": "green", "recall": "red",
+              "roc_auc": "purple", "accuracy": "orange"}
+    for metric, scores in d_metrics_list.items():
+        ax.plot(thresholds, scores, label=metric, linewidth=2.5,
+                color=colors.get(metric, "grey"))
+    ax.axvline(0.5,       color="black", linestyle="--", alpha=0.5)
+    ax.axvline(0.655,     color="grey",  linestyle=":",  alpha=0.7, label="Ukraine t=0.655")
+    ax.axvline(optimal_t, color="red",   linestyle="--", alpha=0.7,
+               label=f"Gaza pixel optimal t={optimal_t:.3f}")
+    ax.set_xlabel("Threshold", fontsize=14)
+    ax.set_ylabel("Metrics", fontsize=14)
+    ax.set_title("Pixel-level threshold sweep — Gaza vs UNOSAT labels")
+    ax.set_xlim([0.1, 0.9])
+    ax.set_ylim([0, 1.001])
+    ax.legend(loc="lower left", fontsize=12)
+    fig.tight_layout()
+    fig.savefig(FIGURES_DIR / "pixel_threshold_sweep.png", dpi=150)
+    plt.close()
+    print(f"  Saved: pixel_threshold_sweep.png")
+
+    return {"thresholds": list(thresholds), "metrics": dict(d_metrics_list),
+            "optimal_threshold": float(optimal_t)}
 
 # ==================== MAIN ====================
 
@@ -440,6 +520,9 @@ if __name__ == "__main__":
 
     # Plot summary
     plot_ablation_summary(all_results)
+
+    # Study 7: Pixel-level threshold sweep
+    all_results["pixel_threshold"] = pixel_level_threshold_sweep()
 
     # Save all results
     fp_out = ABLATION_DIR / "ablation_results.json"
