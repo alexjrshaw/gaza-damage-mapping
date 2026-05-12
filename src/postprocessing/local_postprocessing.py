@@ -51,7 +51,7 @@ BUFFER_M = 10
 UTM_CRS = "EPSG:32636"
 
 # Input paths
-RUN_NAME = "rf_s1_2months_50trees_1x1_all7reducers_baseline"
+RUN_NAME = "rf_s1_2months_50trees_1x1_all7reducers_random_per_aoi"
 PREDS_FP = DATA_PATH / f"runs/{RUN_NAME}/{RUN_NAME}.geojson"
 BUILDINGS_FP = DATA_PATH / "overture_buildings/gaza_buildings.parquet"
 

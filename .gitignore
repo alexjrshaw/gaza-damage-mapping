@@ -112,3 +112,9 @@ run_features.sh
 features_log.txt
 features_err.txt
 download_log.txt
+alex/
+figures/
+extract_features_log.txt
+features_splits_log.txt
+features_splits_err.txt
+run_hotosm.sh

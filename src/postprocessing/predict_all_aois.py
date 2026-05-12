@@ -23,7 +23,7 @@ from src.classification.utils import get_features_names
 from src.constants import DATA_PATH, PRE_PERIOD, AOIS_TRAIN
 
 RUNS_DIR = DATA_PATH / "runs"
-RUN_NAME = "rf_s1_2months_50trees_1x1_all7reducers_baseline"
+RUN_NAME = "rf_s1_2months_50trees_1x1_all7reducers_random_per_aoi"
 
 
 def predict_train_aois() -> gpd.GeoDataFrame:
