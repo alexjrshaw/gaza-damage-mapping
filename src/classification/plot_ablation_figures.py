@@ -162,10 +162,7 @@ def plot_band_ablation(rp: dict, rx: dict) -> None:
     bars1 = ax.bar(x - w/2, pt_f1, w, color=BLUE,   label="Point-level (t=0.655)", edgecolor="white")
     bars2 = ax.bar(x + w/2, px_f1, w, color=ORANGE, label="Pixel-level (t=0.655)", edgecolor="white")
 
-    for bar, auc in zip(bars2, px_auc):
-        if not np.isnan(auc):
-            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.005,
-                    f"{auc:.3f}", ha="center", va="bottom", fontsize=8, color=ORANGE)
+    pass  # no annotations
 
     ax.axhline(POINT_BASELINE_F1,  color=BLUE,   linestyle=":", linewidth=1, alpha=0.6)
     ax.axhline(PIXEL_BASELINE_F1,  color=ORANGE, linestyle=":", linewidth=1, alpha=0.6)
@@ -313,11 +310,35 @@ def plot_ablation_summary(rp: dict) -> None:
         f1_vals.append(rp["features"][k]["t0.655"]["f1"])
         colors.append(ORANGE if "baseline" in k else BLUE)
 
+    # Also collect t=0.5 values
+    f1_05_vals = []
+    for k, lbl in [("VV only", "VV only"), ("VH only", "VH only"),
+                   ("VV+VH (baseline)", "VV+VH\n(baseline)")]:
+        f1_05_vals.append(rp["bands"][k]["t0.5"]["f1"])
+    for n in [10, 25, 50, 75, 100]:
+        f1_05_vals.append(rp["n_trees"][str(n)]["t0.5"]["f1"])
+    for k, lbl in [("mean+std", "mean+std"), ("+median", "+median"),
+                   ("+min/max", "+min/max"), ("+skew", "+skew"),
+                   ("all 7 (baseline)", "all 7\n(baseline)")]:
+        f1_05_vals.append(rp["features"][k]["t0.5"]["f1"])
+
+    # Extraction window
+    if "extraction_window" in rp:
+        for k, lbl in [("1x1 (baseline)", "1x1\n(baseline)"),
+                       ("3x3", "3x3"),
+                       ("1x1+3x3", "1x1+3x3")]:
+            labels.append(lbl)
+            f1_vals.append(rp["extraction_window"][k]["t0.655"]["f1"])
+            f1_05_vals.append(rp["extraction_window"][k]["t0.5"]["f1"])
+            colors.append(ORANGE if "baseline" in k else BLUE)
+
     x = np.arange(len(labels))
-    fig, ax = plt.subplots(figsize=(14, 5))
-    ax.bar(x, f1_vals, color=colors, edgecolor="white", linewidth=0.8)
-    ax.axhline(POINT_BASELINE_F1, color=RED, linestyle="--", linewidth=1.5,
-               label=f"Baseline F1={POINT_BASELINE_F1:.3f}")
+    fig, ax = plt.subplots(figsize=(14, 6))
+    ax.bar(x - 0.2, f1_05_vals, 0.4, label="t=0.5",   color="steelblue")
+    ax.bar(x + 0.2, f1_vals,    0.4, label="t=0.655",  color="orange")
+    baseline_f1_05 = rp["bands"]["VV+VH (baseline)"]["t0.5"]["f1"]
+    ax.axhline(baseline_f1_05, color=RED, linestyle="--", linewidth=1,
+               label=f"Baseline F1={baseline_f1_05:.3f}")
     ax.set_xticks(x)
     ax.set_xticklabels(labels, fontsize=9)
     ax.set_ylabel("F1-score (t=0.655)")

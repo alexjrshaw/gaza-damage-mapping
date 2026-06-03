@@ -371,6 +371,65 @@ def ablation_n_trees(df_train, df_test) -> dict:
 
     return results
 
+# ==================== STUDY 8: EXTRACTION WINDOW ====================
+
+def ablation_extraction_window(df_train_1x1, df_test_1x1) -> dict:
+    """
+    Extraction window ablation — mirrors Dietrich et al. Supp. Note 6.
+    Tests 1x1 (pixel-wise), 3x3 (spatial mean), and 1x1+3x3 (combined).
+    """
+    print("\n=== Study 8: Extraction window ===")
+    results = {}
+
+    # 1x1 (baseline — reuse already-loaded features)
+    cfg_1x1 = make_cfg(extract_winds="1x1")
+    m = train_and_evaluate(cfg_1x1, df_train_1x1, df_test_1x1)
+    results["1x1 (baseline)"] = m
+    print(f"  1x1 (baseline): F1@0.5={m['t0.5']['f1']:.3f}, "
+          f"F1@0.655={m['t0.655']['f1']:.3f}")
+
+    # 3x3
+    df_train_3x3, df_test_3x3 = load_features(extract_winds="3x3")
+    cfg_3x3 = make_cfg(extract_winds="3x3")
+    m = train_and_evaluate(cfg_3x3, df_train_3x3, df_test_3x3)
+    results["3x3"] = m
+    print(f"  3x3: F1@0.5={m['t0.5']['f1']:.3f}, "
+          f"F1@0.655={m['t0.655']['f1']:.3f}")
+
+    # 1x1+3x3 combined — merge both feature sets on shared index columns
+    index_cols = ["unosat_id", "aoi", "orbit", "start_post", "end_post",
+                  "start_pre", "end_pre", "label", "damage", "date", "site_id"]
+    feat_1x1 = get_features_names(cfg_1x1)
+    feat_3x3 = get_features_names(cfg_3x3)
+
+    shared = [c for c in index_cols if c in df_train_1x1.columns and c in df_train_3x3.columns]
+    df_train_combined = df_train_1x1.merge(
+        df_train_3x3[shared + feat_3x3], on=shared, how="inner"
+    )
+    df_test_combined = df_test_1x1.merge(
+        df_test_3x3[shared + feat_3x3], on=shared, how="inner"
+    )
+    all_feat = feat_1x1 + feat_3x3
+
+    # Train and evaluate manually since cfg doesn't support combined features
+    df_train_c = df_train_combined.dropna(subset=all_feat)
+    df_test_c  = df_test_combined.dropna(subset=all_feat)
+
+    clf = RandomForestClassifier(
+        n_estimators=50, min_samples_leaf=3, max_leaf_nodes=10000,
+        n_jobs=-1, random_state=0,
+    )
+    clf.fit(df_train_c[all_feat].values, df_train_c["label"].values)
+    df_test_c = df_test_c.copy()
+    df_test_c["prob"] = clf.predict_proba(df_test_c[all_feat].values)[:, 1]
+
+    gdf = _format_predictions(df_test_c, cfg_1x1)
+    m05  = get_metrics(gdf, threshold=0.5,   method="date-wise", print_classification_report=False)
+    m655 = get_metrics(gdf, threshold=0.655, method="date-wise", print_classification_report=False)
+    results["1x1+3x3"] = {"t0.5": m05, "t0.655": m655}
+    print(f"  1x1+3x3: F1@0.5={m05['f1']:.3f}, F1@0.655={m655['f1']:.3f}")
+
+    return results                       
 
 # ==================== PLOT ABLATION SUMMARY (Fig. S4 equivalent) ====================
 
@@ -521,6 +580,9 @@ if __name__ == "__main__":
     # Plot summary
     plot_ablation_summary(all_results)
 
+    # Study 8: Extraction window
+    all_results["extraction_window"] = ablation_extraction_window(df_train, df_test)
+    
     # Study 7: Pixel-level threshold sweep
     all_results["pixel_threshold"] = pixel_level_threshold_sweep()
 
