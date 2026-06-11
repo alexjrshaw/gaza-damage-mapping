@@ -154,6 +154,36 @@ MOS_POST_PERIODS = [
     ("2017-06-05", "2017-08-04"),   # label=1 — final window (assessment date)
 ]
 
+# ══════════════════════════════════════════════════════════════════════════════
+# YEI (YEI) — South Sudan, assessed 2017-03-05
+# ══════════════════════════════════════════════════════════════════════════════
+
+YEI_CONFLICT_START  = "2016-07-01"
+YEI_ASSESSMENT_DATE = "2017-03-05"
+YEI_ORBITS          = [21, 102]
+
+# Pre-period starts at first available S1 image (2015-01-11)
+# Only 8 images available in pre-period — noted as limitation
+YEI_PRE_PERIOD = ("2015-01-11", "2016-06-30")
+
+# Windows ending before YEI_CONFLICT_START (2016-07-01) → label=0
+# Windows ending after  YEI_CONFLICT_START              → label=1
+YEI_POST_PERIODS = [
+    ("2015-01-11", "2016-06-30"),   # Pre-period as post-window (T0) → label=0
+    ("2015-01-11", "2015-03-10"),   # label=0
+    ("2015-03-11", "2015-05-10"),   # label=0
+    ("2015-05-11", "2015-07-10"),   # label=0
+    ("2015-07-11", "2015-09-10"),   # label=0
+    ("2015-09-11", "2015-11-10"),   # label=0
+    ("2015-11-11", "2016-01-10"),   # label=0
+    ("2016-01-11", "2016-03-10"),   # label=0
+    ("2016-03-11", "2016-06-30"),   # label=0
+    ("2016-07-01", "2016-09-01"),   # label=1
+    ("2016-09-02", "2016-11-02"),   # label=1
+    ("2016-11-03", "2017-01-03"),   # label=1
+    ("2017-01-04", "2017-03-05"),   # label=1 — final window (assessment date)
+]
+
 # ── Lookup by city ID ──────────────────────────────────────────────────────────
 
 TRANSFER_CITIES = {
@@ -201,5 +231,20 @@ TRANSFER_CITIES = {
         "gee_end":         "2018-01-01",
         "label_0_windows": 8,
         "label_1_windows": 5,
+    },
+    "YEI": {
+        "city_name":       "Yei",
+        "country":         "South Sudan",
+        "conflict_start":  YEI_CONFLICT_START,
+        "assessment_date": YEI_ASSESSMENT_DATE,
+        "orbits":          YEI_ORBITS,
+        "pre_period":      YEI_PRE_PERIOD,
+        "post_periods":    YEI_POST_PERIODS,
+        "unosat_labels":   TRANSFER_DATA_DIR / "yei" / "unosat_labels.geojson",
+        "unosat_aoi":      TRANSFER_DATA_DIR / "yei" / "unosat_aoi.geojson",
+        "gee_start":       "2015-01-01",
+        "gee_end":         "2017-06-01",
+        "label_0_windows": 9,
+        "label_1_windows": 4,
     },
 }
