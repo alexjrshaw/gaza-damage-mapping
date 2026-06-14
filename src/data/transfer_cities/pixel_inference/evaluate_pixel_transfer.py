@@ -1,81 +1,95 @@
 """
-Pixel-level evaluation for transfer city proof-of-concept.
+Pixel-level evaluation for transfer cities.
 
-Samples probability rasters at UNOSAT point locations using a 3x3
-pixel window (max aggregation) — mirrors Dietrich et al. evaluation.ipynb
-and Gaza's pixel_postprocessing.py exactly.
-
-Uses direct rasterio sampling rather than xarray for robustness.
+Merges quadkey probability raster tiles per window, then samples at
+UNOSAT point locations with 3x3 pixel window (max aggregation) —
+mirrors Dietrich et al. evaluation methodology exactly.
 
 Input:
     data/transfer_cities/probability_rasters/{city_id}/{window_str}/
-        {city_id}_{window_str}.tif
+        qk_{qk_id}.tif  (multiple tiles per window)
 
 Output:
     data/transfer_cities/runs/{city_id}/metrics_pixel.json
 
 Usage:
-    python3 src/data/transfer_cities/pixel_inference/evaluate_pixel_transfer.py --city RAQ
+    python3 src/data/transfer_cities/pixel_inference/evaluate_pixel_transfer.py --city MOS
 """
 
 import json
 import argparse
+import warnings
 import numpy as np
 import pandas as pd
 import geopandas as gpd
 import rasterio
+from rasterio.merge import merge
 from rasterio.windows import Window
 from pathlib import Path
 from sklearn import metrics as sk_metrics
+from tqdm.auto import tqdm
 
 import sys
 sys.path.insert(0, '/scratch/s1214882/gaza-damage-mapping')
+
 from src.data.transfer_cities.constants_transfer import TRANSFER_CITIES
 from src.constants import DATA_PATH
 
-TRANSFER_PROB_RASTERS = DATA_PATH / "transfer_cities" / "probability_rasters"
-TRANSFER_RUNS_DIR     = DATA_PATH / "transfer_cities" / "runs"
-WINDOW_SIZE = 3
-WINDOW_AGG  = "max"
-THRESHOLDS  = [0.5, 0.650, 0.655]
+TRANSFER_PROB_BASE = DATA_PATH / "transfer_cities" / "probability_rasters"
+TRANSFER_RUNS_DIR  = DATA_PATH / "transfer_cities" / "runs"
+WINDOW_SIZE        = 3
+THRESHOLDS         = [0.5, 0.650, 0.655]
 
 
-def sample_raster_3x3(fp: Path, gdf: gpd.GeoDataFrame) -> np.ndarray:
+def sample_merged_raster(tiles: list, gdf: gpd.GeoDataFrame) -> np.ndarray:
     """
-    Sample raster at each UNOSAT point with 3x3 pixel window (max aggregation).
-    Mirrors Dietrich et al. evaluation methodology exactly.
+    Merge quadkey tiles and sample at UNOSAT points with 3x3 window.
+    Mirrors Dietrich et al. 3x3 max aggregation exactly.
     """
-    half = WINDOW_SIZE // 2
-    results = []
-    with rasterio.open(fp) as src:
+    # Open all tiles
+    srcs = [rasterio.open(fp) for fp in tiles]
+    try:
+        merged, transform = merge(srcs)
+        merged = merged[0].astype(np.float32)
+        merged[merged == 0] = np.nan
+
+        # Get CRS and transform from first tile
+        crs = srcs[0].crs
+        half = WINDOW_SIZE // 2
+
+        results = []
         for geom in gdf.geometry:
-            row, col = src.index(geom.x, geom.y)
-            win = Window(
-                col_off=max(0, col - half),
-                row_off=max(0, row - half),
-                width=min(WINDOW_SIZE, src.width - max(0, col - half)),
-                height=min(WINDOW_SIZE, src.height - max(0, row - half)),
-            )
-            patch = src.read(1, window=win).astype(np.float32)
-            patch[patch == 0] = np.nan
-            val = np.nanmax(patch) if WINDOW_AGG == "max" else np.nanmean(patch)
-            results.append(val if not np.isnan(val) else 0.0)
-    return np.array(results, dtype=np.float32)
+            # Convert point to pixel coordinates
+            col, row = ~transform * (geom.x, geom.y)
+            col, row = int(col), int(row)
+
+            # Extract 3x3 patch
+            r_start = max(0, row - half)
+            r_end   = min(merged.shape[0], row + half + 1)
+            c_start = max(0, col - half)
+            c_end   = min(merged.shape[1], col + half + 1)
+
+            patch = merged[r_start:r_end, c_start:c_end]
+            val = np.nanmax(patch) if patch.size > 0 else 0.0
+            results.append(0.0 if np.isnan(val) else val)
+
+        return np.array(results, dtype=np.float32)
+    finally:
+        for src in srcs:
+            src.close()
 
 
 def evaluate_pixel_city(city_id: str) -> dict:
-    cfg = TRANSFER_CITIES[city_id]
+    cfg            = TRANSFER_CITIES[city_id]
     conflict_start = cfg["conflict_start"]
-    prob_base = TRANSFER_PROB_RASTERS / city_id
+    prob_base      = TRANSFER_PROB_BASE / city_id
 
     print(f"\n{'='*60}")
-    print(f"{city_id} — {cfg['city_name']} ({cfg['country']}) — PIXEL-LEVEL")
-    print(f"  3x3 window max aggregation, mirrors Dietrich et al.")
+    print(f"{city_id} — {cfg['city_name']} — PIXEL-LEVEL (3x3 max)")
     print(f"{'='*60}")
 
     if not prob_base.exists():
-        print(f"  No probability rasters found at {prob_base}")
-        print(f"  Run pixel_inference_transfer.py --city {city_id} first.")
+        print(f"  No probability rasters at {prob_base}")
         return {}
 
     gdf = gpd.read_file(cfg["unosat_labels"])
@@ -85,30 +99,33 @@ def evaluate_pixel_city(city_id: str) -> dict:
     post_periods = cfg["post_periods"]
     all_periods  = [pre_period] + list(post_periods)
 
-    # Sample all rasters
     pred_cols = {}
     for i, post_period in enumerate(all_periods):
         window_str = f"w{i+1:02d}_{post_period[0]}_{post_period[1]}"
-        fp = prob_base / window_str / f"{city_id}_{window_str}.tif"
-        end_post = post_period[1]
-        col = f"pred_{end_post}"
+        end_post   = post_period[1]
+        col        = f"pred_{end_post}"
+        window_dir = prob_base / window_str
 
-        if not fp.exists():
-            print(f"  MISSING: {window_str}")
+        if not window_dir.exists():
             continue
 
-        vals = sample_raster_3x3(fp, gdf)
+        tiles = sorted(window_dir.glob("qk_*.tif"))
+        if not tiles:
+            continue
+
+        vals = sample_merged_raster(tiles, gdf)
         pred_cols[col] = vals
+        print(f"  {window_str}: {len(tiles)} tiles, mean={np.nanmean(vals):.1f}")
 
     if not pred_cols:
-        print("  No rasters sampled successfully.")
+        print("  No probability rasters found.")
         return {}
 
     df_preds = pd.DataFrame(pred_cols)
-    col_neg = [c for c in df_preds.columns if c.split("pred_")[1] <= conflict_start]
-    col_pos = [c for c in df_preds.columns if c.split("pred_")[1] > conflict_start]
+    col_neg  = [c for c in df_preds.columns if c.split("pred_")[1] <= conflict_start]
+    col_pos  = [c for c in df_preds.columns if c.split("pred_")[1] > conflict_start]
 
-    print(f"  label=0 windows: {len(col_neg)}")
+    print(f"\n  label=0 windows: {len(col_neg)}")
     print(f"  label=1 windows: {len(col_pos)}")
 
     if not col_pos or not col_neg:
@@ -121,10 +138,10 @@ def evaluate_pixel_city(city_id: str) -> dict:
 
     for t in THRESHOLDS:
         t_scaled = t * 255
-        y_pos   = (df_preds[col_pos] >= t_scaled).values.flatten()
-        y_neg   = (df_preds[col_neg] >= t_scaled).values.flatten()
-        y_preds = np.concatenate([y_pos, y_neg])
-        y_trues = np.concatenate([np.ones(y_pos.size), np.zeros(y_neg.size)])
+        y_pos    = (df_preds[col_pos] >= t_scaled).values.flatten()
+        y_neg    = (df_preds[col_neg] >= t_scaled).values.flatten()
+        y_preds  = np.concatenate([y_pos, y_neg])
+        y_trues  = np.concatenate([np.ones(y_pos.size), np.zeros(y_neg.size)])
 
         f1   = sk_metrics.f1_score(y_trues, y_preds, zero_division=0)
         prec = sk_metrics.precision_score(y_trues, y_preds, zero_division=0)
@@ -137,9 +154,10 @@ def evaluate_pixel_city(city_id: str) -> dict:
             "recall": round(rec, 4), "roc_auc": round(auc, 4),
             "accuracy": round(acc, 4), "threshold": t,
             "n_pos": int(y_pos.size), "n_neg": int(y_neg.size),
-            "window_size": WINDOW_SIZE, "window_agg": WINDOW_AGG,
+            "window_size": WINDOW_SIZE, "window_agg": "max",
         }
-        print(f"  {t:>7.3f} {f1:>7.3f} {prec:>7.3f} {rec:>7.3f} {auc:>7.3f} {y_pos.size:>8,} {y_neg.size:>8,}")
+        print(f"  {t:>7.3f} {f1:>7.3f} {prec:>7.3f} {rec:>7.3f} "
+              f"{auc:>7.3f} {y_pos.size:>8,} {y_neg.size:>8,}")
 
     # Save
     run_dir = TRANSFER_RUNS_DIR / city_id
