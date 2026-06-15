@@ -37,7 +37,7 @@ from src.data.transfer_cities.constants_transfer import (
     TRANSFER_RUNS_DIR,
 )
 
-THRESHOLDS = [0.5, 0.655]
+THRESHOLDS = [0.5, 0.655, 0.675]
 
 # Baselines for comparison table
 GAZA_RESULTS = {

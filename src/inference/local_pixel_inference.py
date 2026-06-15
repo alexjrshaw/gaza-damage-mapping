@@ -43,7 +43,7 @@ from src.classification.utils import get_features_names
 ORBITS = [87, 94, 160]
 FEATURE_RASTERS_DIR = DATA_PATH / "feature_rasters"
 PROBABILITY_RASTERS_DIR = DATA_PATH / "probability_rasters"
-RUN_NAME = "rf_s1_2months_50trees_1x1_all7reducers_random_per_aoi"
+RUN_NAME = "rf_s1_2months_50trees_1x1_all7reducers_baseline"
 MODEL_FP = DATA_PATH / f"runs/{RUN_NAME}/model.pkl"
 
 # Config needed to get feature names in correct order
@@ -306,4 +306,4 @@ def run_local_inference(
 # ==================== MAIN ====================
 
 if __name__ == "__main__":
-    run_local_inference()
+    run_local_inference(force_recreate=True)

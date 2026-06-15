@@ -38,7 +38,7 @@ from src.constants import DATA_PATH
 TRANSFER_PROB_BASE = DATA_PATH / "transfer_cities" / "probability_rasters"
 TRANSFER_RUNS_DIR  = DATA_PATH / "transfer_cities" / "runs"
 WINDOW_SIZE        = 3
-THRESHOLDS         = [0.5, 0.650, 0.655]
+THRESHOLDS         = [0.5, 0.650, 0.655, 0.675]
 
 
 def sample_merged_raster(tiles: list, gdf: gpd.GeoDataFrame) -> np.ndarray:
