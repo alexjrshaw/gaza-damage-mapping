@@ -427,7 +427,7 @@ def ablation_extraction_window(df_train_1x1, df_test_1x1) -> dict:
     gdf = _format_predictions(df_test_c, cfg_1x1)
     m05  = get_metrics(gdf, threshold=0.5,   method="date-wise", print_classification_report=False)
     m655 = get_metrics(gdf, threshold=0.655, method="date-wise", print_classification_report=False)
-    m675_combined = get_metrics(gdf_combined, threshold=0.675, method="date-wise", print_classification_report=False)
+    m675_combined = get_metrics(gdf, threshold=0.675, method="date-wise", print_classification_report=False)
     results["1x1+3x3"] = {"t0.5": m05, "t0.655": m655, "t0.675": m675_combined}
     print(f"  1x1+3x3: F1@0.5={m05['f1']:.3f}, F1@0.655={m655['f1']:.3f}")
 
