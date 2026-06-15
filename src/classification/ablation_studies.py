@@ -104,7 +104,7 @@ def load_features(split_strategy="aoi", extract_winds="1x1"):
 
 
 def train_and_evaluate(cfg, df_train, df_test) -> dict:
-    """Train RF with given config and return metrics at t=0.5 and t=0.655."""
+    """Train RF with given config and return metrics at t=0.5, t=0.655 and t=0.675."""
     feature_cols = get_features_names(cfg)
 
     df_train = df_train.dropna(subset=feature_cols)
@@ -127,7 +127,8 @@ def train_and_evaluate(cfg, df_train, df_test) -> dict:
     m05  = get_metrics(gdf, threshold=0.5,   method="date-wise", print_classification_report=False)
     m655 = get_metrics(gdf, threshold=0.655, method="date-wise", print_classification_report=False)
 
-    return {"t0.5": m05, "t0.655": m655}
+    m675 = get_metrics(gdf, threshold=0.675, method="date-wise", print_classification_report=False)
+    return {"t0.5": m05, "t0.655": m655, "t0.675": m675}
 
 
 # ==================== STUDY 1: THRESHOLD SWEEP ====================
@@ -426,7 +427,8 @@ def ablation_extraction_window(df_train_1x1, df_test_1x1) -> dict:
     gdf = _format_predictions(df_test_c, cfg_1x1)
     m05  = get_metrics(gdf, threshold=0.5,   method="date-wise", print_classification_report=False)
     m655 = get_metrics(gdf, threshold=0.655, method="date-wise", print_classification_report=False)
-    results["1x1+3x3"] = {"t0.5": m05, "t0.655": m655}
+    m675_combined = get_metrics(gdf_combined, threshold=0.675, method="date-wise", print_classification_report=False)
+    results["1x1+3x3"] = {"t0.5": m05, "t0.655": m655, "t0.675": m675_combined}
     print(f"  1x1+3x3: F1@0.5={m05['f1']:.3f}, F1@0.655={m655['f1']:.3f}")
 
     return results                       
