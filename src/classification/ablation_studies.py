@@ -166,7 +166,8 @@ def threshold_sweep(gdf: gpd.GeoDataFrame) -> dict:
     ax.plot(df["threshold"], df["roc_auc"],    label="roc_auc",   color="purple")
     ax.plot(df["threshold"], df["accuracy"],   label="accuracy",  color="orange")
     ax.axvline(0.5,   color="grey", linestyle="--", linewidth=1)
-    ax.axvline(0.655, color="grey", linestyle="--", linewidth=1)
+    ax.axvline(0.655, color="grey", linestyle="--", linewidth=1, label="Dietrich et al. t=0.655")
+    ax.axvline(0.675, color="red", linestyle="--", linewidth=1, label="Gaza optimal t=0.675")
     ax.set_xlabel("Threshold")
     ax.set_ylabel("Metrics")
     ax.set_title("Performance of the model for different thresholds (Gaza)")
@@ -227,7 +228,9 @@ def oob_vs_n_trees(df_train: pd.DataFrame, feature_cols: list) -> dict:
 
     print(f"\n  Optimal n_trees (elbow): {optimal_n}")
     print(f"  OOB error at optimal: {oob_errors[tree_counts.index(optimal_n)]:.4f}")
-    print(f"  OOB error at 50 trees: {oob_errors[tree_counts.index(50)]:.4f}")
+    # OOB at 50 trees (approximate)
+    idx_50 = min(range(len(tree_counts)), key=lambda i: abs(tree_counts[i]-50))
+    print(f"  OOB error near 50 trees ({tree_counts[idx_50]} trees): {oob_errors[idx_50]:.4f}")
 
     # Plot
     fig, ax = plt.subplots(figsize=(8, 5))
@@ -318,7 +321,7 @@ def ablation_bands(df_train, df_test) -> dict:
         m = train_and_evaluate(cfg, df_train, df_test)
         results[label] = m
         print(f"  {label}: F1@0.5={m['t0.5']['f1']:.3f}, "
-              f"F1@0.655={m['t0.655']['f1']:.3f}")
+              f"F1@0.675={m['t0.675']['f1']:.3f}")
 
     return results
 
@@ -346,7 +349,7 @@ def ablation_features(df_train, df_test) -> dict:
         m = train_and_evaluate(cfg, df_train, df_test)
         results[label] = m
         print(f"  {label}: F1@0.5={m['t0.5']['f1']:.3f}, "
-              f"F1@0.655={m['t0.655']['f1']:.3f}")
+              f"F1@0.675={m['t0.675']['f1']:.3f}")
 
     return results
 
@@ -368,7 +371,7 @@ def ablation_n_trees(df_train, df_test) -> dict:
         m = train_and_evaluate(cfg, df_train, df_test)
         results[str(n_trees)] = m
         print(f"  n_trees={n_trees}: F1@0.5={m['t0.5']['f1']:.3f}, "
-              f"F1@0.655={m['t0.655']['f1']:.3f}")
+              f"F1@0.675={m['t0.675']['f1']:.3f}")
 
     return results
 
@@ -387,7 +390,7 @@ def ablation_extraction_window(df_train_1x1, df_test_1x1) -> dict:
     m = train_and_evaluate(cfg_1x1, df_train_1x1, df_test_1x1)
     results["1x1 (baseline)"] = m
     print(f"  1x1 (baseline): F1@0.5={m['t0.5']['f1']:.3f}, "
-          f"F1@0.655={m['t0.655']['f1']:.3f}")
+          f"F1@0.675={m['t0.675']['f1']:.3f}")
 
     # 3x3
     df_train_3x3, df_test_3x3 = load_features(extract_winds="3x3")
@@ -395,7 +398,7 @@ def ablation_extraction_window(df_train_1x1, df_test_1x1) -> dict:
     m = train_and_evaluate(cfg_3x3, df_train_3x3, df_test_3x3)
     results["3x3"] = m
     print(f"  3x3: F1@0.5={m['t0.5']['f1']:.3f}, "
-          f"F1@0.655={m['t0.655']['f1']:.3f}")
+          f"F1@0.675={m['t0.675']['f1']:.3f}")
 
     # 1x1+3x3 combined — merge both feature sets on shared index columns
     index_cols = ["unosat_id", "aoi", "orbit", "start_post", "end_post",
@@ -429,7 +432,7 @@ def ablation_extraction_window(df_train_1x1, df_test_1x1) -> dict:
     m655 = get_metrics(gdf, threshold=0.655, method="date-wise", print_classification_report=False)
     m675_combined = get_metrics(gdf, threshold=0.675, method="date-wise", print_classification_report=False)
     results["1x1+3x3"] = {"t0.5": m05, "t0.655": m655, "t0.675": m675_combined}
-    print(f"  1x1+3x3: F1@0.5={m05['f1']:.3f}, F1@0.655={m655['f1']:.3f}")
+    print(f"  1x1+3x3: F1@0.5={m05['f1']:.3f}, F1@0.675={m675_combined['f1']:.3f}")
 
     return results                       
 
@@ -439,7 +442,7 @@ def plot_ablation_summary(results: dict) -> None:
     """
     Bar chart of F1 scores across ablation settings — mirrors Fig. S4.
     """
-    labels, f1_05, f1_655 = [], [], []
+    labels, f1_05, f1_675 = [], [], []
 
     for study, study_results in results.items():
         if study in ("threshold_sweep", "oob_n_trees", "oob_mtry"):
@@ -447,12 +450,12 @@ def plot_ablation_summary(results: dict) -> None:
         for setting, metrics in study_results.items():
             labels.append(f"{setting}")
             f1_05.append(metrics["t0.5"]["f1"])
-            f1_655.append(metrics["t0.655"]["f1"])
+            f1_675.append(metrics["t0.675"]["f1"])
 
     x = np.arange(len(labels))
     fig, ax = plt.subplots(figsize=(14, 6))
     ax.bar(x - 0.2, f1_05,  0.4, label="t=0.5",   color="steelblue")
-    ax.bar(x + 0.2, f1_655, 0.4, label="t=0.655",  color="orange")
+    ax.bar(x + 0.2, f1_675, 0.4, label="t=0.675",  color="orange")
 
     # Baseline line
     baseline_f1 = results["bands"]["VV+VH (baseline)"]["t0.5"]["f1"]

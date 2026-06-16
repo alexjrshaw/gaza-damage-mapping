@@ -7,7 +7,7 @@ evaluation.ipynb (Dietrich et al. 2025 methodology):
     2. Run full pixel inference → probability rasters
     3. Merge tiles → Gaza-wide GeoTIFFs
     4. Sample rasters at UNOSAT test points (3x3 window, max agg)
-    5. Compute metrics at t=0.655 (90% precision target)
+    5. Compute metrics at t=0.675 (90% precision target)
 
 OOB plots (n_trees, mtry) use sklearn oob_score_ — no inference needed.
 
@@ -56,7 +56,7 @@ ABLATION_DIR.mkdir(parents=True, exist_ok=True)
 
 ORBITS = [87, 94, 160]
 ALL_REDUCERS = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
-THRESHOLD_TARGET = 0.655
+THRESHOLD_TARGET = 0.675
 WINDOW_AGG = "max"
 SPATIAL_WINDOW = 3
 
