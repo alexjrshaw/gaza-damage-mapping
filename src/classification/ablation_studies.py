@@ -166,8 +166,8 @@ def threshold_sweep(gdf: gpd.GeoDataFrame) -> dict:
     ax.plot(df["threshold"], df["roc_auc"],    label="roc_auc",   color="purple")
     ax.plot(df["threshold"], df["accuracy"],   label="accuracy",  color="orange")
     ax.axvline(0.5,   color="grey", linestyle="--", linewidth=1)
-    ax.axvline(0.655, color="grey", linestyle="--", linewidth=1, label="Dietrich et al. t=0.655")
-    ax.axvline(0.675, color="red", linestyle="--", linewidth=1, label="Gaza optimal t=0.675")
+    ax.axvline(0.655, color="grey", linestyle="--", linewidth=1, label="Optimal t=0.655 (matches Dietrich et al.)")
+    ax.axvline(0.675, color="orange", linestyle=":", linewidth=1, label="t=0.675 (reference)")
     ax.set_xlabel("Threshold")
     ax.set_ylabel("Metrics")
     ax.set_title("Performance of the model for different thresholds (Gaza)")
@@ -442,20 +442,20 @@ def plot_ablation_summary(results: dict) -> None:
     """
     Bar chart of F1 scores across ablation settings — mirrors Fig. S4.
     """
-    labels, f1_05, f1_675 = [], [], []
+    labels, f1_05, f1_655 = [], [], []
 
     for study, study_results in results.items():
-        if study in ("threshold_sweep", "oob_n_trees", "oob_mtry"):
+        if study in ("threshold_sweep", "oob_n_trees", "oob_mtry", "pixel_threshold"):
             continue
         for setting, metrics in study_results.items():
             labels.append(f"{setting}")
             f1_05.append(metrics["t0.5"]["f1"])
-            f1_675.append(metrics["t0.675"]["f1"])
+            f1_655.append(metrics["t0.655"]["f1"])
 
     x = np.arange(len(labels))
     fig, ax = plt.subplots(figsize=(14, 6))
     ax.bar(x - 0.2, f1_05,  0.4, label="t=0.5",   color="steelblue")
-    ax.bar(x + 0.2, f1_675, 0.4, label="t=0.675",  color="orange")
+    ax.bar(x + 0.2, f1_655, 0.4, label="t=0.655",  color="orange")
 
     # Baseline line
     baseline_f1 = results["bands"]["VV+VH (baseline)"]["t0.5"]["f1"]

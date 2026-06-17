@@ -56,7 +56,7 @@ ABLATION_DIR.mkdir(parents=True, exist_ok=True)
 
 ORBITS = [87, 94, 160]
 ALL_REDUCERS = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
-THRESHOLD_TARGET = 0.675
+THRESHOLD_TARGET = 0.655
 WINDOW_AGG = "max"
 SPATIAL_WINDOW = 3
 
