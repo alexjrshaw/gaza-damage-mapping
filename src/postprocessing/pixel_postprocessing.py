@@ -51,6 +51,7 @@ UTM_CRS = "EPSG:32636"
 
 # ==================== STEP 1: MERGE TILES ====================
 
+
 def merge_tiles_for_window(window_str: str, force_recreate: bool = False) -> Path | None:
     """
     Merge all quadkey tiles for one window into a single GeoTIFF.
@@ -108,9 +109,11 @@ def merge_all_windows(force_recreate: bool = False) -> list[Path]:
 
 # ==================== STEP 2: ASSIGN TO BUILDINGS ====================
 
+
 def load_buildings() -> gpd.GeoDataFrame:
     """Load HOTOSM building footprints."""
     from shapely.wkb import loads as wkb_loads
+
     df = pd.read_parquet(BUILDINGS_FP)
     df["geometry"] = df["geometry_wkb"].apply(lambda x: wkb_loads(bytes(x)))
     gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
@@ -166,6 +169,7 @@ def create_buildings_with_preds_for_admin(
         print(f"  {adm2_name}: {len(gdf_buildings):,} buildings")
 
     from shapely.geometry import box
+
     total_bounds = box(*gdf_buildings.total_bounds)
 
     # Get post dates from window strings
@@ -173,11 +177,9 @@ def create_buildings_with_preds_for_admin(
 
     # Read and stack prediction rasters — mirrors Dietrich et al. exactly
     from src.data.utils import read_fp_within_geo
+
     dates_var = xr.Variable("date", pd.to_datetime(post_dates))
-    preds = xr.concat(
-        [read_fp_within_geo(fp, total_bounds) for fp in merged_fps],
-        dim=dates_var
-    ).squeeze(dim="band")
+    preds = xr.concat([read_fp_within_geo(fp, total_bounds) for fp in merged_fps], dim=dates_var).squeeze(dim="band")
 
     if verbose:
         print(f"  {adm2_name}: rasters stacked {preds.shape}")
@@ -188,11 +190,7 @@ def create_buildings_with_preds_for_admin(
         print(f"  {adm2_name}: {len(gdf_pixels):,} pixels vectorized")
 
     # Intersect buildings with pixels — identical to Dietrich et al.
-    overlap = gpd.overlay(
-        gdf_buildings.reset_index(),
-        gdf_pixels,
-        how="intersection"
-    ).set_index("building_id")
+    overlap = gpd.overlay(gdf_buildings.reset_index(), gdf_pixels, how="intersection").set_index("building_id")
 
     if len(overlap) == 0:
         print(f"  {adm2_name}: no overlaps found")
@@ -268,6 +266,7 @@ def create_all_buildings_with_preds(
 
 # ==================== STEP 3: AGGREGATE ====================
 
+
 def process_admin_file(adm2_name: str) -> pd.DataFrame | None:
     """Load one admin GeoJSON and pivot to wide format."""
     folder_preds = OUTPUT_DIR / "admin_preds"
@@ -298,8 +297,7 @@ def aggregate_all_preds() -> pd.DataFrame:
     adm2_names = sorted(df["adm2_name"].dropna().unique())
 
     folder_preds = OUTPUT_DIR / "admin_preds"
-    available = [a for a in adm2_names
-                 if (folder_preds / f"{a.replace(' ', '_')}.geojson").exists()]
+    available = [a for a in adm2_names if (folder_preds / f"{a.replace(' ', '_')}.geojson").exists()]
     print(f"Aggregating {len(available)} admin units...")
 
     df_preds = []
@@ -329,11 +327,15 @@ def aggregate_all_preds() -> pd.DataFrame:
     if post_war_cols:
         print("\n=== Per-governorate damage summary ===")
         df_buildings_with_preds["max_post_war"] = df_buildings_with_preds[post_war_cols].max(axis=1)
-        summary = df_buildings_with_preds.groupby("adm2_name").agg(
-            n_buildings=("max_post_war", "count"),
-            mean_damage=("max_post_war", "mean"),
-            pct_over_50=("max_post_war", lambda x: (x > 127).mean() * 100),
-        ).round(3)
+        summary = (
+            df_buildings_with_preds.groupby("adm2_name")
+            .agg(
+                n_buildings=("max_post_war", "count"),
+                mean_damage=("max_post_war", "mean"),
+                pct_over_50=("max_post_war", lambda x: (x > 127).mean() * 100),
+            )
+            .round(3)
+        )
         print("(mean_damage and pct_over_50 use 0-255 scale, threshold=127)")
         print(summary.to_string())
 
@@ -341,6 +343,7 @@ def aggregate_all_preds() -> pd.DataFrame:
 
 
 # ==================== MAIN ====================
+
 
 @timeit
 def pixel_postprocessing(force_recreate: bool = False) -> pd.DataFrame:

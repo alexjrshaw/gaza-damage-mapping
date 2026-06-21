@@ -27,25 +27,24 @@ Or interactively:
     python3 src/data/transfer_cities/extract_features_transfer.py
 """
 
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from tqdm.auto import tqdm
-import sys
-sys.path.insert(0, '/scratch/s1214882/gaza-damage-mapping')
 
-from src.data.transfer_cities.constants_transfer import (
-    TRANSFER_CITIES,
-    TRANSFER_CACHE_DIR,
-    TRANSFER_FEATURES_DIR,
-    S1_BANDS,
-)
+sys.path.insert(0, "/scratch/s1214882/gaza-damage-mapping")
+
+from src.data.transfer_cities.constants_transfer import (S1_BANDS, TRANSFER_CACHE_DIR, TRANSFER_CITIES,
+                                                         TRANSFER_FEATURES_DIR)
 
 EXTRACT_WINDOW = "1x1"
-REDUCER_NAMES  = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
+REDUCER_NAMES = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
 
 
 # ── Feature computation (identical to extract_features_local.py) ───────────────
+
 
 def compute_features_for_window(
     df: pd.DataFrame,
@@ -61,9 +60,7 @@ def compute_features_for_window(
     Only difference: uses city-specific conflict_start instead of GAZA_WAR_START.
     """
     df = df.copy()
-    df["s1_date"] = pd.to_datetime(
-        df["system:time_start"], unit="ms"
-    ).dt.date.astype(str)
+    df["s1_date"] = pd.to_datetime(df["system:time_start"], unit="ms").dt.date.astype(str)
     df["date_first_severe"] = df["date_first_severe"].astype(str)
 
     # Label assignment — Dietrich et al. eq. 1
@@ -77,26 +74,24 @@ def compute_features_for_window(
     if len(df) == 0:
         return pd.DataFrame()
 
-    prefix_pre  = f"pre_{EXTRACT_WINDOW}"
+    prefix_pre = f"pre_{EXTRACT_WINDOW}"
     prefix_post = f"post_{EXTRACT_WINDOW}"
 
     # Filter to pre and post date ranges
-    pre_df  = df[(df["s1_date"] >= pre_period[0])  & (df["s1_date"] <= pre_period[1])]
+    pre_df = df[(df["s1_date"] >= pre_period[0]) & (df["s1_date"] <= pre_period[1])]
     post_df = df[(df["s1_date"] >= post_period[0]) & (df["s1_date"] <= post_period[1])]
 
     # Point metadata
-    meta = df.groupby("unosat_id").first()[
-        ["damage", "aoi", "date_first_severe", "site_id"]
-    ].reset_index()
+    meta = df.groupby("unosat_id").first()[["damage", "aoi", "date_first_severe", "site_id"]].reset_index()
     meta = meta.rename(columns={"date_first_severe": "date"})
 
     results = meta.copy()
-    results["label"]      = label
-    results["orbit"]      = orbit
-    results["start_pre"]  = pre_period[0]
-    results["end_pre"]    = pre_period[1]
+    results["label"] = label
+    results["orbit"] = orbit
+    results["start_pre"] = pre_period[0]
+    results["end_pre"] = pre_period[1]
     results["start_post"] = post_period[0]
-    results["end_post"]   = post_period[1]
+    results["end_post"] = post_period[1]
 
     # Compute 7 statistics for each band and period
     for band in S1_BANDS:
@@ -129,16 +124,16 @@ def extract_features_city(city_id: str, cfg: dict) -> pd.DataFrame:
     Mirrors extract_features_local() in extract_features_local.py.
     """
     all_features = []
-    pre_period    = cfg["pre_period"]
-    post_periods  = cfg["post_periods"]
+    pre_period = cfg["pre_period"]
+    post_periods = cfg["post_periods"]
     conflict_start = cfg["conflict_start"]
 
     print(f"\n  Pre-period:     {pre_period[0]} → {pre_period[1]}")
     print(f"  Post-windows:   {len(post_periods)} total")
     print(f"  Conflict start: {conflict_start}")
 
-    label_0 = [(s,e) for s,e in post_periods if e <= conflict_start]
-    label_1 = [(s,e) for s,e in post_periods if e > conflict_start]
+    label_0 = [(s, e) for s, e in post_periods if e <= conflict_start]
+    label_1 = [(s, e) for s, e in post_periods if e > conflict_start]
     print(f"  label=0 windows: {len(label_0)}")
     print(f"  label=1 windows: {len(label_1)}")
 
@@ -151,9 +146,7 @@ def extract_features_city(city_id: str, cfg: dict) -> pd.DataFrame:
         print(f"  {len(df):,} rows in cache")
 
         for post_period in tqdm(post_periods, desc=f"    {city_id}_orbit{orbit}"):
-            features = compute_features_for_window(
-                df, pre_period, post_period, orbit, conflict_start
-            )
+            features = compute_features_for_window(df, pre_period, post_period, orbit, conflict_start)
             if len(features) > 0:
                 all_features.append(features)
 
@@ -165,7 +158,7 @@ def extract_features_city(city_id: str, cfg: dict) -> pd.DataFrame:
     print(f"\n  {city_id}: {len(result):,} rows, {len(result.columns)} columns")
 
     # Label distribution
-    label_counts = result['label'].value_counts().sort_index()
+    label_counts = result["label"].value_counts().sort_index()
     print(f"  Label distribution: {label_counts.to_dict()}")
 
     return result
@@ -202,7 +195,7 @@ def extract_all_transfer_features() -> None:
         fp = TRANSFER_FEATURES_DIR / f"{city_id}_features.parquet"
         if fp.exists():
             df = pd.read_parquet(fp)
-            label_counts = df['label'].value_counts().sort_index().to_dict()
+            label_counts = df["label"].value_counts().sort_index().to_dict()
             print(f"  {city_id}: {len(df):,} rows — labels: {label_counts}")
         else:
             print(f"  {city_id}: MISSING")

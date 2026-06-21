@@ -15,9 +15,9 @@ adaptations for Gaza:
 
 import geopandas as gpd
 import pandas as pd
+from shapely.wkb import loads as wkb_loads
 from tqdm.auto import tqdm
 
-from shapely.wkb import loads as wkb_loads
 from src.constants import DATA_PATH, OVERTURE_PATH
 from src.data.hotosm.download import HOTOSM_RAW_FP, download_hotosm_buildings
 from src.data.unosat import load_unosat_geo, load_unosat_labels
@@ -197,9 +197,9 @@ def add_admin_info() -> None:
     del df
 
     # Load admin boundaries
-    adm2 = load_gaza_admin_polygons(adm_level=2)[
-        ["adm2_name", "admin_id", "geometry"]
-    ].rename(columns={"admin_id": "adm2_id"})
+    adm2 = load_gaza_admin_polygons(adm_level=2)[["adm2_name", "admin_id", "geometry"]].rename(
+        columns={"admin_id": "adm2_id"}
+    )
 
     # Spatial join on centroid
     gdf_centroids = gpd.GeoDataFrame(

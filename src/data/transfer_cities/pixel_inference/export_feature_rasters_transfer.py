@@ -26,31 +26,32 @@ Usage:
     python3 src/data/transfer_cities/pixel_inference/export_feature_rasters_transfer.py --city MOS --force
 """
 
-import ee
 import argparse
+import sys
+from pathlib import Path
+
+import ee
 import geemap
 import geopandas as gpd
-from pathlib import Path
 from tqdm import tqdm
 
-import sys
-sys.path.insert(0, '/scratch/s1214882/gaza-damage-mapping')
+sys.path.insert(0, "/scratch/s1214882/gaza-damage-mapping")
 
-from src.utils.gee import init_gee, asset_exists, create_folders_recursively
-from src.utils.gdrive import create_drive_folder, get_files_in_folder
-from src.inference.dense_inference import col_to_features
-from src.data.sentinel1.collection import get_s1_collection
 from src.data.quadkeys import get_intersecting_quadkeys
+from src.data.sentinel1.collection import get_s1_collection
 from src.data.transfer_cities.constants_transfer import TRANSFER_CITIES, TRANSFER_GEE_FOLDER
+from src.inference.dense_inference import col_to_features
+from src.utils.gdrive import create_drive_folder, get_files_in_folder
+from src.utils.gee import asset_exists, create_folders_recursively, init_gee
 
 init_gee()
 
-SCALE          = 10
-REDUCER_NAMES  = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
+SCALE = 10
+REDUCER_NAMES = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
 EXTRACT_WINDOW = "1x1"
-QUADKEY_ZOOM   = 12   # Same as Gaza pipeline
-DRIVE_BASE     = "transfer_feature_rasters"
-LOCAL_BASE     = Path("/scratch/s1214882/gaza-damage-mapping/data/transfer_cities/feature_rasters")
+QUADKEY_ZOOM = 12  # Same as Gaza pipeline
+DRIVE_BASE = "transfer_feature_rasters"
+LOCAL_BASE = Path("/scratch/s1214882/gaza-damage-mapping/data/transfer_cities/feature_rasters")
 
 
 def get_city_quadkeys_gee(city_id: str, aoi_fp: Path) -> tuple:
@@ -81,6 +82,7 @@ def get_city_quadkeys_gee(city_id: str, aoi_fp: Path) -> tuple:
         task.start()
         print(f"  Uploading quadkey grid to GEE... waiting...")
         import time
+
         while not asset_exists(asset_id):
             time.sleep(5)
         print(f"  Quadkey grid ready: {asset_id}")
@@ -90,8 +92,7 @@ def get_city_quadkeys_gee(city_id: str, aoi_fp: Path) -> tuple:
     return grids, ids
 
 
-def already_exported(city_id: str, window_str: str, orbit: int,
-                     qk_id: str, drive_folder: str) -> bool:
+def already_exported(city_id: str, window_str: str, orbit: int, qk_id: str, drive_folder: str) -> bool:
     """Check if tile already exists locally or on Drive."""
     fp_local = LOCAL_BASE / city_id / window_str / f"orbit{orbit}" / f"qk_{qk_id}.tif"
     if fp_local.exists():
@@ -108,8 +109,8 @@ def export_feature_rasters_city(
     force: bool = False,
     window_filter: list = None,
 ) -> None:
-    cfg       = TRANSFER_CITIES[city_id]
-    orbits    = cfg["orbits"]
+    cfg = TRANSFER_CITIES[city_id]
+    orbits = cfg["orbits"]
     pre_period = cfg["pre_period"]
     post_periods = cfg["post_periods"]
     all_periods = [pre_period] + list(post_periods)
@@ -134,7 +135,7 @@ def export_feature_rasters_city(
     n_skipped = 0
 
     for i, post_period in enumerate(all_periods):
-        window_str   = f"w{i+1:02d}_{post_period[0]}_{post_period[1]}"
+        window_str = f"w{i+1:02d}_{post_period[0]}_{post_period[1]}"
         time_periods = dict(pre=pre_period, post=post_period)
 
         # Apply window filter
@@ -157,10 +158,11 @@ def export_feature_rasters_city(
                     pass
 
             # Filter already-exported tiles
-            ids_to_export = ids if force else [
-                qk_id for qk_id in ids
-                if not already_exported(city_id, window_str, orbit, qk_id, drive_folder)
-            ]
+            ids_to_export = (
+                ids
+                if force
+                else [qk_id for qk_id in ids if not already_exported(city_id, window_str, orbit, qk_id, drive_folder)]
+            )
 
             if not ids_to_export:
                 print(f"    orbit{orbit}: all {len(ids)} tiles already exported — skipping")

@@ -9,8 +9,8 @@ from shapely import GeometryType
 from shapely.geometry import box
 
 from src.constants import ASSETS_PATH, DATA_PATH
-from src.utils.geo import load_gaza_strip_boundary
 from src.utils.gee import asset_exists, create_folders_recursively, init_gee
+from src.utils.geo import load_gaza_strip_boundary
 from src.utils.time import timeit
 
 init_gee()
@@ -87,8 +87,7 @@ def create_gaza_quadkeys_grid(zoom: int, fp_to_save: str | Path):
     """Create a quadkeys grid for Gaza at a specific zoom level."""
     gaza = load_gaza_strip_boundary()
     quadkeys = get_intersecting_quadkeys(gaza, zoom)
-    quadkeys["area_in_gaza"] = quadkeys.geometry.apply(
-        lambda geo: geo.intersection(gaza).area / geo.area)
+    quadkeys["area_in_gaza"] = quadkeys.geometry.apply(lambda geo: geo.intersection(gaza).area / geo.area)
     quadkeys.to_file(fp_to_save, driver="GeoJSON")
     print(f"Saved quadkeys grid for Gaza at zoom level {zoom}.")
 

@@ -18,16 +18,13 @@ Forth HPC compute nodes lack internet access, so pipeline is split:
     Step 2 (this script): Run as Slurm batch job — computes features from local cache
 """
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from tqdm.auto import tqdm
 
-from src.constants import (
-    AOIS_TRAIN, AOIS_TEST,
-    DATA_PATH, ASSETS_PATH,
-    GAZA_WAR_START, PRE_PERIOD, POST_PERIODS,
-)
+from src.constants import AOIS_TEST, AOIS_TRAIN, ASSETS_PATH, DATA_PATH, GAZA_WAR_START, POST_PERIODS, PRE_PERIOD
 
 # Local cache for downloaded intermediate assets
 CACHE_DIR = DATA_PATH / "intermediate_features_cache"
@@ -40,18 +37,19 @@ REDUCER_NAMES = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
 
 # ==================== FEATURE COMPUTATION ====================
 
+
 def compute_stats(series: pd.Series) -> dict:
     """
     Compute 7 statistics for a series — mirrors GEE reducers.
     Matches Dietrich et al. reducer names exactly.
     """
     return {
-        "mean":     series.mean(),
-        "stdDev":   series.std(),
-        "median":   series.median(),
-        "min":      series.min(),
-        "max":      series.max(),
-        "skew":     series.skew(),
+        "mean": series.mean(),
+        "stdDev": series.std(),
+        "median": series.median(),
+        "min": series.min(),
+        "max": series.max(),
+        "skew": series.skew(),
         "kurtosis": series.kurtosis(),
     }
 
@@ -107,26 +105,24 @@ def compute_features_for_window(
         return pd.DataFrame()
 
     # --- Compute features per point ---
-    prefix_pre  = f"pre_{EXTRACT_WINDOW}"
+    prefix_pre = f"pre_{EXTRACT_WINDOW}"
     prefix_post = f"post_{EXTRACT_WINDOW}"
 
     # Filter to pre and post date ranges
-    pre_df  = df[(df["s1_date"] >= pre_period[0])  & (df["s1_date"] <= pre_period[1])]
+    pre_df = df[(df["s1_date"] >= pre_period[0]) & (df["s1_date"] <= pre_period[1])]
     post_df = df[(df["s1_date"] >= post_period[0]) & (df["s1_date"] <= post_period[1])]
 
     # Get unique point metadata
-    meta = df.groupby("unosat_id").first()[
-        ["damage", "aoi", "date_first_severe", "site_id"]
-    ].reset_index()
+    meta = df.groupby("unosat_id").first()[["damage", "aoi", "date_first_severe", "site_id"]].reset_index()
     meta = meta.rename(columns={"date_first_severe": "date"})
 
     results = meta.copy()
     results["label"] = label
     results["orbit"] = orbit
-    results["start_pre"]  = pre_period[0]
-    results["end_pre"]    = pre_period[1]
+    results["start_pre"] = pre_period[0]
+    results["end_pre"] = pre_period[1]
     results["start_post"] = post_period[0]
-    results["end_post"]   = post_period[1]
+    results["end_post"] = post_period[1]
 
     # Compute statistics for each band and period using vectorised groupby
     for band in ["VV", "VH"]:
@@ -177,18 +173,13 @@ def extract_features_local(
         print(f"\nProcessing {aoi}...")
         for orbit in ORBITS:
             fp = CACHE_DIR / f"{aoi}_orbit{orbit}.parquet"
-            assert fp.exists(), (
-                f"Cache file {fp} not found. "
-                f"Run download_intermediate_assets.py first."
-            )
+            assert fp.exists(), f"Cache file {fp} not found. " f"Run download_intermediate_assets.py first."
 
             print(f"  Loading {aoi}_orbit{orbit}...")
             df = pd.read_parquet(fp)
 
             for post_period in tqdm(post_periods, desc=f"    windows"):
-                features = compute_features_for_window(
-                    df, pre_period, post_period, orbit
-                )
+                features = compute_features_for_window(df, pre_period, post_period, orbit)
                 if len(features) > 0:
                     all_features.append(features)
 

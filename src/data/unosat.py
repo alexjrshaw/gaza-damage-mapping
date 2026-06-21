@@ -1,12 +1,14 @@
+from pathlib import Path
+
 import ee
 import geopandas as gpd
 import pandas as pd
-from pathlib import Path
 from shapely.geometry import Polygon
 
-from src.constants import DATA_PATH, OLD_ASSETS_PATH, ASSETS_PATH
+from src.constants import ASSETS_PATH, DATA_PATH, OLD_ASSETS_PATH
 
 # ==================== LOCAL DATA ====================
+
 
 def load_unosat_labels(
     aoi: str | list[str] | None = None,
@@ -37,7 +39,9 @@ def load_unosat_labels(
             gdf = gdf.loc[gdf.groupby(gdf.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))["ep"].idxmax()]
         elif combine_epoch == "min":
             # Only keep strongest label for each point
-            gdf = gdf.loc[gdf.groupby(gdf.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))["damage"].idxmin()]
+            gdf = gdf.loc[
+                gdf.groupby(gdf.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))["damage"].idxmin()
+            ]
         elif combine_epoch == "first_severe":
             # Keep earliest epoch where damage is class 1 or 2.
             # This is tunosat in Dietrich et al. (2025) eq. 1 —
@@ -46,7 +50,9 @@ def load_unosat_labels(
             # so combine_epoch='last' naturally gave the detection date.
             # Gaza has 14 epochs so we must explicitly find first severe.
             severe = gdf[gdf["damage"].isin([1, 2])]
-            gdf = severe.loc[severe.groupby(severe.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))["ep"].idxmin()]
+            gdf = severe.loc[
+                severe.groupby(severe.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))["ep"].idxmin()
+            ]
         else:
             raise ValueError("combine_epoch must be 'last', 'min' or 'first_severe'")
 
@@ -91,6 +97,7 @@ def load_unosat_geo(aoi: str) -> Polygon:
 
 # ==================== GEE DATA ====================
 
+
 def load_unosat_labels_gee(aoi: str, all_labels: bool = False) -> ee.FeatureCollection:
     """
     Get the UNOSAT labels for the given AOI.
@@ -131,16 +138,17 @@ N_EPOCHS = 14
 
 # Map governorates to AOI IDs
 GOVERNORATE_TO_AOI = {
-    "North Gaza":    "GAZ1",
-    "Gaza":          "GAZ2",
+    "North Gaza": "GAZ1",
+    "Gaza": "GAZ2",
     "Deir Al-Balah": "GAZ3",
-    "Khan Yunis":    "GAZ4",
-    "Rafah":         "GAZ5",
+    "Khan Yunis": "GAZ4",
+    "Rafah": "GAZ5",
 }
 
 
 def preprocess_gaza_unosat(
-    gdb_path: Path = GDB_PATH,) -> None:
+    gdb_path: Path = GDB_PATH,
+) -> None:
     """
     Convert raw UNOSAT Gaza GDB into unosat_labels.geojson and unosat_aois.geojson.
 
@@ -172,10 +180,10 @@ def preprocess_gaza_unosat(
     print(f"Loading {LAYER_NAME} from {gdb_path} ...")
     gdf_raw = gpd.read_file(gdb_path, layer=LAYER_NAME)
     from shapely.ops import transform
+
     gdf_raw.geometry = gdf_raw.geometry.apply(lambda geom: transform(lambda x, y, *args: (x, y), geom))
     gdf_raw = gdf_raw.to_crs("EPSG:4326")
-    print(f"  Loaded {len(gdf_raw):,} points across "
-          f"{gdf_raw['Governorate'].nunique()} governorates")
+    print(f"  Loaded {len(gdf_raw):,} points across " f"{gdf_raw['Governorate'].nunique()} governorates")
 
     # --- Convert wide format to long format ---
     # Ukraine data was already long format (one row per point).
@@ -191,27 +199,30 @@ def preprocess_gaza_unosat(
         # Collect all epochs into a list of (date, damage_class, epoch_num)
         epochs = [(row.get("SensorDate"), row.get("Main_Damage_Site_Class"), 1)]
         for i in range(2, N_EPOCHS + 1):
-            epochs.append((
-                row.get(f"SensorDate_{i}"),
-                row.get(f"Main_Damage_Site_Class_{i}"),
-                i,
-            ))
+            epochs.append(
+                (
+                    row.get(f"SensorDate_{i}"),
+                    row.get(f"Main_Damage_Site_Class_{i}"),
+                    i,
+                )
+            )
 
         # Build per-epoch records — skip epochs with no assessment
         point_records = []
         for sensor_date, damage_class, ep_num in epochs:
             if pd.isna(damage_class):
                 continue
-            point_records.append({
-                "unosat_id": f"{row_idx}_{ep_num}",
-                "site_id":   row_idx,
-                "aoi":        aoi,
-                "damage":     int(damage_class),
-                "ep":         ep_num,
-                "date":       str(pd.to_datetime(sensor_date).date())
-                              if pd.notna(sensor_date) else None,
-                "geometry":   row["geometry"],
-            })
+            point_records.append(
+                {
+                    "unosat_id": f"{row_idx}_{ep_num}",
+                    "site_id": row_idx,
+                    "aoi": aoi,
+                    "damage": int(damage_class),
+                    "ep": ep_num,
+                    "date": str(pd.to_datetime(sensor_date).date()) if pd.notna(sensor_date) else None,
+                    "geometry": row["geometry"],
+                }
+            )
 
         if not point_records:
             continue
@@ -219,23 +230,22 @@ def preprocess_gaza_unosat(
         # --- Compute summary fields across all epochs for this point ---
         # These follow the spirit of Dietrich et al. eq. 1 where tunosat
         # is the date the post-event image was acquired confirming damage.
-        dates = [pd.to_datetime(r["date"]) for r in point_records
-                 if r["date"] is not None]
+        dates = [pd.to_datetime(r["date"]) for r in point_records if r["date"] is not None]
         severe = [r for r in point_records if r["damage"] in [1, 2]]
         destroyed = [r for r in point_records if r["damage"] == 1]
         damage_classes = [r["damage"] for r in point_records]
 
         date_first = str(min(dates).date()) if dates else None
 
-        date_first_severe = str(min(
-            pd.to_datetime(r["date"]) for r in severe
-            if r["date"] is not None
-        ).date()) if severe else None
+        date_first_severe = (
+            str(min(pd.to_datetime(r["date"]) for r in severe if r["date"] is not None).date()) if severe else None
+        )
 
-        date_first_destroyed = str(min(
-            pd.to_datetime(r["date"]) for r in destroyed
-            if r["date"] is not None
-        ).date()) if destroyed else None
+        date_first_destroyed = (
+            str(min(pd.to_datetime(r["date"]) for r in destroyed if r["date"] is not None).date())
+            if destroyed
+            else None
+        )
 
         damage_max = min(damage_classes)
 
@@ -262,6 +272,7 @@ def preprocess_gaza_unosat(
     # Use official boundaries rather than convex hulls of damage points
     print("Creating AOI polygons from OCHA admin boundaries ...")
     from src.utils.geo import load_gaza_admin_polygons
+
     adm2 = load_gaza_admin_polygons(adm_level=2)
     aoi_records = []
     for _, row in adm2.iterrows():
@@ -269,11 +280,13 @@ def preprocess_gaza_unosat(
         aoi_id = GOVERNORATE_TO_AOI.get(gov)
         if aoi_id is None:
             continue
-        aoi_records.append({
-            "aoi":         aoi_id,
-            "governorate": gov,
-            "geometry":    row["geometry"],
-        })
+        aoi_records.append(
+            {
+                "aoi": aoi_id,
+                "governorate": gov,
+                "geometry": row["geometry"],
+            }
+        )
     gdf_aois = gpd.GeoDataFrame(aoi_records, geometry="geometry", crs="EPSG:4326")
     out_aois = DATA_PATH / "unosat_aois.geojson"
     gdf_aois.to_file(out_aois, driver="GeoJSON")
@@ -282,17 +295,15 @@ def preprocess_gaza_unosat(
     # --- Summary ---
     print("\n── Label counts by AOI and damage class ──")
     severe_only = gdf_long[gdf_long["damage"].isin([1, 2])]
-    first_severe = severe_only.loc[severe_only.groupby(severe_only.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))["ep"].idxmin()]
-    
+    first_severe = severe_only.loc[
+        severe_only.groupby(severe_only.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))["ep"].idxmin()
+    ]
+
     print(first_severe.groupby(["aoi", "damage"]).size().to_string())
     print(f"\nTotal unique severely damaged points: {len(first_severe):,}")
     print("\nDistribution of date_first_severe:")
-    print(
-        first_severe["date_first_severe"]
-        .value_counts()
-        .sort_index()
-        .to_string()
-    )
+    print(first_severe["date_first_severe"].value_counts().sort_index().to_string())
+
 
 def export_gaza_unosat_per_aoi() -> None:
     """
@@ -305,12 +316,12 @@ def export_gaza_unosat_per_aoi() -> None:
 
     print("Exporting per-AOI GeoJSON files for GEE upload...")
     labels_fp = DATA_PATH / "unosat_labels.geojson"
-    aois_fp   = DATA_PATH / "unosat_aois.geojson"
+    aois_fp = DATA_PATH / "unosat_aois.geojson"
     assert labels_fp.exists(), "Run preprocess_gaza_unosat() first"
-    assert aois_fp.exists(),   "Run preprocess_gaza_unosat() first"
+    assert aois_fp.exists(), "Run preprocess_gaza_unosat() first"
 
     gdf_labels = gpd.read_file(labels_fp)
-    gdf_aois   = gpd.read_file(aois_fp)
+    gdf_aois = gpd.read_file(aois_fp)
 
     out_dir = DATA_PATH / "gee_upload"
     out_dir.mkdir(exist_ok=True, parents=True)
@@ -319,10 +330,7 @@ def export_gaza_unosat_per_aoi() -> None:
         print(f"\nProcessing {aoi} ...")
 
         # Labels (use first epoch where damage is class 1 or 2)
-        pts = gdf_labels[
-            (gdf_labels["aoi"] == aoi) &
-            (gdf_labels["damage"].isin([1, 2]))
-        ].copy()
+        pts = gdf_labels[(gdf_labels["aoi"] == aoi) & (gdf_labels["damage"].isin([1, 2]))].copy()
         pts = pts.loc[pts.groupby(pts.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))["ep"].idxmin()]
         fp = out_dir / f"UNOSAT_labels_{aoi}.geojson"
         pts.to_file(fp, driver="GeoJSON")
@@ -330,7 +338,9 @@ def export_gaza_unosat_per_aoi() -> None:
 
         # Use first epoch per point (for full labels)
         pts_full = gdf_labels[gdf_labels["aoi"] == aoi].copy()
-        pts_full = pts_full.loc[pts_full.groupby(pts_full.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))["ep"].idxmin()]
+        pts_full = pts_full.loc[
+            pts_full.groupby(pts_full.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))["ep"].idxmin()
+        ]
         fp_full = out_dir / f"UNOSAT_labels_{aoi}_full.geojson"
         pts_full.to_file(fp_full, driver="GeoJSON")
         print(f"  Saved {len(pts_full)} points (all classes) to {fp_full}")
@@ -357,23 +367,27 @@ def export_gaza_unosat_per_aoi() -> None:
         fp_aoi = out_dir / f"AOI_{aoi}.geojson"
         print(f"earthengine upload table --asset_id={asset_path_aoi} {fp_aoi}")
 
+
 def upload_gaza_unosat_to_gee(aois: list[str] | None = None) -> None:
     """
     Upload preprocessed UNOSAT Gaza labels and AOI boundaries to GEE assets.
     Files under 10MB upload directly; larger files are uploaded in chunks and merged.
     """
     import time
+
     import geemap
+
     from src.utils.gee import asset_exists, create_folder, init_gee
+
     init_gee(project="gaza-damage-mapping")
 
     labels_fp = DATA_PATH / "unosat_labels.geojson"
-    aois_fp   = DATA_PATH / "unosat_aois.geojson"
+    aois_fp = DATA_PATH / "unosat_aois.geojson"
     assert labels_fp.exists(), "Run preprocess_gaza_unosat() first"
-    assert aois_fp.exists(),   "Run preprocess_gaza_unosat() first"
+    assert aois_fp.exists(), "Run preprocess_gaza_unosat() first"
 
     gdf_labels = gpd.read_file(labels_fp)
-    gdf_aois   = gpd.read_file(aois_fp)
+    gdf_aois = gpd.read_file(aois_fp)
 
     # Ensure folders exist
     for folder in ["UNOSAT_labels", "AOIs"]:
@@ -405,7 +419,7 @@ def upload_gaza_unosat_to_gee(aois: list[str] | None = None) -> None:
             return
 
         n = len(gdf)
-        chunks = [gdf.iloc[i:i+chunk_size] for i in range(0, n, chunk_size)]
+        chunks = [gdf.iloc[i : i + chunk_size] for i in range(0, n, chunk_size)]
         print(f"  Uploading {n} features in {len(chunks)} chunks...")
 
         chunk_ids = []
@@ -429,9 +443,7 @@ def upload_gaza_unosat_to_gee(aois: list[str] | None = None) -> None:
         print(f"  All chunks uploaded, merging...")
 
         # Merge and export as single asset
-        merged = ee.FeatureCollection(
-            [ee.FeatureCollection(cid) for cid in chunk_ids]
-        ).flatten()
+        merged = ee.FeatureCollection([ee.FeatureCollection(cid) for cid in chunk_ids]).flatten()
         merge_task = ee.batch.Export.table.toAsset(
             collection=merged,
             description=description,
@@ -458,10 +470,7 @@ def upload_gaza_unosat_to_gee(aois: list[str] | None = None) -> None:
         upload_direct(aoi_row, ASSETS_PATH + f"AOIs/{aoi}", f"AOI_{aoi}")
 
         # Labels (classes 1+2, latest epoch per point)
-        pts = gdf_labels[
-            (gdf_labels["aoi"] == aoi) &
-            (gdf_labels["damage"].isin([1, 2]))
-        ].copy()
+        pts = gdf_labels[(gdf_labels["aoi"] == aoi) & (gdf_labels["damage"].isin([1, 2]))].copy()
         pts = pts.loc[pts.groupby(pts.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))["ep"].idxmin()]
         asset_id = ASSETS_PATH + f"UNOSAT_labels/{aoi}"
         if len(pts) > CHUNK_THRESHOLD:
@@ -470,15 +479,17 @@ def upload_gaza_unosat_to_gee(aois: list[str] | None = None) -> None:
             upload_direct(pts, asset_id, f"UNOSAT_labels_{aoi}")
 
         # Labels full (all classes, latest epoch per point) - skipped for now, not needed for core pipeline
-        #pts_full = gdf_labels[gdf_labels["aoi"] == aoi].copy()
-        #pts_full = pts_full.loc[pts_full.groupby(pts_full.geometry.to_wkt())["ep"].idxmin()]
-        #asset_id_full = ASSETS_PATH + f"UNOSAT_labels/{aoi}_full"
+        # pts_full = gdf_labels[gdf_labels["aoi"] == aoi].copy()
+        # pts_full = pts_full.loc[pts_full.groupby(pts_full.geometry.to_wkt())["ep"].idxmin()]
+        # asset_id_full = ASSETS_PATH + f"UNOSAT_labels/{aoi}_full"
 
         # upload when needed by changing skip_full=False
         skip_full = True
         if not skip_full:
             pts_full = gdf_labels[gdf_labels["aoi"] == aoi].copy()
-            pts_full = pts_full.loc[pts_full.groupby(pts_full.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))["ep"].idxmin()]
+            pts_full = pts_full.loc[
+                pts_full.groupby(pts_full.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))["ep"].idxmin()
+            ]
             asset_id_full = ASSETS_PATH + f"UNOSAT_labels/{aoi}_full"
             if len(pts_full) > CHUNK_THRESHOLD:
                 upload_chunked(pts_full, asset_id_full, f"UNOSAT_labels_{aoi}_full")
@@ -487,10 +498,11 @@ def upload_gaza_unosat_to_gee(aois: list[str] | None = None) -> None:
 
     print("\nAll uploads complete.")
 
+
 if __name__ == "__main__":
     import sys
+
     preprocess_gaza_unosat()
     if "--upload" in sys.argv:
         export_gaza_unosat_per_aoi()
         upload_gaza_unosat_to_gee()
-

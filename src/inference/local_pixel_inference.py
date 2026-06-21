@@ -31,12 +31,12 @@ from pathlib import Path
 
 import numpy as np
 import rasterio
-from rasterio.transform import from_bounds
 from omegaconf import OmegaConf
+from rasterio.transform import from_bounds
 from tqdm.auto import tqdm
 
-from src.constants import DATA_PATH, PRE_PERIOD, POST_PERIODS
 from src.classification.utils import get_features_names
+from src.constants import DATA_PATH, POST_PERIODS, PRE_PERIOD
 
 # ==================== CONSTANTS ====================
 
@@ -62,6 +62,7 @@ FEATURE_COLS = get_features_names(CFG)  # 28 feature names in correct order
 
 
 # ==================== LOADING ====================
+
 
 def load_model(fp: Path = MODEL_FP):
     """Load trained sklearn RF model."""
@@ -89,6 +90,7 @@ def load_tile(fp: Path) -> tuple[np.ndarray, list[str], dict]:
 
 
 # ==================== CLASSIFICATION ====================
+
 
 def classify_tile(
     data: np.ndarray,
@@ -150,6 +152,7 @@ def aggregate_orbits(
 
 # ==================== SAVING ====================
 
+
 def save_probability_tile(
     prob: np.ndarray,
     profile: dict,
@@ -179,6 +182,7 @@ def save_probability_tile(
 
 
 # ==================== PIPELINE ====================
+
 
 def classify_window(
     window_str: str,

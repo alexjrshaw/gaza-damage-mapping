@@ -21,17 +21,15 @@ Usage:
     python3 src/data/transfer_cities/create_intermediate_assets.py
 """
 
-import ee
 import sys
-sys.path.insert(0, '/scratch/s1214882/gaza-damage-mapping')
 
-from src.utils.gee import init_gee, asset_exists, create_folder
+import ee
+
+sys.path.insert(0, "/scratch/s1214882/gaza-damage-mapping")
+
 from src.data.sentinel1.collection import get_s1_collection
-from src.utils.gee import fill_nan_with_mean
-from src.data.transfer_cities.constants_transfer import (
-    TRANSFER_CITIES,
-    TRANSFER_GEE_FOLDER,
-)
+from src.data.transfer_cities.constants_transfer import TRANSFER_CITIES, TRANSFER_GEE_FOLDER
+from src.utils.gee import asset_exists, create_folder, fill_nan_with_mean, init_gee
 
 init_gee()
 
@@ -106,13 +104,15 @@ def create_fc_city_orbit(
 
     def extract_image(img):
         """Extract VV and VH at all UNOSAT points for one S1 image."""
-        return img.select(["VV", "VH"]).reduceRegions(
-            collection=labels,
-            reducer=ee.Reducer.mean(),
-            scale=SCALE,
-        ).map(lambda f: f.set(
-            "system:time_start", img.get("system:time_start")
-        ))
+        return (
+            img.select(["VV", "VH"])
+            .reduceRegions(
+                collection=labels,
+                reducer=ee.Reducer.mean(),
+                scale=SCALE,
+            )
+            .map(lambda f: f.set("system:time_start", img.get("system:time_start")))
+        )
 
     # Apply to all images and flatten — mirrors Gaza pipeline exactly
     fc_extracted = s1.map(extract_image).flatten()
@@ -165,11 +165,10 @@ def create_all_intermediate_assets(force: bool = False) -> None:
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--force", action="store_true",
-                        help="Re-export even if assets already exist")
-    parser.add_argument("--city", type=str, default=None,
-                        help="Run for a single city only (e.g. ALP)")
+    parser.add_argument("--force", action="store_true", help="Re-export even if assets already exist")
+    parser.add_argument("--city", type=str, default=None, help="Run for a single city only (e.g. ALP)")
     args = parser.parse_args()
 
     if args.city:
@@ -182,4 +181,3 @@ if __name__ == "__main__":
             create_fc_city_orbit(city_id, orbit, cfg, force=args.force)
     else:
         create_all_intermediate_assets(force=args.force)
-    

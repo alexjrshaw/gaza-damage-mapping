@@ -19,6 +19,7 @@ def aoi_orbit_iterator():
 def get_all_aois():
     """Return all AOIs"""
     from src.constants import AOIS
+
     return AOIS
 
 

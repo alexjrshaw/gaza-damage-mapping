@@ -19,38 +19,38 @@ Usage:
     python3 src/data/transfer_cities/inference_transfer.py
 """
 
-import pickle
 import json
+import pickle
+import sys
+from pathlib import Path
+
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from omegaconf import OmegaConf
-import sys
-sys.path.insert(0, '/scratch/s1214882/gaza-damage-mapping')
 
-from src.constants import DATA_PATH, PRE_PERIOD
+sys.path.insert(0, "/scratch/s1214882/gaza-damage-mapping")
+
 from src.classification.utils import get_features_names
-from src.data.transfer_cities.constants_transfer import (
-    TRANSFER_CITIES,
-    TRANSFER_FEATURES_DIR,
-    TRANSFER_RUNS_DIR,
-)
+from src.constants import DATA_PATH, PRE_PERIOD
+from src.data.transfer_cities.constants_transfer import TRANSFER_CITIES, TRANSFER_FEATURES_DIR, TRANSFER_RUNS_DIR
 
 # Gaza baseline model
 GAZA_MODEL_RUN = "rf_s1_2months_50trees_1x1_all7reducers_baseline"
-GAZA_MODEL_FP  = DATA_PATH / f"runs/{GAZA_MODEL_RUN}/model.pkl"
+GAZA_MODEL_FP = DATA_PATH / f"runs/{GAZA_MODEL_RUN}/model.pkl"
 
 # Feature config — must match Gaza training exactly
-GAZA_CFG = OmegaConf.create(dict(
-    data=dict(
-        s1=dict(subset_bands=None),
-        s2=None,
-        extract_winds="1x1",
-        time_periods=dict(pre=PRE_PERIOD, post="2months"),
-    ),
-    reducer_names=["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"],
-))
+GAZA_CFG = OmegaConf.create(
+    dict(
+        data=dict(
+            s1=dict(subset_bands=None),
+            s2=None,
+            extract_winds="1x1",
+            time_periods=dict(pre=PRE_PERIOD, post="2months"),
+        ),
+        reducer_names=["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"],
+    )
+)
 FEATURE_COLS = get_features_names(GAZA_CFG)
 
 
@@ -103,14 +103,11 @@ def run_inference_city(city_id: str, cfg: dict, clf) -> gpd.GeoDataFrame:
     )
 
     # Pivot to wide format
-    preds_wide = (
-        preds.pivot(
-            index=["unosat_id", "aoi"],
-            columns="start_post",
-            values="classification",
-        )
-        .sort_values(["aoi", "unosat_id"])
-    )
+    preds_wide = preds.pivot(
+        index=["unosat_id", "aoi"],
+        columns="start_post",
+        values="classification",
+    ).sort_values(["aoi", "unosat_id"])
     preds_wide.columns = [f"pred_{c}" for c in preds_wide.columns]
 
     # Load UNOSAT labels for geometry and date

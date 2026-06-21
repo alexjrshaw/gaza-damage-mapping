@@ -28,29 +28,30 @@ Usage:
     python3 src/data/transfer_cities/pixel_inference/evaluate_pixel_transfer.py --city MOS
 """
 
-import json
 import argparse
+import json
+import sys
 import warnings
+from pathlib import Path
+
+import geopandas as gpd
 import numpy as np
 import pandas as pd
-import geopandas as gpd
 import rasterio
 from rasterio.merge import merge
 from rasterio.windows import Window
-from pathlib import Path
 from sklearn import metrics as sk_metrics
 from tqdm.auto import tqdm
 
-import sys
-sys.path.insert(0, '/scratch/s1214882/gaza-damage-mapping')
+sys.path.insert(0, "/scratch/s1214882/gaza-damage-mapping")
 
-from src.data.transfer_cities.constants_transfer import TRANSFER_CITIES
 from src.constants import DATA_PATH
+from src.data.transfer_cities.constants_transfer import TRANSFER_CITIES
 
 TRANSFER_PROB_BASE = DATA_PATH / "transfer_cities" / "probability_rasters"
-TRANSFER_RUNS_DIR  = DATA_PATH / "transfer_cities" / "runs"
-WINDOW_SIZE        = 3
-THRESHOLDS         = [0.5, 0.650, 0.655, 0.675]
+TRANSFER_RUNS_DIR = DATA_PATH / "transfer_cities" / "runs"
+WINDOW_SIZE = 3
+THRESHOLDS = [0.5, 0.650, 0.655, 0.675]
 USABLE_THRESHOLD_PCT = 50.0
 
 
@@ -78,9 +79,9 @@ def sample_merged_raster(tiles: list, gdf: gpd.GeoDataFrame) -> np.ndarray:
 
             # Extract 3x3 patch
             r_start = max(0, row - half)
-            r_end   = min(merged.shape[0], row + half + 1)
+            r_end = min(merged.shape[0], row + half + 1)
             c_start = max(0, col - half)
-            c_end   = min(merged.shape[1], col + half + 1)
+            c_end = min(merged.shape[1], col + half + 1)
 
             patch = merged[r_start:r_end, c_start:c_end]
             val = np.nanmax(patch) if patch.size > 0 else np.nan
@@ -93,9 +94,9 @@ def sample_merged_raster(tiles: list, gdf: gpd.GeoDataFrame) -> np.ndarray:
 
 
 def evaluate_pixel_city(city_id: str) -> dict:
-    cfg            = TRANSFER_CITIES[city_id]
+    cfg = TRANSFER_CITIES[city_id]
     conflict_start = cfg["conflict_start"]
-    prob_base      = TRANSFER_PROB_BASE / city_id
+    prob_base = TRANSFER_PROB_BASE / city_id
 
     print(f"\n{'='*60}")
     print(f"{city_id} — {cfg['city_name']} — PIXEL-LEVEL (3x3 max)")
@@ -108,17 +109,17 @@ def evaluate_pixel_city(city_id: str) -> dict:
     gdf = gpd.read_file(cfg["unosat_labels"])
     print(f"  UNOSAT points: {len(gdf):,}")
 
-    pre_period   = cfg["pre_period"]
+    pre_period = cfg["pre_period"]
     post_periods = cfg["post_periods"]
-    all_periods  = [pre_period] + list(post_periods)
+    all_periods = [pre_period] + list(post_periods)
 
-    pred_cols   = {}   # keyed by UNIQUE window_str -- avoids collisions when
-                        # two windows share the same end-date (e.g. w02/w08)
-    window_meta = {}   # window_str -> (end_post, valid_pct)
+    pred_cols = {}  # keyed by UNIQUE window_str -- avoids collisions when
+    # two windows share the same end-date (e.g. w02/w08)
+    window_meta = {}  # window_str -> (end_post, valid_pct)
 
     for i, post_period in enumerate(all_periods):
         window_str = f"w{i+1:02d}_{post_period[0]}_{post_period[1]}"
-        end_post   = post_period[1]
+        end_post = post_period[1]
         window_dir = prob_base / window_str
 
         if not window_dir.exists():
@@ -138,7 +139,7 @@ def evaluate_pixel_city(city_id: str) -> dict:
         print("  No probability rasters found.")
         return {}
 
-    usable_windows   = {w for w, (_, pct) in window_meta.items() if pct >= USABLE_THRESHOLD_PCT}
+    usable_windows = {w for w, (_, pct) in window_meta.items() if pct >= USABLE_THRESHOLD_PCT}
     unusable_windows = {w for w, (_, pct) in window_meta.items() if pct < USABLE_THRESHOLD_PCT}
 
     col_neg = [w for w in pred_cols if window_meta[w][0] <= conflict_start]
@@ -147,8 +148,10 @@ def evaluate_pixel_city(city_id: str) -> dict:
     print(f"\n  label=0 windows: {len(col_neg)} -> {sorted(col_neg)}")
     print(f"  label=1 windows: {len(col_pos)} -> {sorted(col_pos)}")
     print(f"  Usable windows (>={USABLE_THRESHOLD_PCT}% valid): {sorted(usable_windows)}")
-    print(f"  Excluded windows (<{USABLE_THRESHOLD_PCT}% valid -- insufficient SAR "
-          f"temporal density for skew/kurtosis): {sorted(unusable_windows)}")
+    print(
+        f"  Excluded windows (<{USABLE_THRESHOLD_PCT}% valid -- insufficient SAR "
+        f"temporal density for skew/kurtosis): {sorted(unusable_windows)}"
+    )
 
     if not col_pos or not col_neg:
         print("  WARNING: Missing positive or negative windows")
@@ -169,32 +172,38 @@ def evaluate_pixel_city(city_id: str) -> dict:
         pos_valid = ~np.isnan(pos_vals)
         neg_valid = ~np.isnan(neg_vals)
 
-        y_pos = (pos_vals[pos_valid] >= t_scaled)
-        y_neg = (neg_vals[neg_valid] >= t_scaled)
-        y_preds  = np.concatenate([y_pos, y_neg])
-        y_trues  = np.concatenate([np.ones(y_pos.size), np.zeros(y_neg.size)])
-        n_excl   = (pos_vals.size - y_pos.size) + (neg_vals.size - y_neg.size)
+        y_pos = pos_vals[pos_valid] >= t_scaled
+        y_neg = neg_vals[neg_valid] >= t_scaled
+        y_preds = np.concatenate([y_pos, y_neg])
+        y_trues = np.concatenate([np.ones(y_pos.size), np.zeros(y_neg.size)])
+        n_excl = (pos_vals.size - y_pos.size) + (neg_vals.size - y_neg.size)
 
-        f1   = sk_metrics.f1_score(y_trues, y_preds, zero_division=0)
+        f1 = sk_metrics.f1_score(y_trues, y_preds, zero_division=0)
         prec = sk_metrics.precision_score(y_trues, y_preds, zero_division=0)
-        rec  = sk_metrics.recall_score(y_trues, y_preds, zero_division=0)
-        auc  = sk_metrics.roc_auc_score(y_trues, y_preds) if len(set(y_trues)) > 1 else float("nan")
-        acc  = sk_metrics.accuracy_score(y_trues, y_preds)
+        rec = sk_metrics.recall_score(y_trues, y_preds, zero_division=0)
+        auc = sk_metrics.roc_auc_score(y_trues, y_preds) if len(set(y_trues)) > 1 else float("nan")
+        acc = sk_metrics.accuracy_score(y_trues, y_preds)
 
         results[f"t{t}"] = {
-            "f1": round(f1, 4), "precision": round(prec, 4),
+            "f1": round(f1, 4),
+            "precision": round(prec, 4),
             "recall": round(rec, 4),
             "roc_auc": round(auc, 4) if not np.isnan(auc) else None,
-            "accuracy": round(acc, 4), "threshold": t,
-            "n_pos": int(y_pos.size), "n_neg": int(y_neg.size),
+            "accuracy": round(acc, 4),
+            "threshold": t,
+            "n_pos": int(y_pos.size),
+            "n_neg": int(y_neg.size),
             "n_excluded_nan": int(n_excl),
-            "window_size": WINDOW_SIZE, "window_agg": "max",
+            "window_size": WINDOW_SIZE,
+            "window_agg": "max",
             "usable_windows": sorted(usable_windows),
             "excluded_windows": sorted(unusable_windows),
         }
         auc_str = f"{auc:>7.3f}" if not np.isnan(auc) else f"{'nan':>7}"
-        print(f"  {t:>7.3f} {f1:>7.3f} {prec:>7.3f} {rec:>7.3f} "
-              f"{auc_str} {y_pos.size:>8,} {y_neg.size:>8,}  (excluded={n_excl:,})")
+        print(
+            f"  {t:>7.3f} {f1:>7.3f} {prec:>7.3f} {rec:>7.3f} "
+            f"{auc_str} {y_pos.size:>8,} {y_neg.size:>8,}  (excluded={n_excl:,})"
+        )
 
     # Save
     run_dir = TRANSFER_RUNS_DIR / city_id

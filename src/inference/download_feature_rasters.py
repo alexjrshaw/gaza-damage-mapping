@@ -24,25 +24,28 @@ import time
 from pathlib import Path
 
 from src.constants import DATA_PATH
-from src.utils.gdrive import drive_to_local, get_files_in_folder, get_folder_id, drive
+from src.utils.gdrive import drive, drive_to_local, get_files_in_folder, get_folder_id
 
 # ==================== CONSTANTS ====================
 
 DRIVE_BASE = "gaza_feature_rasters"
 LOCAL_BASE = DATA_PATH / "feature_rasters"
-POLL_INTERVAL = 120   # seconds between Drive checks
+POLL_INTERVAL = 120  # seconds between Drive checks
 DELETE_AFTER_DOWNLOAD = True  # free Drive space after download
 
 
 # ==================== DOWNLOAD ====================
 
+
 def get_drive_windows() -> list[str]:
     """Returns list of window name strings from flat Drive folder names."""
     try:
-        all_folders = drive.ListFile({
-            "q": "mimeType='application/vnd.google-apps.folder' and trashed=false",
-            "maxResults": 1000,
-        }).GetList()
+        all_folders = drive.ListFile(
+            {
+                "q": "mimeType='application/vnd.google-apps.folder' and trashed=false",
+                "maxResults": 1000,
+            }
+        ).GetList()
         windows = set()
         for f in all_folders:
             title = f["title"]
@@ -68,11 +71,8 @@ def get_orbit_folder_id(window_str: str, orbit_str: str) -> str | None:
 def get_drive_tiles_by_id(orbit_id: str) -> list[tuple[str, str]]:
     """Returns list of (filename, file_id) tuples within an orbit folder."""
     try:
-        items = drive.ListFile({
-            "q": f"'{orbit_id}' in parents and trashed=false"
-        }).GetList()
-        return [(i["title"], i["id"]) for i in items
-                if i["title"].startswith("qk_") and i["title"].endswith(".tif")]
+        items = drive.ListFile({"q": f"'{orbit_id}' in parents and trashed=false"}).GetList()
+        return [(i["title"], i["id"]) for i in items if i["title"].startswith("qk_") and i["title"].endswith(".tif")]
     except Exception:
         return []
 
@@ -92,8 +92,7 @@ def download_orbit_folder(
     local_dir.mkdir(exist_ok=True, parents=True)
 
     tiles = get_drive_tiles_by_id(orbit_id)
-    new_tiles = [(name, fid) for name, fid in tiles
-                 if not already_downloaded(window_str, orbit_str, name)]
+    new_tiles = [(name, fid) for name, fid in tiles if not already_downloaded(window_str, orbit_str, name)]
 
     if not new_tiles:
         return 0
@@ -112,6 +111,7 @@ def download_orbit_folder(
 
 # ==================== MAIN LOOP ====================
 
+
 def run_download_loop() -> None:
     """
     Continuously poll Drive and download completed tiles.
@@ -129,7 +129,7 @@ def run_download_loop() -> None:
     total_skipped = 0
 
     while True:
-        
+
         n_new = 0
         for window_str in sorted(get_drive_windows()):
             for orbit_str in ["orbit87", "orbit94", "orbit160"]:
@@ -141,15 +141,11 @@ def run_download_loop() -> None:
 
         if n_new > 0:
             total_downloaded += n_new
-            print(f"Downloaded {n_new} new tiles "
-                  f"(total: {total_downloaded})")
-            local_size_gb = sum(
-                f.stat().st_size for f in LOCAL_BASE.rglob("*.tif")
-            ) / 1e9
+            print(f"Downloaded {n_new} new tiles " f"(total: {total_downloaded})")
+            local_size_gb = sum(f.stat().st_size for f in LOCAL_BASE.rglob("*.tif")) / 1e9
             print(f"Local storage used: {local_size_gb:.2f} GB")
         else:
-            print(f"No new tiles. Waiting {POLL_INTERVAL}s... "
-                  f"(total downloaded: {total_downloaded})")
+            print(f"No new tiles. Waiting {POLL_INTERVAL}s... " f"(total downloaded: {total_downloaded})")
 
         time.sleep(POLL_INTERVAL)
 

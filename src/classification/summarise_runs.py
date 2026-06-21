@@ -116,10 +116,10 @@ def print_comparison_table(df: pd.DataFrame) -> None:
         name = row["run_name"]
         if len(name) > 54:
             name = name[:51] + "..."
-        f1   = f"{row['f1']:.3f}" if pd.notna(row.get("f1")) else "—"
+        f1 = f"{row['f1']:.3f}" if pd.notna(row.get("f1")) else "—"
         prec = f"{row['precision']:.3f}" if pd.notna(row.get("precision")) else "—"
-        rec  = f"{row['recall']:.3f}" if pd.notna(row.get("recall")) else "—"
-        auc  = f"{row['roc_auc']:.3f}" if pd.notna(row.get("roc_auc")) else "—"
+        rec = f"{row['recall']:.3f}" if pd.notna(row.get("recall")) else "—"
+        auc = f"{row['roc_auc']:.3f}" if pd.notna(row.get("roc_auc")) else "—"
         print(f"{name:<55} {f1:>6} {prec:>6} {rec:>6} {auc:>6}")
 
     print("=" * 80)

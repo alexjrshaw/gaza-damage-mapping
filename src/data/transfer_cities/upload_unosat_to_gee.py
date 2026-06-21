@@ -15,15 +15,17 @@ Usage:
     python3 src/data/transfer_cities/upload_unosat_to_gee.py
 """
 
+import sys
 import time
+
 import ee
 import geemap
 import geopandas as gpd
-import sys
-sys.path.insert(0, '/scratch/s1214882/gaza-damage-mapping')
 
-from src.utils.gee import init_gee, asset_exists, create_folder
+sys.path.insert(0, "/scratch/s1214882/gaza-damage-mapping")
+
 from src.data.transfer_cities.constants_transfer import TRANSFER_CITIES, TRANSFER_GEE_FOLDER
+from src.utils.gee import asset_exists, create_folder, init_gee
 
 init_gee()
 
@@ -46,10 +48,7 @@ def wait_for_task(task, asset_id: str) -> None:
             print(f"  Done: {asset_id.split('/')[-1]}")
             return
         elif state in ["FAILED", "CANCELLED"]:
-            raise RuntimeError(
-                f"Export failed for {asset_id}: "
-                f"{status.get('error_message', 'unknown error')}"
-            )
+            raise RuntimeError(f"Export failed for {asset_id}: " f"{status.get('error_message', 'unknown error')}")
         time.sleep(10)
 
 
@@ -79,7 +78,7 @@ def upload_chunked(gdf: gpd.GeoDataFrame, asset_id: str, description: str) -> No
     Upload a large GeoDataFrame in chunks, then merge into one asset.
     Mirrors upload_chunked() in src/data/unosat.py exactly.
     """
-    chunks = [gdf.iloc[i:i+CHUNK_SIZE] for i in range(0, len(gdf), CHUNK_SIZE)]
+    chunks = [gdf.iloc[i : i + CHUNK_SIZE] for i in range(0, len(gdf), CHUNK_SIZE)]
     print(f"  Uploading {len(gdf):,} features in {len(chunks)} chunks...")
 
     # Upload chunks
@@ -107,9 +106,7 @@ def upload_chunked(gdf: gpd.GeoDataFrame, asset_id: str, description: str) -> No
     print(f"  All chunks uploaded, merging...")
 
     # Merge chunks into single asset
-    merged = ee.FeatureCollection(
-        [ee.FeatureCollection(cid) for cid in chunk_ids]
-    ).flatten()
+    merged = ee.FeatureCollection([ee.FeatureCollection(cid) for cid in chunk_ids]).flatten()
     merge_task = ee.batch.Export.table.toAsset(
         collection=merged,
         description=description[:100],
@@ -149,7 +146,7 @@ def upload_transfer_cities() -> None:
         print(f"{'='*60}")
 
         gdf_labels = gpd.read_file(cfg["unosat_labels"])
-        gdf_aoi    = gpd.read_file(cfg["unosat_aoi"])
+        gdf_aoi = gpd.read_file(cfg["unosat_aoi"])
 
         print(f"  Labels: {len(gdf_labels):,} points (classes 1+2)")
 

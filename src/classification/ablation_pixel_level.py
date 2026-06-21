@@ -23,32 +23,32 @@ Usage:
 import json
 import pickle
 import warnings
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+import sklearn.metrics as sk_metrics
 import xarray as xr
 from omegaconf import OmegaConf
-from tqdm.auto import tqdm
-import sklearn.metrics as sk_metrics
 from sklearn.ensemble import RandomForestClassifier
+from tqdm.auto import tqdm
 
-from src.constants import DATA_PATH, PRE_PERIOD, POST_PERIODS, AOIS_TEST, AOIS_TRAIN
 from src.classification.dataset_local import get_dataset_ready_local
+from src.classification.metrics import get_metrics
 from src.classification.utils import get_features_names
+from src.constants import AOIS_TEST, AOIS_TRAIN, DATA_PATH, POST_PERIODS, PRE_PERIOD
 from src.data.unosat import load_unosat_labels
 from src.data.utils import read_fp_within_geo
-from src.classification.metrics import get_metrics
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 
-ABLATION_DIR          = DATA_PATH / "ablation_runs" / "pixel_level"
-PROB_RASTERS_BASE     = DATA_PATH / "probability_rasters_ablation"
-MERGED_RASTERS_BASE   = DATA_PATH / "merged_probability_rasters_ablation"
-FEATURE_RASTERS_DIR   = DATA_PATH / "feature_rasters"
-RESULTS_JSON          = ABLATION_DIR / "results.json"
+ABLATION_DIR = DATA_PATH / "ablation_runs" / "pixel_level"
+PROB_RASTERS_BASE = DATA_PATH / "probability_rasters_ablation"
+MERGED_RASTERS_BASE = DATA_PATH / "merged_probability_rasters_ablation"
+FEATURE_RASTERS_DIR = DATA_PATH / "feature_rasters"
+RESULTS_JSON = ABLATION_DIR / "results.json"
 
 ABLATION_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -61,6 +61,7 @@ WINDOW_AGG = "max"
 SPATIAL_WINDOW = 3
 
 # ── Results I/O ────────────────────────────────────────────────────────────────
+
 
 def load_results() -> dict:
     if RESULTS_JSON.exists():
@@ -76,6 +77,7 @@ def save_results(results: dict) -> None:
 
 
 # ── Training ───────────────────────────────────────────────────────────────────
+
 
 def train_variant(
     variant_name: str,
@@ -97,24 +99,26 @@ def train_variant(
     if reducer_names is None:
         reducer_names = ALL_REDUCERS
 
-    cfg = OmegaConf.create(dict(
-        aggregation_method="mean",
-        model_name="random_forest",
-        model_kwargs=dict(numberOfTrees=n_trees, minLeafPopulation=3, maxNodes=1e4),
-        data=dict(
-            s1=dict(subset_bands=subset_bands),
-            s2=None,
-            aois_test=list(AOIS_TEST),
-            damages_to_keep=[1, 2],
-            extract_winds="1x1",
-            time_periods=dict(pre=PRE_PERIOD, post="2months"),
-            split_strategy="aoi",
-        ),
-        reducer_names=reducer_names,
-        seed=0,
-        local_folder=DATA_PATH / "runs",
-        train_on_all_data=False,
-    ))
+    cfg = OmegaConf.create(
+        dict(
+            aggregation_method="mean",
+            model_name="random_forest",
+            model_kwargs=dict(numberOfTrees=n_trees, minLeafPopulation=3, maxNodes=1e4),
+            data=dict(
+                s1=dict(subset_bands=subset_bands),
+                s2=None,
+                aois_test=list(AOIS_TEST),
+                damages_to_keep=[1, 2],
+                extract_winds="1x1",
+                time_periods=dict(pre=PRE_PERIOD, post="2months"),
+                split_strategy="aoi",
+            ),
+            reducer_names=reducer_names,
+            seed=0,
+            local_folder=DATA_PATH / "runs",
+            train_on_all_data=False,
+        )
+    )
 
     feature_cols = get_features_names(cfg)
 
@@ -160,6 +164,7 @@ def train_variant(
 
 
 # ── Inference ──────────────────────────────────────────────────────────────────
+
 
 def classify_tile_variant(data, band_names, clf, feature_cols):
     """Classify one tile with variant feature set."""
@@ -241,9 +246,11 @@ def run_inference_variant(
 
 # ── Merge tiles ────────────────────────────────────────────────────────────────
 
+
 def merge_tiles_variant(variant_name: str, force_recreate: bool = False) -> list:
     """Merge quadkey tiles → Gaza-wide GeoTIFFs for this variant."""
     from osgeo import gdal
+
     prob_dir = PROB_RASTERS_BASE / variant_name
     merged_dir = MERGED_RASTERS_BASE / variant_name
     merged_dir.mkdir(parents=True, exist_ok=True)
@@ -268,6 +275,7 @@ def merge_tiles_variant(variant_name: str, force_recreate: bool = False) -> list
 
 
 # ── Pixel sampling ─────────────────────────────────────────────────────────────
+
 
 def extract_with_window(point, raster, window=3, agg="max"):
     """Sample raster at point with spatial window. Unchanged from evaluation.ipynb."""
@@ -322,6 +330,7 @@ def sample_rasters_at_unosat_points(
     for aoi in tqdm(all_aois, desc="  Sampling AOIs"):
         gdf_aoi = gdf_labels[gdf_labels["aoi"] == aoi].copy()
         from shapely.geometry import box
+
         bounds = box(*gdf_aoi.total_bounds)
 
         dates_var = xr.Variable("date", pd.to_datetime([p[0] for p in post_dates]))
@@ -332,9 +341,7 @@ def sample_rasters_at_unosat_points(
 
         for start, _ in post_dates:
             date = start
-            gdf_aoi[f"pred_{date}"] = gdf_aoi.geometry.apply(
-                lambda pt: _safe_extract(pt, preds.sel(date=date))
-            )
+            gdf_aoi[f"pred_{date}"] = gdf_aoi.geometry.apply(lambda pt: _safe_extract(pt, preds.sel(date=date)))
 
         gdf_out = pd.concat([gdf_out, gdf_aoi]) if gdf_out is not None else gdf_aoi
 
@@ -352,6 +359,7 @@ def _safe_extract(pt, raster):
 
 
 # ── Evaluation ─────────────────────────────────────────────────────────────────
+
 
 def evaluate_variant(gdf_points: gpd.GeoDataFrame, threshold: float = THRESHOLD_TARGET) -> dict:
     """
@@ -373,21 +381,25 @@ def evaluate_variant(gdf_points: gpd.GeoDataFrame, threshold: float = THRESHOLD_
     )
     auc = sk_metrics.roc_auc_score(y_trues, y_preds)
     rep = sk_metrics.classification_report(
-        y_trues, y_preds, labels=[0, 1],
+        y_trues,
+        y_preds,
+        labels=[0, 1],
         target_names=["Undamaged", "Damaged"],
-        output_dict=True, zero_division=0,
+        output_dict=True,
+        zero_division=0,
     )
     return {
-        "f1":        rep["Damaged"]["f1-score"],
+        "f1": rep["Damaged"]["f1-score"],
         "precision": rep["Damaged"]["precision"],
-        "recall":    rep["Damaged"]["recall"],
-        "accuracy":  rep["accuracy"],
-        "auc":       auc,
+        "recall": rep["Damaged"]["recall"],
+        "accuracy": rep["accuracy"],
+        "auc": auc,
         "threshold": threshold,
     }
 
 
 # ── Full variant pipeline ──────────────────────────────────────────────────────
+
 
 def run_variant_full(
     variant_name: str,
@@ -408,27 +420,40 @@ def run_variant_full(
     print(f"{'='*60}")
 
     import sys
+
     clf, feature_cols, cfg = train_variant(
-        variant_name, n_trees, max_features, subset_bands, reducer_names,
+        variant_name,
+        n_trees,
+        max_features,
+        subset_bands,
+        reducer_names,
         force_recreate=force_recreate,
     )
-    print(f"  [checkpoint] train done"); sys.stdout.flush()
+    print(f"  [checkpoint] train done")
+    sys.stdout.flush()
     run_inference_variant(variant_name, clf, feature_cols, force_recreate)
-    print(f"  [checkpoint] inference done"); sys.stdout.flush()
+    print(f"  [checkpoint] inference done")
+    sys.stdout.flush()
     del clf
     merged_fps = merge_tiles_variant(variant_name, force_recreate)
-    print(f"  [checkpoint] merge done, {len(merged_fps)} windows"); sys.stdout.flush()
+    print(f"  [checkpoint] merge done, {len(merged_fps)} windows")
+    sys.stdout.flush()
     gdf_points = sample_rasters_at_unosat_points(variant_name, merged_fps, force_recreate)
-    print(f"  [checkpoint] sampling done, {len(gdf_points)} points"); sys.stdout.flush()
+    print(f"  [checkpoint] sampling done, {len(gdf_points)} points")
+    sys.stdout.flush()
     metrics = evaluate_variant(gdf_points)
-    print(f"  [checkpoint] evaluation done"); sys.stdout.flush()
+    print(f"  [checkpoint] evaluation done")
+    sys.stdout.flush()
 
-    print(f"  F1={metrics['f1']:.3f}  P={metrics['precision']:.3f}  "
-          f"R={metrics['recall']:.3f}  AUC={metrics['auc']:.3f}")
+    print(
+        f"  F1={metrics['f1']:.3f}  P={metrics['precision']:.3f}  "
+        f"R={metrics['recall']:.3f}  AUC={metrics['auc']:.3f}"
+    )
     return metrics
 
 
 # ── OOB study (training-time only, no inference) ───────────────────────────────
+
 
 def run_oob_study(results: dict) -> dict:
     """OOB error vs n_trees and vs max_features. No inference needed."""
@@ -436,20 +461,28 @@ def run_oob_study(results: dict) -> dict:
         print("OOB studies already complete — skipping")
         return results
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("OOB STUDY")
-    print("="*60)
+    print("=" * 60)
 
     df_train = get_dataset_ready_local(
-        sat="s1", split="train", post_dates="2months",
-        extract_wind="1x1", split_strategy="aoi",
+        sat="s1",
+        split="train",
+        post_dates="2months",
+        extract_wind="1x1",
+        split_strategy="aoi",
     )
-    cfg_base = OmegaConf.create(dict(
-        data=dict(s1=dict(subset_bands=None), s2=None,
-                  time_periods=dict(pre=PRE_PERIOD, post="2months"),
-                  extract_winds="1x1"),
-        reducer_names=ALL_REDUCERS,
-    ))
+    cfg_base = OmegaConf.create(
+        dict(
+            data=dict(
+                s1=dict(subset_bands=None),
+                s2=None,
+                time_periods=dict(pre=PRE_PERIOD, post="2months"),
+                extract_winds="1x1",
+            ),
+            reducer_names=ALL_REDUCERS,
+        )
+    )
     feature_cols = get_features_names(cfg_base)
     df_train = df_train.dropna(subset=feature_cols)
     df_train = df_train.sample(n=min(200_000, len(df_train)), random_state=0)
@@ -464,9 +497,12 @@ def run_oob_study(results: dict) -> dict:
         oob_scores = []
         for n in tqdm(n_trees_vals, desc="n_trees"):
             clf = RandomForestClassifier(
-                n_estimators=n, max_features="sqrt",
-                min_samples_leaf=3, oob_score=True,
-                n_jobs=4, random_state=0,
+                n_estimators=n,
+                max_features="sqrt",
+                min_samples_leaf=3,
+                oob_score=True,
+                n_jobs=4,
+                random_state=0,
             )
             clf.fit(X, y)
             oob_scores.append(1 - clf.oob_score_)  # OOB error
@@ -482,9 +518,12 @@ def run_oob_study(results: dict) -> dict:
         oob_scores = []
         for m in tqdm(mtry_vals, desc="mtry"):
             clf = RandomForestClassifier(
-                n_estimators=50, max_features=m,
-                min_samples_leaf=3, oob_score=True,
-                n_jobs=4, random_state=0,
+                n_estimators=50,
+                max_features=m,
+                min_samples_leaf=3,
+                oob_score=True,
+                n_jobs=4,
+                random_state=0,
             )
             clf.fit(X, y)
             oob_scores.append(1 - clf.oob_score_)
@@ -510,32 +549,38 @@ if __name__ == "__main__":
         m = run_variant_full(vname, n_trees=n, results=results)
         results[vname] = m
         save_results(results)
-        import gc; gc.collect()
+        import gc
+
+        gc.collect()
 
     # 3. Band ablation (VV only, VH only — VV+VH is baseline)
     band_variants = {
-        "ablation_bands_VV":   ["VV"],
-        "ablation_bands_VH":   ["VH"],
+        "ablation_bands_VV": ["VV"],
+        "ablation_bands_VH": ["VH"],
     }
     for vname, bands in band_variants.items():
         m = run_variant_full(vname, subset_bands=bands, results=results)
         results[vname] = m
         save_results(results)
-        import gc; gc.collect()
+        import gc
+
+        gc.collect()
 
     # 4. Feature subset ablation
     reducer_variants = {
-        "ablation_reducers_mean_std":        ["mean", "stdDev"],
+        "ablation_reducers_mean_std": ["mean", "stdDev"],
         "ablation_reducers_mean_std_median": ["mean", "stdDev", "median"],
-        "ablation_reducers_no_skew_kurt":    ["mean", "stdDev", "median", "min", "max"],
+        "ablation_reducers_no_skew_kurt": ["mean", "stdDev", "median", "min", "max"],
     }
     for vname, reducers in reducer_variants.items():
         m = run_variant_full(vname, reducer_names=reducers, results=results)
         results[vname] = m
         save_results(results)
-        import gc; gc.collect()
+        import gc
 
-    print("\n" + "="*60)
+        gc.collect()
+
+    print("\n" + "=" * 60)
     print("ALL ABLATION VARIANTS COMPLETE")
-    print("="*60)
+    print("=" * 60)
     print(json.dumps(results, indent=2))

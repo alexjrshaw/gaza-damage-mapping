@@ -1,8 +1,8 @@
+import ee
 import geopandas as gpd
 import pandas as pd
-import ee
 
-from src.constants import DATA_PATH, AOIS
+from src.constants import AOIS, DATA_PATH
 
 
 def get_valid_orbits(aoi: str) -> list[int]:
@@ -35,9 +35,7 @@ def load_df_orbits() -> pd.DataFrame:
         create_orbits_file(fp)
 
     df_orbits = pd.read_csv(fp)
-    df_orbits.valid_orbits = df_orbits.valid_orbits.apply(
-        lambda x: [int(i) for i in x.split(",")]
-    )
+    df_orbits.valid_orbits = df_orbits.valid_orbits.apply(lambda x: [int(i) for i in x.split(",")])
     df_orbits.set_index("aoi", inplace=True)
     return df_orbits
 
@@ -55,6 +53,7 @@ def create_orbits_file(fp) -> None:
     from src.constants import PRE_PERIOD
     from src.data.unosat import load_unosat_geo_gee
     from src.utils.gee import init_gee
+
     init_gee(project="gaza-damage-mapping")
 
     records = []
@@ -77,17 +76,16 @@ def create_orbits_file(fp) -> None:
         print(f"    All orbits: {orbit_counts}")
 
         # Keep orbits with at least 10 images (roughly one per month)
-        valid_orbits = [
-            int(float(orbit)) for orbit, count in orbit_counts.items()
-            if int(float(count)) >= 10
-        ]
+        valid_orbits = [int(float(orbit)) for orbit, count in orbit_counts.items() if int(float(count)) >= 10]
         valid_orbits.sort()
         print(f"    Valid orbits (>=10 images): {valid_orbits}")
 
-        records.append({
-            "aoi": aoi,
-            "valid_orbits": ",".join(str(o) for o in valid_orbits),
-        })
+        records.append(
+            {
+                "aoi": aoi,
+                "valid_orbits": ",".join(str(o) for o in valid_orbits),
+            }
+        )
 
     df = pd.DataFrame(records)
     df.to_csv(fp, index=False)
@@ -96,6 +94,7 @@ def create_orbits_file(fp) -> None:
 
 if __name__ == "__main__":
     from src.utils.gee import init_gee
+
     init_gee(project="gaza-damage-mapping")
     fp = DATA_PATH / "s1_aoi_orbits.csv"
     if fp.exists():

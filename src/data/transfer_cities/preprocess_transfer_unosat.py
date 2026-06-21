@@ -32,9 +32,10 @@ Usage:
     python3 src/data/transfer_cities/preprocess_transfer_unosat.py
 """
 
+from pathlib import Path
+
 import geopandas as gpd
 import pandas as pd
-from pathlib import Path
 from shapely.ops import unary_union
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
@@ -43,7 +44,7 @@ OUT_BASE = Path("test_sites/processed")
 
 # ── Damage string → standard class mapping ─────────────────────────────────────
 DAMAGE_MAP = {
-    "Destroyed":     1,
+    "Destroyed": 1,
     "Severe Damage": 2,
     # All others dropped
 }
@@ -54,35 +55,32 @@ DAMAGE_MAP = {
 # shp: path to shapefile relative to RAW_BASE
 CITIES = [
     {
-        "city_id":         "ALP",
-        "city_name":       "Aleppo",
-        "country":         "Syria",
+        "city_id": "ALP",
+        "city_name": "Aleppo",
+        "country": "Syria",
         "assessment_date": "2016-09-18",
-        "conflict_start":  "2012-01-01",
+        "conflict_start": "2012-01-01",
         "shp": (
             "_static_unosat_filesystem_1118_UNOSAT_CE20130604SYR_Syria_Damage_Assessment_2016_shp"
             "/6_Damage_Sites_Aleppo_SDA.shp"
         ),
-        "damage_field": "DmgCls_4",   # most recent epoch column
+        "damage_field": "DmgCls_4",  # most recent epoch column
     },
     {
-        "city_id":         "RAQ",
-        "city_name":       "Raqqa",
-        "country":         "Syria",
+        "city_id": "RAQ",
+        "city_name": "Raqqa",
+        "country": "Syria",
         "assessment_date": "2017-10-21",
-        "conflict_start":  "2014-01-01",
-        "shp": (
-            "_static_unosat_filesystem_1192_CE20130604SYR_Raqqa_Deir_shp"
-            "/Damage_Sites_Raqqa_CDA.shp"
-        ),
-        "damage_field": "DaSitCl5",   # most recent epoch column
+        "conflict_start": "2014-01-01",
+        "shp": ("_static_unosat_filesystem_1192_CE20130604SYR_Raqqa_Deir_shp" "/Damage_Sites_Raqqa_CDA.shp"),
+        "damage_field": "DaSitCl5",  # most recent epoch column
     },
     {
-        "city_id":         "MOS",
-        "city_name":       "Mosul",
-        "country":         "Iraq",
+        "city_id": "MOS",
+        "city_name": "Mosul",
+        "country": "Iraq",
         "assessment_date": "2017-08-04",
-        "conflict_start":  "2014-06-01",
+        "conflict_start": "2014-06-01",
         "shp": (
             "_static_unosat_filesystem_1188_Damage_assessment_Mosul_20170804_shp"
             "/Damage_assessment_Mosul_20170804_shp/Mosul_Damage_Sites_20170804.shp"
@@ -93,10 +91,10 @@ CITIES = [
 
 
 def preprocess_city(city: dict) -> None:
-    city_id   = city["city_id"]
+    city_id = city["city_id"]
     city_name = city["city_name"]
-    shp_fp    = RAW_BASE / city["shp"]
-    out_dir   = OUT_BASE / city_id.lower()
+    shp_fp = RAW_BASE / city["shp"]
+    out_dir = OUT_BASE / city_id.lower()
     out_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{'='*60}")
@@ -135,19 +133,21 @@ def preprocess_city(city: dict) -> None:
     records = []
     for idx, row in gdf.iterrows():
         dmg = int(row["damage_std"])
-        records.append({
-            "unosat_id":             f"{city_id}_{idx}_1",
-            "site_id":               idx,
-            "aoi":                   city_id,
-            "damage":                dmg,
-            "ep":                    1,
-            "date":                  assessment_date,
-            "geometry":              row["geometry"],
-            "date_first":            assessment_date,
-            "date_first_severe":     assessment_date,
-            "date_first_destroyed":  assessment_date if dmg == 1 else None,
-            "damage_max":            dmg,
-        })
+        records.append(
+            {
+                "unosat_id": f"{city_id}_{idx}_1",
+                "site_id": idx,
+                "aoi": city_id,
+                "damage": dmg,
+                "ep": 1,
+                "date": assessment_date,
+                "geometry": row["geometry"],
+                "date_first": assessment_date,
+                "date_first_severe": assessment_date,
+                "date_first_destroyed": assessment_date if dmg == 1 else None,
+                "damage_max": dmg,
+            }
+        )
 
     gdf_out = gpd.GeoDataFrame(records, geometry="geometry", crs="EPSG:4326")
     gdf_out = gdf_out.set_index("unosat_id")
@@ -160,14 +160,16 @@ def preprocess_city(city: dict) -> None:
     # Save AOI boundary (convex hull of all damage points)
     aoi_geom = unary_union(gdf_out.geometry).convex_hull
     gdf_aoi = gpd.GeoDataFrame(
-        [{
-            "aoi":             city_id,
-            "city":            city_name,
-            "country":         city["country"],
-            "assessment_date": assessment_date,
-            "conflict_start":  city["conflict_start"],
-            "geometry":        aoi_geom,
-        }],
+        [
+            {
+                "aoi": city_id,
+                "city": city_name,
+                "country": city["country"],
+                "assessment_date": assessment_date,
+                "conflict_start": city["conflict_start"],
+                "geometry": aoi_geom,
+            }
+        ],
         geometry="geometry",
         crs="EPSG:4326",
     )

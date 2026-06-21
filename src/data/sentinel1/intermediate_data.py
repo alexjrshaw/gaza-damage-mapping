@@ -8,7 +8,7 @@ from src.utils.gee import asset_exists, create_folders_recursively, fill_nan_wit
 init_gee()
 
 # Pre-war baseline start through end of conflict period studied
-START_DATE = "2021-10-07" # One-year pre-conflict baseline
+START_DATE = "2021-10-07"  # One-year pre-conflict baseline
 END_DATE = "2025-12-07"  # One day after last post window end
 
 
@@ -17,7 +17,7 @@ def create_fc_aoi_orbit(
     orbit: str,
     scale: int = 10,
     export: bool = True,
-    ) -> ee.FeatureCollection:
+) -> ee.FeatureCollection:
     """
     Creates a feature collection with all Sentinel-1 band values
     for each date and each UNOSAT point (one row per point per image).
@@ -47,18 +47,20 @@ def create_fc_aoi_orbit(
     geo = load_unosat_geo_gee(aoi)
 
     # Load S1 collection for this AOI and orbit
-    s1 = get_s1_collection(geo, START_DATE, END_DATE).filterMetadata(
-        "relativeOrbitNumber_start", "equals", orbit
-    )
+    s1 = get_s1_collection(geo, START_DATE, END_DATE).filterMetadata("relativeOrbitNumber_start", "equals", orbit)
     s1 = fill_nan_with_mean(s1)
 
     def extract_image(img):
         """Extract VV and VH at all points for one image using reduceRegions."""
-        return img.select(["VV", "VH"]).reduceRegions(
-            collection=labels,
-            reducer=ee.Reducer.mean(),
-            scale=scale,
-        ).map(lambda f: f.set("system:time_start", img.get("system:time_start")))
+        return (
+            img.select(["VV", "VH"])
+            .reduceRegions(
+                collection=labels,
+                reducer=ee.Reducer.mean(),
+                scale=scale,
+            )
+            .map(lambda f: f.set("system:time_start", img.get("system:time_start")))
+        )
 
     # Apply to all images and flatten
     fc_extracted = s1.map(extract_image).flatten()

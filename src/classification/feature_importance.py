@@ -23,8 +23,8 @@ from pathlib import Path
 import pandas as pd
 from omegaconf import OmegaConf
 
-from src.constants import DATA_PATH, PRE_PERIOD
 from src.classification.utils import get_features_names
+from src.constants import DATA_PATH, PRE_PERIOD
 
 RUN_NAME = "rf_s1_2months_50trees_1x1_all7reducers_baseline"
 RUNS_DIR = DATA_PATH / "runs"
@@ -37,25 +37,29 @@ def get_feature_importance(run_name: str = RUN_NAME) -> pd.DataFrame:
     with open(fp_model, "rb") as f:
         clf = pickle.load(f)
 
-    cfg = OmegaConf.create(dict(
-        data=dict(
-            s1=dict(subset_bands=None),
-            s2=None,
-            extract_winds="1x1",
-            time_periods=dict(pre=PRE_PERIOD, post="2months"),
-        ),
-        reducer_names=["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"],
-    ))
+    cfg = OmegaConf.create(
+        dict(
+            data=dict(
+                s1=dict(subset_bands=None),
+                s2=None,
+                extract_winds="1x1",
+                time_periods=dict(pre=PRE_PERIOD, post="2months"),
+            ),
+            reducer_names=["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"],
+        )
+    )
     feature_cols = get_features_names(cfg)
 
-    df = pd.DataFrame({
-        "feature": feature_cols,
-        "importance": clf.feature_importances_,
-    })
+    df = pd.DataFrame(
+        {
+            "feature": feature_cols,
+            "importance": clf.feature_importances_,
+        }
+    )
 
-    df["band"]    = df["feature"].apply(lambda x: x.split("_")[0])
-    df["period"]  = df["feature"].apply(lambda x: x.split("_")[1])
-    df["window"]  = df["feature"].apply(lambda x: x.split("_")[2])
+    df["band"] = df["feature"].apply(lambda x: x.split("_")[0])
+    df["period"] = df["feature"].apply(lambda x: x.split("_")[1])
+    df["window"] = df["feature"].apply(lambda x: x.split("_")[2])
     df["reducer"] = df["feature"].apply(lambda x: x.split("_")[3])
 
     df = df.sort_values("importance", ascending=False).reset_index(drop=True)

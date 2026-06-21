@@ -26,10 +26,11 @@ Usage:
 """
 
 import pandas as pd
+
 from src.constants import DATA_PATH, GAZA_WAR_START
 
 THRESHOLD = int(0.655 * 255)  # = Gaza pixel-level optimal (P>=0.9 target, matches Dietrich et al.)
-INPUT_FP  = DATA_PATH / "pixel_postprocessing/buildings_preds.parquet"
+INPUT_FP = DATA_PATH / "pixel_postprocessing/buildings_preds.parquet"
 OUTPUT_FP = DATA_PATH / "pixel_postprocessing/buildings_damage.parquet"
 
 
@@ -48,7 +49,7 @@ def apply_equation3(threshold: int = THRESHOLD) -> pd.DataFrame:
 
     # Identify date columns
     date_cols = [c for c in df.columns if isinstance(c, str) and len(c) == 10 and c[4] == "-"]
-    pre_cols  = [c for c in date_cols if c <  GAZA_WAR_START]
+    pre_cols = [c for c in date_cols if c < GAZA_WAR_START]
     post_cols = [c for c in date_cols if c >= GAZA_WAR_START]
 
     print(f"Pre-war windows ({len(pre_cols)}):  {pre_cols[0]} to {pre_cols[-1]}")
@@ -57,15 +58,15 @@ def apply_equation3(threshold: int = THRESHOLD) -> pd.DataFrame:
 
     # Equation 3
     max_post = df[post_cols].max(axis=1)
-    max_pre  = df[pre_cols].max(axis=1)
-    damaged  = ((max_post >= threshold) & (max_pre < threshold)).astype(int)
+    max_pre = df[pre_cols].max(axis=1)
+    damaged = ((max_post >= threshold) & (max_pre < threshold)).astype(int)
 
     # Build output
     meta_cols = ["area_m2", "lon", "lat", "adm2_name", "adm2_id"]
     result = df[meta_cols].copy()
-    result["max_pre"]  = max_pre
+    result["max_pre"] = max_pre
     result["max_post"] = max_post
-    result["damaged"]  = damaged
+    result["damaged"] = damaged
 
     # Summary
     print(f"\nTotal buildings: {len(result):,}")
@@ -73,12 +74,16 @@ def apply_equation3(threshold: int = THRESHOLD) -> pd.DataFrame:
     print(f"Undamaged:       {(1-damaged).sum():,} ({(1-damaged).mean()*100:.1f}%)")
 
     print("\n=== Per-governorate damage summary ===")
-    summary = result.groupby("adm2_name").agg(
-        n_buildings=("damaged", "count"),
-        n_damaged=("damaged", "sum"),
-        pct_damaged=("damaged", lambda x: x.mean() * 100),
-        mean_max_post=("max_post", "mean"),
-    ).round(2)
+    summary = (
+        result.groupby("adm2_name")
+        .agg(
+            n_buildings=("damaged", "count"),
+            n_damaged=("damaged", "sum"),
+            pct_damaged=("damaged", lambda x: x.mean() * 100),
+            mean_max_post=("max_post", "mean"),
+        )
+        .round(2)
+    )
     print(summary.to_string())
 
     # Save

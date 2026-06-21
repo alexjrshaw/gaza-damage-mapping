@@ -8,10 +8,12 @@ Usage:
     python src/data/sentinel1/download_intermediate_assets.py
 """
 
+from pathlib import Path
+
 import ee
 import pandas as pd
-from pathlib import Path
-from src.constants import DATA_PATH, ASSETS_PATH, AOIS
+
+from src.constants import AOIS, ASSETS_PATH, DATA_PATH
 from src.utils.gee import init_gee
 
 init_gee()
@@ -35,6 +37,7 @@ def download_intermediate_asset(aoi: str, orbit: int, force: bool = False) -> Pa
         Path to local parquet file
     """
     import time
+
     from src.utils.gdrive import drive_to_local
 
     CACHE_DIR.mkdir(exist_ok=True, parents=True)

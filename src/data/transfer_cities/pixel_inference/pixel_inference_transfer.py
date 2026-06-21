@@ -22,31 +22,35 @@ Usage:
     python3 src/data/transfer_cities/pixel_inference/pixel_inference_transfer.py --city MOS
 """
 
-import pickle
-import warnings
 import argparse
+import pickle
+import sys
+import warnings
+from pathlib import Path
+
 import numpy as np
 import rasterio
-from pathlib import Path
 from omegaconf import OmegaConf
 from tqdm.auto import tqdm
 
-import sys
-sys.path.insert(0, '/scratch/s1214882/gaza-damage-mapping')
+sys.path.insert(0, "/scratch/s1214882/gaza-damage-mapping")
 
-from src.constants import DATA_PATH, PRE_PERIOD
 from src.classification.utils import get_features_names
+from src.constants import DATA_PATH, PRE_PERIOD
 from src.data.transfer_cities.constants_transfer import TRANSFER_CITIES
 
-GAZA_MODEL_FP        = DATA_PATH / "runs/rf_s1_2months_50trees_1x1_all7reducers_baseline/model.pkl"
-TRANSFER_FEAT_BASE   = DATA_PATH / "transfer_cities" / "feature_rasters"
-TRANSFER_PROB_BASE   = DATA_PATH / "transfer_cities" / "probability_rasters"
+GAZA_MODEL_FP = DATA_PATH / "runs/rf_s1_2months_50trees_1x1_all7reducers_baseline/model.pkl"
+TRANSFER_FEAT_BASE = DATA_PATH / "transfer_cities" / "feature_rasters"
+TRANSFER_PROB_BASE = DATA_PATH / "transfer_cities" / "probability_rasters"
 
-CFG = OmegaConf.create(dict(
-    data=dict(s1=dict(subset_bands=None), s2=None,
-              extract_winds="1x1", time_periods=dict(pre=PRE_PERIOD, post="2months")),
-    reducer_names=["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"],
-))
+CFG = OmegaConf.create(
+    dict(
+        data=dict(
+            s1=dict(subset_bands=None), s2=None, extract_winds="1x1", time_periods=dict(pre=PRE_PERIOD, post="2months")
+        ),
+        reducer_names=["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"],
+    )
+)
 FEATURE_COLS = get_features_names(CFG)
 
 
@@ -95,11 +99,11 @@ def save_probability_tile(prob: np.ndarray, profile: dict, fp_out: Path) -> None
 
 
 def run_pixel_inference_city(city_id: str, force: bool = False) -> None:
-    cfg    = TRANSFER_CITIES[city_id]
+    cfg = TRANSFER_CITIES[city_id]
     orbits = cfg["orbits"]
-    pre_period   = cfg["pre_period"]
+    pre_period = cfg["pre_period"]
     post_periods = cfg["post_periods"]
-    all_periods  = [pre_period] + list(post_periods)
+    all_periods = [pre_period] + list(post_periods)
 
     feat_base = TRANSFER_FEAT_BASE / city_id
     prob_base = TRANSFER_PROB_BASE / city_id
@@ -113,17 +117,14 @@ def run_pixel_inference_city(city_id: str, force: bool = False) -> None:
 
     for i, post_period in enumerate(all_periods):
         window_str = f"w{i+1:02d}_{post_period[0]}_{post_period[1]}"
-        out_dir    = prob_base / window_str
+        out_dir = prob_base / window_str
 
         # Find all tile IDs for this window
         tile_ids = set()
         for orbit in orbits:
             orbit_dir = feat_base / window_str / f"orbit{orbit}"
             if orbit_dir.exists():
-                tile_ids.update(
-                    fp.stem.replace("qk_", "")
-                    for fp in orbit_dir.glob("qk_*.tif")
-                )
+                tile_ids.update(fp.stem.replace("qk_", "") for fp in orbit_dir.glob("qk_*.tif"))
 
         if not tile_ids:
             continue
@@ -137,8 +138,8 @@ def run_pixel_inference_city(city_id: str, force: bool = False) -> None:
                 n_skipped += 1
                 continue
 
-            orbit_probs    = []
-            ref_profile    = None
+            orbit_probs = []
+            ref_profile = None
 
             for orbit in orbits:
                 fp = feat_base / window_str / f"orbit{orbit}" / f"qk_{qk_id}.tif"

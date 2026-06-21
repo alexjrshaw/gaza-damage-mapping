@@ -151,7 +151,7 @@ def get_fc_ts(aoi: str, orbit: int, extract: str, damages_to_keep: list[int] | N
 
 
 if __name__ == "__main__":
-    from src.constants import AOIS_TEST, AOIS_TRAIN, PRE_PERIOD, POST_PERIODS
+    from src.constants import AOIS_TEST, AOIS_TRAIN, POST_PERIODS, PRE_PERIOD
 
     damages_to_keep = [1, 2]
     extract_winds = "1x1"
@@ -175,4 +175,3 @@ if __name__ == "__main__":
                 assetId=asset_id,
             ).start()
             print(f"Submitted: {split} {window_str}")
-

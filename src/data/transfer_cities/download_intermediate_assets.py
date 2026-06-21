@@ -15,19 +15,17 @@ Usage:
     python3 src/data/transfer_cities/download_intermediate_assets.py
 """
 
+import sys
+import time
+
 import ee
 import pandas as pd
-import time
-import sys
-sys.path.insert(0, '/scratch/s1214882/gaza-damage-mapping')
 
-from src.utils.gee import init_gee, asset_exists
+sys.path.insert(0, "/scratch/s1214882/gaza-damage-mapping")
+
+from src.data.transfer_cities.constants_transfer import TRANSFER_CACHE_DIR, TRANSFER_CITIES, TRANSFER_GEE_FOLDER
 from src.utils.gdrive import drive_to_local
-from src.data.transfer_cities.constants_transfer import (
-    TRANSFER_CITIES,
-    TRANSFER_GEE_FOLDER,
-    TRANSFER_CACHE_DIR,
-)
+from src.utils.gee import asset_exists, init_gee
 
 init_gee()
 
@@ -88,8 +86,7 @@ def download_intermediate_asset(
             break
         elif state in ["FAILED", "CANCELLED"]:
             raise RuntimeError(
-                f"Drive export failed for {city_id}_orbit{orbit}: "
-                f"{status.get('error_message', 'unknown error')}"
+                f"Drive export failed for {city_id}_orbit{orbit}: " f"{status.get('error_message', 'unknown error')}"
             )
         time.sleep(30)
     print(f"  {city_id}_orbit{orbit}: export complete, downloading from Drive...")
@@ -108,9 +105,7 @@ def download_intermediate_asset(
             print(f"  {city_id}_orbit{orbit}: merging {len(parts)} CSV parts...")
             df = pd.concat([pd.read_csv(p) for p in parts], ignore_index=True)
         else:
-            raise FileNotFoundError(
-                f"CSV not found after Drive download: {csv_fp}"
-            )
+            raise FileNotFoundError(f"CSV not found after Drive download: {csv_fp}")
     else:
         df = pd.read_csv(csv_fp)
 
@@ -149,11 +144,10 @@ def download_all(force: bool = False) -> None:
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--force", action="store_true",
-                        help="Re-download even if cache exists")
-    parser.add_argument("--city", type=str, default=None,
-                        help="Download single city only (e.g. ALP)")
+    parser.add_argument("--force", action="store_true", help="Re-download even if cache exists")
+    parser.add_argument("--city", type=str, default=None, help="Download single city only (e.g. ALP)")
     args = parser.parse_args()
 
     if args.city:

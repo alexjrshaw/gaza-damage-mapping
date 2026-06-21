@@ -30,15 +30,16 @@ Usage:
     python3 src/inference/export_feature_rasters.py
 """
 
+from pathlib import Path
+
 import ee
 from omegaconf import OmegaConf
 from tqdm import tqdm
-from pathlib import Path
 
-from src.constants import PRE_PERIOD, POST_PERIODS, AOIS, DATA_PATH
+from src.constants import AOIS, DATA_PATH, POST_PERIODS, PRE_PERIOD
 from src.data.quadkeys import load_gaza_quadkeys_gee
-from src.inference.dense_inference import col_to_features
 from src.data.sentinel1.collection import get_s1_collection
+from src.inference.dense_inference import col_to_features
 from src.utils.gdrive import create_drive_folder, get_files_in_folder
 from src.utils.gee import init_gee
 
@@ -47,8 +48,8 @@ init_gee(project="gaza-damage-mapping")
 # ==================== CONSTANTS ====================
 
 RUN_NAME = "gaza_feature_rasters"
-QUADKEY_ZOOM = 12       # Same as full_gaza.py — ~2.4km² tiles
-SCALE = 10              # 10m resolution — same as Dietrich et al.
+QUADKEY_ZOOM = 12  # Same as full_gaza.py — ~2.4km² tiles
+SCALE = 10  # 10m resolution — same as Dietrich et al.
 ORBITS = [87, 94, 160]  # Gaza S1 orbits
 REDUCER_NAMES = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
 EXTRACT_WINDOW = "1x1"
@@ -56,6 +57,7 @@ LOCAL_BASE = DATA_PATH / "feature_rasters"
 
 
 # ==================== EXPORT ====================
+
 
 def export_feature_rasters_for_window(
     post_period: tuple[str, str],

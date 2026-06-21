@@ -32,13 +32,9 @@ from omegaconf import DictConfig, OmegaConf
 
 from src.classification.dataset_local import get_dataset_ready_local
 from src.classification.metrics import get_metrics
-from src.classification.models_local import (
-    classifier_factory_local,
-    load_classifier_local,
-    save_classifier_local,
-)
+from src.classification.models_local import classifier_factory_local, load_classifier_local, save_classifier_local
 from src.classification.utils import get_features_names, get_run_name
-from src.constants import DATA_PATH, PRE_PERIOD, POST_PERIODS
+from src.constants import DATA_PATH, POST_PERIODS, PRE_PERIOD
 from src.data.unosat import load_unosat_labels
 from src.utils.time import timeit
 
@@ -68,7 +64,7 @@ def full_pipeline_local(cfg: DictConfig, force_recreate: bool = False) -> dict:
     run_name = get_run_name(cfg)
     print(f"Running local pipeline for {run_name}")
 
-    run_dir        = RUNS_DIR / run_name
+    run_dir = RUNS_DIR / run_name
     fp_preds_local = run_dir / f"{run_name}.geojson"
     run_dir.mkdir(exist_ok=True, parents=True)
 
@@ -87,7 +83,7 @@ def full_pipeline_local(cfg: DictConfig, force_recreate: bool = False) -> dict:
             split="test",
             post_dates=cfg.data.time_periods["post"],
             extract_wind=cfg.data.extract_winds,
-            split_strategy=cfg.data.get("split_strategy", "aoi")
+            split_strategy=cfg.data.get("split_strategy", "aoi"),
         )
 
         # --- Get feature names ---
@@ -186,7 +182,7 @@ def get_classifier_trained_local(cfg: DictConfig, verbose: int = 1) -> object:
         split="train",
         post_dates=cfg.data.time_periods["post"],
         extract_wind=cfg.data.extract_winds,
-        split_strategy=cfg.data.get("split_strategy", "aoi")
+        split_strategy=cfg.data.get("split_strategy", "aoi"),
     )
 
     feature_cols = get_features_names(cfg)
@@ -225,14 +221,11 @@ def _format_predictions(df_test: pd.DataFrame, cfg: DictConfig) -> gpd.GeoDataFr
     )
 
     # Pivot to wide format
-    preds_wide = (
-        preds.pivot(
-            index=["unosat_id", "aoi"],
-            columns="start_post",
-            values="classification",
-        )
-        .sort_values(["aoi", "unosat_id"])
-    )
+    preds_wide = preds.pivot(
+        index=["unosat_id", "aoi"],
+        columns="start_post",
+        values="classification",
+    ).sort_values(["aoi", "unosat_id"])
     preds_wide.columns = [f"pred_{c}" for c in preds_wide.columns]
 
     # Join with UNOSAT labels to get date and geometry
@@ -242,8 +235,7 @@ def _format_predictions(df_test: pd.DataFrame, cfg: DictConfig) -> gpd.GeoDataFr
     ).reset_index()
 
     gdf = preds_wide.join(
-        all_labels[["unosat_id", "aoi", "date", "geometry"]]
-        .set_index(["unosat_id", "aoi"]),
+        all_labels[["unosat_id", "aoi", "date", "geometry"]].set_index(["unosat_id", "aoi"]),
         on=["unosat_id", "aoi"],
     )
     gdf["date"] = pd.to_datetime(gdf["date"])
@@ -265,7 +257,9 @@ if __name__ == "__main__":
         dict(
             aggregation_method="mean",
             model_name="random_forest",
-            model_kwargs=dict(numberOfTrees=50, minLeafPopulation=3, maxNodes=1e4), # class_weight='balanced') added after baseline results; commented out for 20:80 train/test AOI split test
+            model_kwargs=dict(
+                numberOfTrees=50, minLeafPopulation=3, maxNodes=1e4
+            ),  # class_weight='balanced') added after baseline results; commented out for 20:80 train/test AOI split test
             data=dict(
                 s1=dict(subset_bands=None),
                 s2=None,
@@ -273,7 +267,7 @@ if __name__ == "__main__":
                 damages_to_keep=[1, 2],
                 extract_winds="1x1",
                 time_periods=dict(pre=PRE_PERIOD, post="2months"),
-                split_strategy="aoi" # Added after baseline results
+                split_strategy="aoi",  # Added after baseline results
             ),
             reducer_names=["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"],
             seed=0,
@@ -282,4 +276,6 @@ if __name__ == "__main__":
         )
     )
 
-    result = full_pipeline_local(cfg, force_recreate=False) # force_recreate=False changed to =True after baseline results; changed back to =False for 20:80 train/test AOI split test
+    result = full_pipeline_local(
+        cfg, force_recreate=False
+    )  # force_recreate=False changed to =True after baseline results; changed back to =False for 20:80 train/test AOI split test

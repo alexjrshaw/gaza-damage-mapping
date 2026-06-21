@@ -34,11 +34,11 @@ from src.classification.dataset_local import get_dataset_ready_local
 from src.classification.main_local import _format_predictions, full_pipeline_local
 from src.classification.metrics import get_metrics
 from src.classification.utils import get_features_names
-from src.constants import DATA_PATH, PRE_PERIOD, AOIS_TEST
+from src.constants import AOIS_TEST, DATA_PATH, PRE_PERIOD
 
-RUNS_DIR    = DATA_PATH / "runs"
+RUNS_DIR = DATA_PATH / "runs"
 ABLATION_DIR = DATA_PATH / "ablation_runs"
-FIGURES_DIR  = ABLATION_DIR / "figures"
+FIGURES_DIR = ABLATION_DIR / "figures"
 ABLATION_DIR.mkdir(exist_ok=True, parents=True)
 FIGURES_DIR.mkdir(exist_ok=True, parents=True)
 
@@ -47,6 +47,7 @@ ALL_REDUCERS = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
 
 
 # ==================== HELPERS ====================
+
 
 def load_baseline_gdf() -> gpd.GeoDataFrame:
     """Load baseline predictions GeoDataFrame."""
@@ -64,41 +65,49 @@ def make_cfg(
     """Create config dict for a given ablation setting."""
     if reducer_names is None:
         reducer_names = ALL_REDUCERS
-    return OmegaConf.create(dict(
-        aggregation_method="mean",
-        model_name="random_forest",
-        model_kwargs=dict(
-            numberOfTrees=n_trees,
-            minLeafPopulation=3,
-            maxNodes=1e4,
-            class_weight=class_weight,
-        ),
-        data=dict(
-            s1=dict(subset_bands=subset_bands),
-            s2=None,
-            aois_test=AOIS_TEST,
-            damages_to_keep=[1, 2],
-            extract_winds=extract_winds,
-            time_periods=dict(pre=PRE_PERIOD, post="2months"),
-            split_strategy="aoi",
-        ),
-        reducer_names=reducer_names,
-        seed=0,
-        local_folder=RUNS_DIR,
-        train_on_all_data=False,
-    ))
+    return OmegaConf.create(
+        dict(
+            aggregation_method="mean",
+            model_name="random_forest",
+            model_kwargs=dict(
+                numberOfTrees=n_trees,
+                minLeafPopulation=3,
+                maxNodes=1e4,
+                class_weight=class_weight,
+            ),
+            data=dict(
+                s1=dict(subset_bands=subset_bands),
+                s2=None,
+                aois_test=AOIS_TEST,
+                damages_to_keep=[1, 2],
+                extract_winds=extract_winds,
+                time_periods=dict(pre=PRE_PERIOD, post="2months"),
+                split_strategy="aoi",
+            ),
+            reducer_names=reducer_names,
+            seed=0,
+            local_folder=RUNS_DIR,
+            train_on_all_data=False,
+        )
+    )
 
 
 def load_features(split_strategy="aoi", extract_winds="1x1"):
     """Load train and test feature DataFrames."""
     suffix = "" if split_strategy == "aoi" else f"_{split_strategy}"
     train = get_dataset_ready_local(
-        sat="s1", split="train", post_dates="2months",
-        extract_wind=extract_winds, split_strategy=split_strategy,
+        sat="s1",
+        split="train",
+        post_dates="2months",
+        extract_wind=extract_winds,
+        split_strategy=split_strategy,
     )
     test = get_dataset_ready_local(
-        sat="s1", split="test", post_dates="2months",
-        extract_wind=extract_winds, split_strategy=split_strategy,
+        sat="s1",
+        split="test",
+        post_dates="2months",
+        extract_wind=extract_winds,
+        split_strategy=split_strategy,
     )
     return train, test
 
@@ -108,7 +117,7 @@ def train_and_evaluate(cfg, df_train, df_test) -> dict:
     feature_cols = get_features_names(cfg)
 
     df_train = df_train.dropna(subset=feature_cols)
-    df_test  = df_test.dropna(subset=feature_cols)
+    df_test = df_test.dropna(subset=feature_cols)
 
     clf = RandomForestClassifier(
         n_estimators=int(cfg.model_kwargs.numberOfTrees),
@@ -124,7 +133,7 @@ def train_and_evaluate(cfg, df_train, df_test) -> dict:
     df_test["prob"] = y_prob
     gdf = _format_predictions(df_test, cfg)
 
-    m05  = get_metrics(gdf, threshold=0.5,   method="date-wise", print_classification_report=False)
+    m05 = get_metrics(gdf, threshold=0.5, method="date-wise", print_classification_report=False)
     m655 = get_metrics(gdf, threshold=0.655, method="date-wise", print_classification_report=False)
 
     m675 = get_metrics(gdf, threshold=0.675, method="date-wise", print_classification_report=False)
@@ -132,6 +141,7 @@ def train_and_evaluate(cfg, df_train, df_test) -> dict:
 
 
 # ==================== STUDY 1: THRESHOLD SWEEP ====================
+
 
 def threshold_sweep(gdf: gpd.GeoDataFrame) -> dict:
     """
@@ -143,29 +153,32 @@ def threshold_sweep(gdf: gpd.GeoDataFrame) -> dict:
     results = []
 
     for t in thresholds:
-        m = get_metrics(gdf, threshold=float(t), method="date-wise",
-                       print_classification_report=False)
+        m = get_metrics(gdf, threshold=float(t), method="date-wise", print_classification_report=False)
         results.append({"threshold": float(t), **m})
-        print(f"  t={t:.3f}: F1={m['f1']:.3f}, Prec={m['precision']:.3f}, "
-              f"Rec={m['recall']:.3f}, AUC={m['roc_auc']:.3f}")
+        print(
+            f"  t={t:.3f}: F1={m['f1']:.3f}, Prec={m['precision']:.3f}, "
+            f"Rec={m['recall']:.3f}, AUC={m['roc_auc']:.3f}"
+        )
 
     # Find threshold closest to 90% precision
     df = pd.DataFrame(results)
     above_90 = df[df["precision"] >= 0.90]
     if len(above_90) > 0:
         optimal = above_90.loc[above_90["f1"].idxmax()]
-        print(f"\n  Optimal threshold (precision>=90%): {optimal['threshold']:.3f} "
-              f"(F1={optimal['f1']:.3f}, Prec={optimal['precision']:.3f}, "
-              f"Rec={optimal['recall']:.3f})")
+        print(
+            f"\n  Optimal threshold (precision>=90%): {optimal['threshold']:.3f} "
+            f"(F1={optimal['f1']:.3f}, Prec={optimal['precision']:.3f}, "
+            f"Rec={optimal['recall']:.3f})"
+        )
 
     # Plot — mirrors Fig. S1
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(df["threshold"], df["f1"],        label="F1-score",  color="blue")
-    ax.plot(df["threshold"], df["precision"],  label="precision", color="green")
-    ax.plot(df["threshold"], df["recall"],     label="recall",    color="red")
-    ax.plot(df["threshold"], df["roc_auc"],    label="roc_auc",   color="purple")
-    ax.plot(df["threshold"], df["accuracy"],   label="accuracy",  color="orange")
-    ax.axvline(0.5,   color="grey", linestyle="--", linewidth=1)
+    ax.plot(df["threshold"], df["f1"], label="F1-score", color="blue")
+    ax.plot(df["threshold"], df["precision"], label="precision", color="green")
+    ax.plot(df["threshold"], df["recall"], label="recall", color="red")
+    ax.plot(df["threshold"], df["roc_auc"], label="roc_auc", color="purple")
+    ax.plot(df["threshold"], df["accuracy"], label="accuracy", color="orange")
+    ax.axvline(0.5, color="grey", linestyle="--", linewidth=1)
     ax.axvline(0.655, color="grey", linestyle="--", linewidth=1, label="Optimal t=0.655 (matches Dietrich et al.)")
     ax.axvline(0.675, color="orange", linestyle=":", linewidth=1, label="t=0.675 (reference)")
     ax.set_xlabel("Threshold")
@@ -183,6 +196,7 @@ def threshold_sweep(gdf: gpd.GeoDataFrame) -> dict:
 
 
 # ==================== STUDY 2: OOB ERROR VS N_TREES ====================
+
 
 def oob_vs_n_trees(df_train: pd.DataFrame, feature_cols: list) -> dict:
     """
@@ -219,9 +233,9 @@ def oob_vs_n_trees(df_train: pd.DataFrame, feature_cols: list) -> dict:
     epsilon = 0.0005
     optimal_n = tree_counts[0]
     for i in range(1, len(oob_errors)):
-        improvement = oob_errors[i-1] - oob_errors[i]
+        improvement = oob_errors[i - 1] - oob_errors[i]
         if improvement < epsilon:
-            optimal_n = tree_counts[i-1]
+            optimal_n = tree_counts[i - 1]
             break
     else:
         optimal_n = tree_counts[-1]
@@ -229,15 +243,16 @@ def oob_vs_n_trees(df_train: pd.DataFrame, feature_cols: list) -> dict:
     print(f"\n  Optimal n_trees (elbow): {optimal_n}")
     print(f"  OOB error at optimal: {oob_errors[tree_counts.index(optimal_n)]:.4f}")
     # OOB at 50 trees (approximate)
-    idx_50 = min(range(len(tree_counts)), key=lambda i: abs(tree_counts[i]-50))
+    idx_50 = min(range(len(tree_counts)), key=lambda i: abs(tree_counts[i] - 50))
     print(f"  OOB error near 50 trees ({tree_counts[idx_50]} trees): {oob_errors[idx_50]:.4f}")
 
     # Plot
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.plot(tree_counts, oob_errors, color="blue", linewidth=2)
     ax.axvline(50, color="red", linestyle="--", linewidth=1, label="Dietrich et al. (50 trees)")
-    ax.axvline(optimal_n, color="green", linestyle=":", linewidth=1.5,
-           label=f"Auto-detected optimum ({optimal_n} trees)")
+    ax.axvline(
+        optimal_n, color="green", linestyle=":", linewidth=1.5, label=f"Auto-detected optimum ({optimal_n} trees)"
+    )
     ax.set_xlabel("Number of trees")
     ax.set_ylabel("OOB error rate")
     ax.set_title("OOB error vs number of trees (Gaza)")
@@ -252,6 +267,7 @@ def oob_vs_n_trees(df_train: pd.DataFrame, feature_cols: list) -> dict:
 
 # ==================== STUDY 3: OOB ERROR VS MTRY ====================
 
+
 def oob_vs_mtry(df_train: pd.DataFrame, feature_cols: list) -> dict:
     """
     OOB error vs max_features (mtry) — extends Dietrich et al.
@@ -263,14 +279,28 @@ def oob_vs_mtry(df_train: pd.DataFrame, feature_cols: list) -> dict:
     y = df_train.dropna(subset=feature_cols)["label"].values
     n_features = X.shape[1]
 
-    mtry_values = sorted(set([
-        1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14,
-        int(np.sqrt(n_features)),   # default sqrt(p) = 5
-        int(np.log2(n_features)),   # log2(p) = 4
-        n_features // 3,
-        n_features // 2,
-        n_features,
-    ]))
+    mtry_values = sorted(
+        set(
+            [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                10,
+                12,
+                14,
+                int(np.sqrt(n_features)),  # default sqrt(p) = 5
+                int(np.log2(n_features)),  # log2(p) = 4
+                n_features // 3,
+                n_features // 2,
+                n_features,
+            ]
+        )
+    )
 
     oob_errors = []
     for mtry in mtry_values:
@@ -291,8 +321,7 @@ def oob_vs_mtry(df_train: pd.DataFrame, feature_cols: list) -> dict:
     # Plot
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.plot(mtry_values, oob_errors, color="blue", linewidth=2, marker="o")
-    ax.axvline(sqrt_p, color="red", linestyle="--", linewidth=1,
-               label=f"sqrt(p)={sqrt_p} (sklearn default)")
+    ax.axvline(sqrt_p, color="red", linestyle="--", linewidth=1, label=f"sqrt(p)={sqrt_p} (sklearn default)")
     ax.set_xlabel("mtry (max_features)")
     ax.set_ylabel("OOB error rate")
     ax.set_title("OOB error vs mtry parameter (Gaza)")
@@ -307,6 +336,7 @@ def oob_vs_mtry(df_train: pd.DataFrame, feature_cols: list) -> dict:
 
 # ==================== STUDY 4: INPUT BANDS ====================
 
+
 def ablation_bands(df_train, df_test) -> dict:
     """VV only vs VH only vs VV+VH — mirrors Dietrich et al. Supp. Note 6."""
     print("\n=== Study 4: Input bands ===")
@@ -315,18 +345,18 @@ def ablation_bands(df_train, df_test) -> dict:
     for bands, label in [
         (["VV"], "VV only"),
         (["VH"], "VH only"),
-        (None,   "VV+VH (baseline)"),
+        (None, "VV+VH (baseline)"),
     ]:
         cfg = make_cfg(subset_bands=bands)
         m = train_and_evaluate(cfg, df_train, df_test)
         results[label] = m
-        print(f"  {label}: F1@0.5={m['t0.5']['f1']:.3f}, "
-              f"F1@0.675={m['t0.675']['f1']:.3f}")
+        print(f"  {label}: F1@0.5={m['t0.5']['f1']:.3f}, " f"F1@0.675={m['t0.675']['f1']:.3f}")
 
     return results
 
 
 # ==================== STUDY 5: FEATURE SUBSETS ====================
+
 
 def ablation_features(df_train, df_test) -> dict:
     """
@@ -337,10 +367,10 @@ def ablation_features(df_train, df_test) -> dict:
     results = {}
 
     configs = [
-        (["mean", "stdDev"],                                        "mean+std"),
-        (["mean", "stdDev", "median"],                              "+median"),
-        (["mean", "stdDev", "median", "min", "max"],                "+min/max"),
-        (["mean", "stdDev", "median", "min", "max", "skew"],        "+skew"),
+        (["mean", "stdDev"], "mean+std"),
+        (["mean", "stdDev", "median"], "+median"),
+        (["mean", "stdDev", "median", "min", "max"], "+min/max"),
+        (["mean", "stdDev", "median", "min", "max", "skew"], "+skew"),
         (["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"], "all 7 (baseline)"),
     ]
 
@@ -348,13 +378,13 @@ def ablation_features(df_train, df_test) -> dict:
         cfg = make_cfg(reducer_names=reducers)
         m = train_and_evaluate(cfg, df_train, df_test)
         results[label] = m
-        print(f"  {label}: F1@0.5={m['t0.5']['f1']:.3f}, "
-              f"F1@0.675={m['t0.675']['f1']:.3f}")
+        print(f"  {label}: F1@0.5={m['t0.5']['f1']:.3f}, " f"F1@0.675={m['t0.675']['f1']:.3f}")
 
     return results
 
 
 # ==================== STUDY 6: NUMBER OF TREES (F1) ====================
+
 
 def ablation_n_trees(df_train, df_test) -> dict:
     """
@@ -370,12 +400,13 @@ def ablation_n_trees(df_train, df_test) -> dict:
         cfg = make_cfg(n_trees=n_trees)
         m = train_and_evaluate(cfg, df_train, df_test)
         results[str(n_trees)] = m
-        print(f"  n_trees={n_trees}: F1@0.5={m['t0.5']['f1']:.3f}, "
-              f"F1@0.675={m['t0.675']['f1']:.3f}")
+        print(f"  n_trees={n_trees}: F1@0.5={m['t0.5']['f1']:.3f}, " f"F1@0.675={m['t0.675']['f1']:.3f}")
 
     return results
 
+
 # ==================== STUDY 8: EXTRACTION WINDOW ====================
+
 
 def ablation_extraction_window(df_train_1x1, df_test_1x1) -> dict:
     """
@@ -389,54 +420,64 @@ def ablation_extraction_window(df_train_1x1, df_test_1x1) -> dict:
     cfg_1x1 = make_cfg(extract_winds="1x1")
     m = train_and_evaluate(cfg_1x1, df_train_1x1, df_test_1x1)
     results["1x1 (baseline)"] = m
-    print(f"  1x1 (baseline): F1@0.5={m['t0.5']['f1']:.3f}, "
-          f"F1@0.675={m['t0.675']['f1']:.3f}")
+    print(f"  1x1 (baseline): F1@0.5={m['t0.5']['f1']:.3f}, " f"F1@0.675={m['t0.675']['f1']:.3f}")
 
     # 3x3
     df_train_3x3, df_test_3x3 = load_features(extract_winds="3x3")
     cfg_3x3 = make_cfg(extract_winds="3x3")
     m = train_and_evaluate(cfg_3x3, df_train_3x3, df_test_3x3)
     results["3x3"] = m
-    print(f"  3x3: F1@0.5={m['t0.5']['f1']:.3f}, "
-          f"F1@0.675={m['t0.675']['f1']:.3f}")
+    print(f"  3x3: F1@0.5={m['t0.5']['f1']:.3f}, " f"F1@0.675={m['t0.675']['f1']:.3f}")
 
     # 1x1+3x3 combined — merge both feature sets on shared index columns
-    index_cols = ["unosat_id", "aoi", "orbit", "start_post", "end_post",
-                  "start_pre", "end_pre", "label", "damage", "date", "site_id"]
+    index_cols = [
+        "unosat_id",
+        "aoi",
+        "orbit",
+        "start_post",
+        "end_post",
+        "start_pre",
+        "end_pre",
+        "label",
+        "damage",
+        "date",
+        "site_id",
+    ]
     feat_1x1 = get_features_names(cfg_1x1)
     feat_3x3 = get_features_names(cfg_3x3)
 
     shared = [c for c in index_cols if c in df_train_1x1.columns and c in df_train_3x3.columns]
-    df_train_combined = df_train_1x1.merge(
-        df_train_3x3[shared + feat_3x3], on=shared, how="inner"
-    )
-    df_test_combined = df_test_1x1.merge(
-        df_test_3x3[shared + feat_3x3], on=shared, how="inner"
-    )
+    df_train_combined = df_train_1x1.merge(df_train_3x3[shared + feat_3x3], on=shared, how="inner")
+    df_test_combined = df_test_1x1.merge(df_test_3x3[shared + feat_3x3], on=shared, how="inner")
     all_feat = feat_1x1 + feat_3x3
 
     # Train and evaluate manually since cfg doesn't support combined features
     df_train_c = df_train_combined.dropna(subset=all_feat)
-    df_test_c  = df_test_combined.dropna(subset=all_feat)
+    df_test_c = df_test_combined.dropna(subset=all_feat)
 
     clf = RandomForestClassifier(
-        n_estimators=50, min_samples_leaf=3, max_leaf_nodes=10000,
-        n_jobs=-1, random_state=0,
+        n_estimators=50,
+        min_samples_leaf=3,
+        max_leaf_nodes=10000,
+        n_jobs=-1,
+        random_state=0,
     )
     clf.fit(df_train_c[all_feat].values, df_train_c["label"].values)
     df_test_c = df_test_c.copy()
     df_test_c["prob"] = clf.predict_proba(df_test_c[all_feat].values)[:, 1]
 
     gdf = _format_predictions(df_test_c, cfg_1x1)
-    m05  = get_metrics(gdf, threshold=0.5,   method="date-wise", print_classification_report=False)
+    m05 = get_metrics(gdf, threshold=0.5, method="date-wise", print_classification_report=False)
     m655 = get_metrics(gdf, threshold=0.655, method="date-wise", print_classification_report=False)
     m675_combined = get_metrics(gdf, threshold=0.675, method="date-wise", print_classification_report=False)
     results["1x1+3x3"] = {"t0.5": m05, "t0.655": m655, "t0.675": m675_combined}
     print(f"  1x1+3x3: F1@0.5={m05['f1']:.3f}, F1@0.675={m675_combined['f1']:.3f}")
 
-    return results                       
+    return results
+
 
 # ==================== PLOT ABLATION SUMMARY (Fig. S4 equivalent) ====================
+
 
 def plot_ablation_summary(results: dict) -> None:
     """
@@ -454,13 +495,12 @@ def plot_ablation_summary(results: dict) -> None:
 
     x = np.arange(len(labels))
     fig, ax = plt.subplots(figsize=(14, 6))
-    ax.bar(x - 0.2, f1_05,  0.4, label="t=0.5",   color="steelblue")
-    ax.bar(x + 0.2, f1_655, 0.4, label="t=0.655",  color="orange")
+    ax.bar(x - 0.2, f1_05, 0.4, label="t=0.5", color="steelblue")
+    ax.bar(x + 0.2, f1_655, 0.4, label="t=0.655", color="orange")
 
     # Baseline line
     baseline_f1 = results["bands"]["VV+VH (baseline)"]["t0.5"]["f1"]
-    ax.axhline(baseline_f1, color="red", linestyle="--", linewidth=1,
-               label=f"Baseline F1={baseline_f1:.3f}")
+    ax.axhline(baseline_f1, color="red", linestyle="--", linewidth=1, label=f"Baseline F1={baseline_f1:.3f}")
 
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=9)
@@ -473,7 +513,9 @@ def plot_ablation_summary(results: dict) -> None:
     plt.close()
     print(f"\nSaved: ablation_summary.png")
 
+
 # ==================== STUDY 7: PIXEL-LEVEL THRESHOLD (Dietrich et al. method) ====================
+
 
 def pixel_level_threshold_sweep() -> dict:
     """
@@ -484,7 +526,9 @@ def pixel_level_threshold_sweep() -> dict:
     print("\n=== Study 7: Pixel-level threshold sweep (Dietrich et al. method) ===")
 
     from collections import defaultdict
+
     import geopandas as gpd
+
     from src.constants import AOIS_TEST
 
     # Load pre-computed UNOSAT points with pixel predictions
@@ -520,26 +564,25 @@ def pixel_level_threshold_sweep() -> dict:
     # Find optimal threshold at precision=0.9
     diff = np.array(d_metrics_list["precision"]) - 0.9
     idx_min = np.abs(diff).argmin()
-    optimal_t = thresholds[idx_min] if diff[idx_min] > 0 else thresholds[min(idx_min + 1, len(thresholds)-1)]
+    optimal_t = thresholds[idx_min] if diff[idx_min] > 0 else thresholds[min(idx_min + 1, len(thresholds) - 1)]
     print(f"\n  Optimal threshold (pixel-level, precision>=90%): {optimal_t:.3f}")
-    print(f"  F1={d_metrics_list['f1'][idx_min]:.3f}, "
-          f"Precision={d_metrics_list['precision'][idx_min]:.3f}, "
-          f"Recall={d_metrics_list['recall'][idx_min]:.3f}")
+    print(
+        f"  F1={d_metrics_list['f1'][idx_min]:.3f}, "
+        f"Precision={d_metrics_list['precision'][idx_min]:.3f}, "
+        f"Recall={d_metrics_list['recall'][idx_min]:.3f}"
+    )
     print(f"  Dietrich et al. (Ukraine): 0.655")
     print(f"  Point-level optimal (Gaza): 0.600")
     print(f"  Pixel-level optimal (Gaza): {optimal_t:.3f}")
 
     # Plot — mirrors evaluation.ipynb plot
     fig, ax = plt.subplots(figsize=(12, 6))
-    colors = {"f1": "blue", "precision": "green", "recall": "red",
-              "roc_auc": "purple", "accuracy": "orange"}
+    colors = {"f1": "blue", "precision": "green", "recall": "red", "roc_auc": "purple", "accuracy": "orange"}
     for metric, scores in d_metrics_list.items():
-        ax.plot(thresholds, scores, label=metric, linewidth=2.5,
-                color=colors.get(metric, "grey"))
-    ax.axvline(0.5,       color="black", linestyle="--", alpha=0.5)
-    ax.axvline(0.655,     color="grey",  linestyle=":",  alpha=0.7, label="Ukraine t=0.655")
-    ax.axvline(optimal_t, color="red",   linestyle="--", alpha=0.7,
-               label=f"Gaza pixel optimal t={optimal_t:.3f}")
+        ax.plot(thresholds, scores, label=metric, linewidth=2.5, color=colors.get(metric, "grey"))
+    ax.axvline(0.5, color="black", linestyle="--", alpha=0.5)
+    ax.axvline(0.655, color="grey", linestyle=":", alpha=0.7, label="Ukraine t=0.655")
+    ax.axvline(optimal_t, color="red", linestyle="--", alpha=0.7, label=f"Gaza pixel optimal t={optimal_t:.3f}")
     ax.set_xlabel("Threshold", fontsize=14)
     ax.set_ylabel("Metrics", fontsize=14)
     ax.set_title("Pixel-level threshold sweep — Gaza vs UNOSAT labels")
@@ -551,8 +594,8 @@ def pixel_level_threshold_sweep() -> dict:
     plt.close()
     print(f"  Saved: pixel_threshold_sweep.png")
 
-    return {"thresholds": list(thresholds), "metrics": dict(d_metrics_list),
-            "optimal_threshold": float(optimal_t)}
+    return {"thresholds": list(thresholds), "metrics": dict(d_metrics_list), "optimal_threshold": float(optimal_t)}
+
 
 # ==================== MAIN ====================
 
@@ -587,7 +630,7 @@ if __name__ == "__main__":
 
     # Study 8: Extraction window
     all_results["extraction_window"] = ablation_extraction_window(df_train, df_test)
-    
+
     # Study 7: Pixel-level threshold sweep
     all_results["pixel_threshold"] = pixel_level_threshold_sweep()
 
