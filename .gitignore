@@ -118,3 +118,7 @@ extract_features_log.txt
 features_splits_log.txt
 features_splits_err.txt
 run_hotosm.sh
+
+# Large UNOSAT data files (too large for GitHub, regenerable from source)
+data/unosat_labels.geojson
+data/unosat_aois.geojson
