@@ -43,7 +43,7 @@ from src.utils.time import timeit
 # ==================== CONSTANTS ====================
 
 PROBABILITY_RASTERS_DIR = DATA_PATH / "probability_rasters"
-BUILDINGS_FP = DATA_PATH / "overture_buildings/gaza_buildings.parquet"
+BUILDINGS_FP = DATA_PATH / "hotosm_buildings/gaza_buildings.parquet"
 MERGED_RASTERS_DIR = DATA_PATH / "merged_probability_rasters"
 OUTPUT_DIR = DATA_PATH / "pixel_postprocessing"
 UTM_CRS = "EPSG:32636"

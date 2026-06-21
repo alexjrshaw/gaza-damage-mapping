@@ -47,7 +47,7 @@ PROJECT_PATH = SRC_PATH.parent
 
 SECRETS_PATH  = PROJECT_PATH / "secrets"
 DATA_PATH     = PROJECT_PATH / "data"
-OVERTURE_PATH = DATA_PATH / "overture_buildings"
+OVERTURE_PATH = DATA_PATH / "hotosm_buildings"
 
 # ------------------- GEE PATH CONSTANTS -------------------
 ASSETS_PATH     = "projects/gaza-damage-mapping/assets/gaza-mapping-tool/"
