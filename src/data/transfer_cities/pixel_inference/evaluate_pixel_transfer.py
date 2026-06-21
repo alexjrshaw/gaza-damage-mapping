@@ -31,17 +31,13 @@ Usage:
 import argparse
 import json
 import sys
-import warnings
-from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 import rasterio
 from rasterio.merge import merge
-from rasterio.windows import Window
 from sklearn import metrics as sk_metrics
-from tqdm.auto import tqdm
 
 sys.path.insert(0, "/scratch/s1214882/gaza-damage-mapping")
 

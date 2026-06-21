@@ -18,7 +18,7 @@ import pandas as pd
 from shapely.wkb import loads as wkb_loads
 from tqdm.auto import tqdm
 
-from src.constants import DATA_PATH, OVERTURE_PATH
+from src.constants import OVERTURE_PATH
 from src.data.hotosm.download import HOTOSM_RAW_FP, download_hotosm_buildings
 from src.data.unosat import load_unosat_geo, load_unosat_labels
 from src.data.utils import get_all_aois

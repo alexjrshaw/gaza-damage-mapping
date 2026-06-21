@@ -33,7 +33,6 @@ from pathlib import Path
 import ee
 import geemap
 import geopandas as gpd
-from tqdm import tqdm
 
 sys.path.insert(0, "/scratch/s1214882/gaza-damage-mapping")
 

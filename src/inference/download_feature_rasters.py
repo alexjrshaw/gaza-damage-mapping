@@ -21,10 +21,9 @@ Output:
 """
 
 import time
-from pathlib import Path
 
 from src.constants import DATA_PATH
-from src.utils.gdrive import drive, drive_to_local, get_files_in_folder, get_folder_id
+from src.utils.gdrive import drive, get_folder_id
 
 # ==================== CONSTANTS ====================
 

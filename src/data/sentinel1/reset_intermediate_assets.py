@@ -1,6 +1,3 @@
-import ee
-
-from src.constants import AOIS
 from src.data.sentinel1.intermediate_data import create_fc_aoi_orbit
 from src.data.utils import aoi_orbit_iterator
 from src.utils.gee import asset_exists, delete_asset, init_gee

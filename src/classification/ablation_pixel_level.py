@@ -23,8 +23,6 @@ Usage:
 import json
 import pickle
 import warnings
-from collections import defaultdict
-from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
@@ -38,7 +36,7 @@ from tqdm.auto import tqdm
 from src.classification.dataset_local import get_dataset_ready_local
 from src.classification.metrics import get_metrics
 from src.classification.utils import get_features_names
-from src.constants import AOIS_TEST, AOIS_TRAIN, DATA_PATH, POST_PERIODS, PRE_PERIOD
+from src.constants import AOIS_TEST, DATA_PATH, PRE_PERIOD
 from src.data.unosat import load_unosat_labels
 from src.data.utils import read_fp_within_geo
 
@@ -194,7 +192,6 @@ def run_inference_variant(
 ) -> None:
     """Run pixel inference for all windows using variant model."""
     import rasterio
-    from rasterio.transform import from_bounds
 
     prob_dir = PROB_RASTERS_BASE / variant_name
     windows = sorted(d.name for d in FEATURE_RASTERS_DIR.iterdir() if d.is_dir())

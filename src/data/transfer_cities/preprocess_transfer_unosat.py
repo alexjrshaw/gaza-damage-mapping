@@ -35,7 +35,6 @@ Usage:
 from pathlib import Path
 
 import geopandas as gpd
-import pandas as pd
 from shapely.ops import unary_union
 
 # ── Paths ──────────────────────────────────────────────────────────────────────

@@ -33,10 +33,9 @@ Usage:
 from pathlib import Path
 
 import ee
-from omegaconf import OmegaConf
 from tqdm import tqdm
 
-from src.constants import AOIS, DATA_PATH, POST_PERIODS, PRE_PERIOD
+from src.constants import DATA_PATH, POST_PERIODS, PRE_PERIOD
 from src.data.quadkeys import load_gaza_quadkeys_gee
 from src.data.sentinel1.collection import get_s1_collection
 from src.inference.dense_inference import col_to_features

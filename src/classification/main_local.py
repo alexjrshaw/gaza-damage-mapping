@@ -22,11 +22,8 @@ Gaza adaptation: local pandas/sklearn instead of GEE SMILE RF.
 """
 
 import json
-import pickle
-from pathlib import Path
 
 import geopandas as gpd
-import numpy as np
 import pandas as pd
 from omegaconf import DictConfig, OmegaConf
 
@@ -34,7 +31,7 @@ from src.classification.dataset_local import get_dataset_ready_local
 from src.classification.metrics import get_metrics
 from src.classification.models_local import classifier_factory_local, load_classifier_local, save_classifier_local
 from src.classification.utils import get_features_names, get_run_name
-from src.constants import DATA_PATH, POST_PERIODS, PRE_PERIOD
+from src.constants import DATA_PATH, PRE_PERIOD
 from src.data.unosat import load_unosat_labels
 from src.utils.time import timeit
 

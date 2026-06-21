@@ -11,7 +11,6 @@ Gaza adaptation: sklearn instead of GEE SMILE RF.
 import pickle
 from pathlib import Path
 
-import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 
 

@@ -23,20 +23,15 @@ Usage:
     python3 src/postprocessing/pixel_postprocessing.py
 """
 
-import multiprocessing as mp
 import warnings
 from pathlib import Path
 
 import geopandas as gpd
-import numpy as np
 import pandas as pd
-import rioxarray
 import xarray as xr
 from osgeo import gdal
-from shapely.wkb import loads as wkb_loads
-from tqdm.auto import tqdm
 
-from src.constants import DATA_PATH, GAZA_WAR_START, POST_PERIODS, PRE_PERIOD
+from src.constants import DATA_PATH, GAZA_WAR_START
 from src.postprocessing.utils import vectorize_xarray_3d
 from src.utils.time import timeit
 

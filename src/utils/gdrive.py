@@ -96,7 +96,6 @@ def download_file_to_local(
                 print(f"File {file_name} downloaded")
     except Exception as e:
         print(e)
-        pass
 
 
 def get_folder_id(folder_name: str, create_if_missing: bool = False) -> str:

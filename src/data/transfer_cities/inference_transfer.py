@@ -19,13 +19,10 @@ Usage:
     python3 src/data/transfer_cities/inference_transfer.py
 """
 
-import json
 import pickle
 import sys
-from pathlib import Path
 
 import geopandas as gpd
-import numpy as np
 import pandas as pd
 from omegaconf import OmegaConf
 

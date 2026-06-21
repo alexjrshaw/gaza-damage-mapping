@@ -15,7 +15,6 @@ Usage:
 
 import argparse
 import sys
-from pathlib import Path
 
 sys.path.insert(0, "/scratch/s1214882/gaza-damage-mapping")
 

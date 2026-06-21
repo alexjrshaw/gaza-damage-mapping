@@ -5,7 +5,7 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import Polygon
 
-from src.constants import ASSETS_PATH, DATA_PATH, OLD_ASSETS_PATH
+from src.constants import ASSETS_PATH, DATA_PATH
 
 # ==================== LOCAL DATA ====================
 
@@ -312,7 +312,6 @@ def export_gaza_unosat_per_aoi() -> None:
 
     Output files are saved to data/gee_upload/
     """
-    import json
 
     print("Exporting per-AOI GeoJSON files for GEE upload...")
     labels_fp = DATA_PATH / "unosat_labels.geojson"

@@ -5,8 +5,6 @@ Mirrors the interface of get_dataset_ready() exactly.
 Gaza adaptation: features stored locally instead of GEE assets.
 """
 
-from pathlib import Path
-
 import pandas as pd
 
 from src.constants import DATA_PATH

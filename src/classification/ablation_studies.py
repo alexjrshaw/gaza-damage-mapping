@@ -19,9 +19,6 @@ Usage:
 """
 
 import json
-import pickle
-import warnings
-from pathlib import Path
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -31,7 +28,7 @@ from omegaconf import OmegaConf
 from sklearn.ensemble import RandomForestClassifier
 
 from src.classification.dataset_local import get_dataset_ready_local
-from src.classification.main_local import _format_predictions, full_pipeline_local
+from src.classification.main_local import _format_predictions
 from src.classification.metrics import get_metrics
 from src.classification.utils import get_features_names
 from src.constants import AOIS_TEST, DATA_PATH, PRE_PERIOD

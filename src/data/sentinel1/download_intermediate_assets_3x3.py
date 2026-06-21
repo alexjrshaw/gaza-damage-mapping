@@ -4,7 +4,6 @@ import ee
 import pandas as pd
 
 from src.constants import AOIS, DATA_PATH
-from src.data.sentinel1.download_intermediate_assets import download_intermediate_asset
 from src.utils.gee import init_gee
 
 init_gee()

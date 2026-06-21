@@ -1,5 +1,4 @@
 import ee
-import geopandas as gpd
 import pandas as pd
 
 from src.constants import AOIS, DATA_PATH

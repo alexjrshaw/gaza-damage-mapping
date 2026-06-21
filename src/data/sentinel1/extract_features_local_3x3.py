@@ -18,13 +18,11 @@ Forth HPC compute nodes lack internet access, so pipeline is split:
     Step 2 (this script): Run as Slurm batch job — computes features from local cache
 """
 
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 
-from src.constants import AOIS_TEST, AOIS_TRAIN, ASSETS_PATH, DATA_PATH, GAZA_WAR_START, POST_PERIODS, PRE_PERIOD
+from src.constants import AOIS_TEST, AOIS_TRAIN, DATA_PATH, GAZA_WAR_START, POST_PERIODS, PRE_PERIOD
 
 # Local cache for downloaded intermediate assets
 CACHE_DIR = DATA_PATH / "intermediate_features_cache_3x3"

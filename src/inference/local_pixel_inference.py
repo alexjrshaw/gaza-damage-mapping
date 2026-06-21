@@ -32,11 +32,10 @@ from pathlib import Path
 import numpy as np
 import rasterio
 from omegaconf import OmegaConf
-from rasterio.transform import from_bounds
 from tqdm.auto import tqdm
 
 from src.classification.utils import get_features_names
-from src.constants import DATA_PATH, POST_PERIODS, PRE_PERIOD
+from src.constants import DATA_PATH, PRE_PERIOD
 
 # ==================== CONSTANTS ====================
 
