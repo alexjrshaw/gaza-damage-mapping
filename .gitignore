@@ -122,3 +122,9 @@ run_hotosm.sh
 # Large UNOSAT data files (too large for GitHub, regenerable from source)
 data/unosat_labels.geojson
 data/unosat_aois.geojson
+
+# Raw UNOSAT source shapefiles (large, not needed in repo)
+test_sites/raw/
+
+# Slurm error logs
+logs/*.err
