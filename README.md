@@ -232,3 +232,30 @@ And the HOTOSM building footprint methodology:
 ## Licence
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+---
+
+## Zero-Shot Transfer Evaluation
+
+The Gaza-trained model (no retraining, no fine-tuning, no per-city calibration) was applied
+to four additional conflicts to test geographic transferability:
+
+| City    | Conflict              | Pixel-level AUC | F1    | Coverage              |
+|---------|------------------------|------------------|-------|------------------------|
+| Raqqa   | Syrian civil war       | 0.651            | 0.489 | Full (14 windows)      |
+| Mosul   | ISIS conflict, Iraq    | 0.658            | 0.510 | Full (14 windows)      |
+| Aleppo  | Syrian civil war       | 0.652            | 0.486 | Full (14 windows)      |
+| Yei     | South Sudan civil war  | 0.840            | 0.810 | Partial (5/13 windows; limited by Sentinel-1 temporal density) |
+
+All metrics at t=0.655, matching Dietrich et al.'s Ukraine-derived operating threshold,
+which reproduces exactly as optimal for Gaza via independent threshold-sweep verification.
+
+**Candidate cities considered but excluded** (with technical justification):
+- **El Fasher, Khartoum** (Sudan) — no usable pre/post-conflict Sentinel-1 pair; both
+  conflicts post-date the December 2021 Sentinel-1B failure, and Sentinel-1A alone
+  provides insufficient temporal density for the full feature set used here
+- **Fallujah** (Iraq) — insufficient post-conflict Sentinel-1 coverage (37-day window)
+- **Rakhine State** (Myanmar) — destruction occurred within 6 days of the UNOSAT
+  assessment date, too narrow a margin to reliably isolate pre/post-conflict SAR signal
+
+See `src/data/transfer_cities/` for the quadkey-tiled export/inference/evaluation pipeline.
