@@ -248,3 +248,13 @@ TRANSFER_CITIES = {
         "label_1_windows": 4,
     },
 }
+
+# ── Retrained Mosul comparison (east-bank test points only) ───────────────────
+# Added for the local-retraining comparison: evaluates the Mosul-retrained
+# model (trained on west-bank points, see main_local_mosul_retrain.py)
+# against the east-bank points only, since the west-bank points were used
+# for training and would inflate apparent performance if included here.
+TRANSFER_CITIES["MOS_RETRAINED_EAST_ONLY"] = {
+    **TRANSFER_CITIES["MOS"],
+    "unosat_labels": PROJECT_PATH / "test_sites" / "processed" / "mos" / "unosat_labels_east_bank_only.geojson",
+}
