@@ -10,7 +10,9 @@ Follows Dietrich et al. (2025) methodology exactly:
     - Same 7 statistical features: mean, stdDev, median, min, max, skew, kurtosis
     - Same label assignment (eq. 1): y=0 pre-conflict, y=1 post-damage, y=-1 discard
     - Same feature naming convention: VV_pre_1x1_mean, VH_post_1x1_stdDev etc.
-    - Same train/test split by AOI
+
+split_strategy support (added):
+    - "aoi": train on AOIS_TRAIN, test on AOIS_TEST (governorate-level holdout)
 
 Gaza-specific adaptation: computation moved from GEE to local pandas.
 Forth HPC compute nodes lack internet access, so pipeline is split:
@@ -18,29 +20,25 @@ Forth HPC compute nodes lack internet access, so pipeline is split:
     Step 2 (this script): Run as Slurm batch job — computes features from local cache
 """
 
+import argparse
+
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 from tqdm.auto import tqdm
 
 from src.constants import AOIS_TEST, AOIS_TRAIN, DATA_PATH, GAZA_WAR_START, POST_PERIODS, PRE_PERIOD
 
-# Local cache for downloaded intermediate assets
 CACHE_DIR = DATA_PATH / "intermediate_features_cache"
 FEATURES_DIR = DATA_PATH / "features_ready"
 
 ORBITS = [87, 94, 160]
 EXTRACT_WINDOW = "1x1"
 REDUCER_NAMES = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
-
-
-# ==================== FEATURE COMPUTATION ====================
+ALL_AOIS = list(AOIS_TRAIN) + list(AOIS_TEST)
 
 
 def compute_stats(series: pd.Series) -> dict:
-    """
-    Compute 7 statistics for a series — mirrors GEE reducers.
-    Matches Dietrich et al. reducer names exactly.
-    """
     return {
         "mean": series.mean(),
         "stdDev": series.std(),
@@ -58,59 +56,28 @@ def compute_features_for_window(
     post_period: tuple[str, str],
     orbit: int,
 ) -> pd.DataFrame:
-    """
-    Compute pre and post features for one intermediate asset and one time window.
-
-    For each UNOSAT point, computes 7 statistics for VV and VH across
-    all images within the pre and post date windows.
-
-    Implements Dietrich et al. (2025) eq. 1 label assignment:
-        y = 0  if end_post <= conflict_start
-        y = 1  if end_post > date_first_severe (tunosat equivalent)
-        y = -1 discard (points where damage confirmed after end_post)
-
-    Args:
-        df: Intermediate asset dataframe (rows = one image x one point)
-        pre_period: (start, end) date strings for pre-conflict window
-        post_period: (start, end) date strings for post-conflict window
-        orbit: Orbit number
-
-    Returns:
-        DataFrame with one row per point and feature columns
-    """
-
     df = df.copy()
-    # Convert S1 acquisition date from Unix milliseconds to date string
-    # system:time_start is the S1 image date — used for pre/post window filtering
-    # date is the UNOSAT assessment date — not used for S1 image filtering
     df["s1_date"] = pd.to_datetime(df["system:time_start"], unit="ms").dt.date.astype(str)
     df["date_first_severe"] = df["date_first_severe"].astype(str)
 
-    # --- Label assignment — Dietrich et al. eq. 1 ---
     end_post = post_period[1]
     if end_post <= GAZA_WAR_START:
         label = 0
     else:
         label = 1
 
-    # --- Filter points ---
-    # For label=1: only keep points where damage was confirmed
-    # before end of post window (date_first_severe is tunosat)
     if label == 1:
         df = df[df["date_first_severe"] <= end_post].copy()
 
     if len(df) == 0:
         return pd.DataFrame()
 
-    # --- Compute features per point ---
     prefix_pre = f"pre_{EXTRACT_WINDOW}"
     prefix_post = f"post_{EXTRACT_WINDOW}"
 
-    # Filter to pre and post date ranges
     pre_df = df[(df["s1_date"] >= pre_period[0]) & (df["s1_date"] <= pre_period[1])]
     post_df = df[(df["s1_date"] >= post_period[0]) & (df["s1_date"] <= post_period[1])]
 
-    # Get unique point metadata
     meta = df.groupby("unosat_id").first()[["damage", "aoi", "date_first_severe", "site_id"]].reset_index()
     meta = meta.rename(columns={"date_first_severe": "date"})
 
@@ -122,7 +89,6 @@ def compute_features_for_window(
     results["start_post"] = post_period[0]
     results["end_post"] = post_period[1]
 
-    # Compute statistics for each band and period using vectorised groupby
     for band in ["VV", "VH"]:
         for period_df, prefix in [(pre_df, prefix_pre), (post_df, prefix_post)]:
             if len(period_df) > 0:
@@ -139,42 +105,57 @@ def compute_features_for_window(
                 stats.columns = [f"{band}_{prefix}_{s}" for s in REDUCER_NAMES]
                 results = results.merge(stats, on="unosat_id", how="left")
             else:
-                # No images in this window — fill with NaN
                 for stat in REDUCER_NAMES:
                     results[f"{band}_{prefix}_{stat}"] = np.nan
 
     return results
 
 
+def get_aoi_point_assignment(
+    split: str,
+    split_strategy: str,
+    seed: int = 0,
+    test_frac: float = 0.2,
+) -> dict:
+    if split_strategy == "aoi":
+        aois = AOIS_TRAIN if split == "train" else AOIS_TEST
+        return {aoi: None for aoi in aois}
+
+    elif split_strategy == "random_per_aoi":
+        assignment = {}
+        for aoi in ALL_AOIS:
+            fp = CACHE_DIR / f"{aoi}_orbit{ORBITS[0]}.parquet"
+            assert fp.exists(), f"Cache file {fp} not found. Run download_intermediate_assets.py first."
+            ids = pd.read_parquet(fp, columns=["unosat_id"])["unosat_id"].unique()
+            train_ids, test_ids = train_test_split(ids, test_size=test_frac, random_state=seed)
+            assignment[aoi] = list(train_ids) if split == "train" else list(test_ids)
+        return assignment
+
+    else:
+        raise ValueError(f"Unknown split_strategy: {split_strategy}")
+
+
 def extract_features_local(
     split: str,
+    split_strategy: str = "aoi",
     pre_period: tuple[str, str] = PRE_PERIOD,
-    post_periods: list[tuple[str, str]] = POST_PERIODS,
+    post_periods: list = POST_PERIODS,
+    seed: int = 0,
 ) -> pd.DataFrame:
-    """
-    Extract features for all AOIs, orbits and time windows for a given split.
-
-    Reads from local parquet cache — no internet connection required.
-
-    Args:
-        split: 'train' or 'test'
-        pre_period: Pre-conflict date range
-        post_periods: List of post-conflict date ranges
-
-    Returns:
-        DataFrame with all features ready for classification
-    """
-    aois = AOIS_TRAIN if split == "train" else AOIS_TEST
+    aoi_point_assignment = get_aoi_point_assignment(split, split_strategy, seed=seed)
     all_features = []
 
-    for aoi in aois:
+    for aoi, point_ids in aoi_point_assignment.items():
         print(f"\nProcessing {aoi}...")
         for orbit in ORBITS:
             fp = CACHE_DIR / f"{aoi}_orbit{orbit}.parquet"
-            assert fp.exists(), f"Cache file {fp} not found. " f"Run download_intermediate_assets.py first."
+            assert fp.exists(), f"Cache file {fp} not found. Run download_intermediate_assets.py first."
 
             print(f"  Loading {aoi}_orbit{orbit}...")
             df = pd.read_parquet(fp)
+
+            if point_ids is not None:
+                df = df[df["unosat_id"].isin(point_ids)]
 
             for post_period in tqdm(post_periods, desc=f"    windows"):
                 features = compute_features_for_window(df, pre_period, post_period, orbit)
@@ -190,27 +171,34 @@ def extract_features_local(
     return result
 
 
-# ==================== MAIN ====================
-
 if __name__ == "__main__":
-    FEATURES_DIR.mkdir(exist_ok=True, parents=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--split_strategy", default="aoi", choices=["aoi", "random_per_aoi"])
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--test_frac", type=float, default=0.2)
+    args = parser.parse_args()
 
-    # Train split
-    print("=" * 60)
-    print("Extracting train features...")
-    print("=" * 60)
+    FEATURES_DIR.mkdir(exist_ok=True, parents=True)
+    suffix = "" if args.split_strategy == "aoi" else f"_{args.split_strategy}"
     all_periods = [PRE_PERIOD] + list(POST_PERIODS)
-    train_features = extract_features_local("train", post_periods=all_periods)
-    train_fp = FEATURES_DIR / "s1_1x1_2months_train.parquet"
+
+    print("=" * 60)
+    print(f"Extracting train features (split_strategy={args.split_strategy})...")
+    print("=" * 60)
+    train_features = extract_features_local(
+        "train", split_strategy=args.split_strategy, post_periods=all_periods, seed=args.seed
+    )
+    train_fp = FEATURES_DIR / f"s1_1x1_2months_train{suffix}.parquet"
     train_features.to_parquet(train_fp)
     print(f"Saved train features to {train_fp}")
 
-    # Test split
     print("\n" + "=" * 60)
-    print("Extracting test features...")
+    print(f"Extracting test features (split_strategy={args.split_strategy})...")
     print("=" * 60)
-    test_features = extract_features_local("test", post_periods=all_periods)
-    test_fp = FEATURES_DIR / "s1_1x1_2months_test.parquet"
+    test_features = extract_features_local(
+        "test", split_strategy=args.split_strategy, post_periods=all_periods, seed=args.seed
+    )
+    test_fp = FEATURES_DIR / f"s1_1x1_2months_test{suffix}.parquet"
     test_features.to_parquet(test_fp)
     print(f"Saved test features to {test_fp}")
 
