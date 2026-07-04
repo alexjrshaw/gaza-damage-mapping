@@ -235,6 +235,7 @@ def _format_predictions(df_test: pd.DataFrame, cfg: DictConfig) -> gpd.GeoDataFr
         all_labels[["unosat_id", "aoi", "date", "geometry"]].set_index(["unosat_id", "aoi"]),
         on=["unosat_id", "aoi"],
     )
+    assert len(gdf) == len(preds_wide), "Row count changed during join — investigate before trusting results"
     gdf["date"] = pd.to_datetime(gdf["date"])
 
     return gpd.GeoDataFrame(gdf, geometry="geometry")
@@ -254,9 +255,7 @@ if __name__ == "__main__":
         dict(
             aggregation_method="mean",
             model_name="random_forest",
-            model_kwargs=dict(
-                numberOfTrees=50, minLeafPopulation=3, maxNodes=1e4
-            ),  # class_weight='balanced') added after baseline results; commented out for 20:80 train/test AOI split test
+            model_kwargs=dict(numberOfTrees=50, minLeafPopulation=3, maxNodes=1e4),
             data=dict(
                 s1=dict(subset_bands=None),
                 s2=None,
@@ -264,7 +263,7 @@ if __name__ == "__main__":
                 damages_to_keep=[1, 2],
                 extract_winds="1x1",
                 time_periods=dict(pre=PRE_PERIOD, post="2months"),
-                split_strategy="aoi",  # Added after baseline results
+                split_strategy="aoi",
             ),
             reducer_names=["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"],
             seed=0,
@@ -273,6 +272,5 @@ if __name__ == "__main__":
         )
     )
 
-    result = full_pipeline_local(
-        cfg, force_recreate=False
-    )  # force_recreate=False changed to =True after baseline results; changed back to =False for 20:80 train/test AOI split test
+    result = full_pipeline_local(cfg, force_recreate=True)
+
