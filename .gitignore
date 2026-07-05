@@ -129,3 +129,4 @@ test_sites/raw/
 # Slurm error logs
 logs/*.err
 pylint_report.txt
+*_log.txt
