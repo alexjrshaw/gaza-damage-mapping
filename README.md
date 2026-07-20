@@ -10,7 +10,7 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 
 ## Key findings
 
-- The Gaza-trained model detected **85.8% of held-out UNOSAT damage** (balanced accuracy 88.9%) at a calibrated threshold of t=0.670
+- The Gaza-trained model detected **85.8% of held-out UNOSAT damage** (balanced accuracy 88.9%) at a calibrated threshold of t=0.67
 - **151,368 buildings (68.5% of all studied)** were classified as damaged across Gaza
 - Applied without retraining to Mosul, Raqqa and Aleppo, balanced accuracy held at **64.0–64.8%** despite differing geography and conflict history
 - Local retraining on Mosul data did not improve on zero-shot transfer once thresholds were properly calibrated
