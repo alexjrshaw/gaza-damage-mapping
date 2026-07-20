@@ -30,6 +30,9 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 **Training areas (Gaza):** North Gaza, Gaza City
 **Test areas (Gaza):** Deir al-Balah, Khan Younis, Rafah
 
+**Training areas (Mosul retrain):** West bank (lon < 43.1262°E), 6,184 points
+**Test areas (Mosul retrain):** East bank (lon ≥ 43.1262°E), 7,250 points
+
 ---
 
 ## Key methodological adaptations from Dietrich et al. (2025)
@@ -42,7 +45,7 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 | 14 assessment epochs (Oct 2023–Oct 2025) | Full two-year conflict coverage |
 | Feature computation, training and inference moved to local HPC | Gaza's point density exceeded GEE's computational limits |
 | scikit-learn Random Forest instead of GEE SMILE | Required by local feature computation; same hyperparameters retained |
-| Cross-conflict transfer evaluation (Mosul, Raqqa, Aleppo) | Dietrich et al. (2025) argue their model "will adapt well to new areas" — this study provides empirical proof |
+| Cross-conflict transfer evaluation (Mosul, Raqqa, Aleppo) | Dietrich et al. (2025) argue their model "will adapt well to new areas." This study provides empirical proof |
 | Mosul local retraining comparison | Tests whether training on local data improves on zero-shot transfer, and under what conditions |
 
 ---
@@ -94,7 +97,15 @@ source alex/bin/activate        # Linux/Mac
 pip install -r requirements.txt
 ```
 
-### 3. Google Earth Engine
+### 3. Verify your environment
+
+```bash
+python3 check_environment.py
+```
+
+This checks all required packages are installed and reports any that are missing.
+
+### 4. Google Earth Engine
 
 You need a GEE account with access to the `gaza-damage-mapping` project, or your own registered cloud project.
 
@@ -105,7 +116,7 @@ earthengine set_project gaza-damage-mapping
 
 Update `ASSETS_PATH` in `src/constants.py` to point to your GEE project if using your own.
 
-### 4. Google Drive credentials
+### 5. Google Drive credentials
 
 Required for downloading feature rasters exported by GEE. GEE exports to a shared Drive folder; the download scripts poll Drive and delete files after download to manage quota.
 
@@ -127,7 +138,7 @@ oauth_scope:
 
 Note: Drive authentication must be completed interactively on the Forth login node before running any download scripts. Run `python3 src/utils/gdrive.py` once to trigger the OAuth flow and cache credentials.
 
-### 4. Data
+### 6. Data
 
 All data is either downloaded automatically or publicly available:
 
