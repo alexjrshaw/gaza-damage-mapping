@@ -166,47 +166,47 @@ python3 src/data/hotosm/preprocessing.py
 
 Steps 1–4 require internet access and should run interactively on the Forth login node in persistent `screen` sessions. Steps 5–8 can be submitted as Slurm batch jobs.
 
-**Step 1 — Upload UNOSAT labels to GEE**
+**1. Upload UNOSAT labels to GEE**
 ```bash
 python3 src/data/unosat.py
 ```
 
-**Step 2 — Extract Sentinel-1 intermediate time series (GEE)**
+**2. Extract Sentinel-1 intermediate time series (GEE)**
 ```bash
 python3 src/data/sentinel1/intermediate_data.py
 ```
 
-**Step 3 — Download intermediate assets to Forth**
+**3. Download intermediate assets to Forth**
 ```bash
 python3 src/data/sentinel1/download_intermediate_assets.py
 ```
 
-**Step 4 — Compute features locally**
+**4. Compute features locally**
 ```bash
 python3 src/data/sentinel1/extract_features_local.py
 ```
 
-**Step 5 — Train and evaluate classifier**
+**5. Train and evaluate classifier**
 ```bash
 python3 src/classification/main_local.py
 ```
 
-**Step 6 — Export feature rasters from GEE**
+**6. Export feature rasters from GEE**
 ```bash
 python3 src/inference/export_feature_rasters.py
 ```
 
-**Step 7 — Download feature rasters from Drive**
+**7. Download feature rasters from Drive**
 ```bash
 python3 src/inference/download_feature_rasters.py
 ```
 
-**Step 8 — Run local pixel inference**
+**8. Run local pixel inference**
 ```bash
 python3 src/inference/local_pixel_inference.py
 ```
 
-**Step 9 — Postprocess: aggregate to buildings and classify**
+**9. Postprocess: aggregate to buildings and classify**
 ```bash
 python3 src/postprocessing/pixel_postprocessing.py
 python3 src/postprocessing/classify_building_damage.py
@@ -214,23 +214,23 @@ python3 src/postprocessing/classify_building_damage.py
 
 ### Cross-conflict transfer (Mosul, Raqqa, Aleppo)
 
-**Step 1 — Upload transfer city UNOSAT labels to GEE**
+**1. Upload transfer city UNOSAT labels to GEE**
 ```bash
 python3 src/data/transfer_cities/upload_unosat_to_gee.py
 ```
 
-**Step 2 — Export feature rasters**
+**2. Export feature rasters**
 ```bash
 python3 src/data/transfer_cities/pixel_inference/export_feature_rasters_transfer.py
 ```
 
-**Step 3 — Download and run inference**
+**3. Download and run inference**
 ```bash
 python3 src/data/transfer_cities/pixel_inference/download_feature_rasters_transfer.py
 python3 src/data/transfer_cities/pixel_inference/pixel_inference_transfer.py
 ```
 
-**Step 4 — Evaluate**
+**4. Evaluate**
 ```bash
 python3 src/data/transfer_cities/pixel_inference/evaluate_pixel_transfer.py
 ```
