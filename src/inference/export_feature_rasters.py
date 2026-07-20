@@ -9,7 +9,7 @@ This avoids the GEE computation graph scaling problem that prevented
 extract_features.py from working at Gaza's point density. GEE raster
 operations scale reliably to Gaza's full extent.
 
-Mirrors Dietrich et al.'s dense_inference.py / full_gaza.py approach:
+Mirrors Dietrich et al. (2025) feature raster export approach:
     - Same 7 statistical reducers: mean, stdDev, median, min, max, skew, kurtosis
     - Same feature naming: VV_pre_1x1_mean, VH_post_1x1_stdDev etc.
     - Same 10m resolution
@@ -38,7 +38,7 @@ from tqdm import tqdm
 from src.constants import DATA_PATH, POST_PERIODS, PRE_PERIOD
 from src.data.quadkeys import load_gaza_quadkeys_gee
 from src.data.sentinel1.collection import get_s1_collection
-from src.inference.dense_inference import col_to_features
+from src.utils.gee import col_to_features
 from src.utils.gdrive import create_drive_folder, get_files_in_folder
 from src.utils.gee import init_gee
 
@@ -100,7 +100,7 @@ def export_feature_rasters_for_window(
             s1 = get_s1_collection(geo)
             s1_orbit = s1.filter(ee.Filter.eq("relativeOrbitNumber_start", orbit))
 
-            # Compute 28-band feature image — reuses dense_inference.col_to_features exactly
+            # Compute 28-band feature image — uses col_to_features from src/utils/gee.py
             feature_img = col_to_features(s1_orbit, REDUCER_NAMES, time_periods, EXTRACT_WINDOW)
 
             # Export to Drive as Float32 GeoTIFF

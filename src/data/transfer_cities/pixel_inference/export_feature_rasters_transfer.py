@@ -39,7 +39,7 @@ sys.path.insert(0, "/scratch/s1214882/gaza-damage-mapping")
 from src.data.quadkeys import get_intersecting_quadkeys
 from src.data.sentinel1.collection import get_s1_collection
 from src.data.transfer_cities.constants_transfer import TRANSFER_CITIES, TRANSFER_GEE_FOLDER
-from src.inference.dense_inference import col_to_features
+from src.utils.gee import col_to_features
 from src.utils.gdrive import create_drive_folder, get_files_in_folder
 from src.utils.gee import asset_exists, create_folders_recursively, init_gee
 

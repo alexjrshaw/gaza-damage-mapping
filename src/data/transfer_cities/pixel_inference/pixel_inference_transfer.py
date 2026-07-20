@@ -39,7 +39,7 @@ from src.classification.utils import get_features_names
 from src.constants import DATA_PATH, PRE_PERIOD
 from src.data.transfer_cities.constants_transfer import TRANSFER_CITIES
 
-GAZA_MODEL_FP = DATA_PATH / "runs/rf_s1_2months_50trees_1x1_all7reducers_baseline/model.pkl"
+GAZA_MODEL_FP = DATA_PATH / "runs/rf_s1_2months_50trees_1x1_all7reducers/model.pkl"
 TRANSFER_FEAT_BASE = DATA_PATH / "transfer_cities" / "feature_rasters"
 TRANSFER_PROB_BASE = DATA_PATH / "transfer_cities" / "probability_rasters"
 

@@ -7,7 +7,7 @@ evaluation.ipynb (Dietrich et al. 2025 methodology):
     2. Run full pixel inference → probability rasters
     3. Merge tiles → Gaza-wide GeoTIFFs
     4. Sample rasters at UNOSAT test points (3x3 window, max agg)
-    5. Compute metrics at t=0.675 (90% precision target)
+    5. Compute metrics at t=0.670 (90% precision target, re-verified 5 July)
 
 OOB plots (n_trees, mtry) use sklearn oob_score_ — no inference needed.
 
@@ -490,7 +490,7 @@ def run_oob_study(results: dict) -> dict:
     # OOB vs n_trees
     if "oob_n_trees" not in results:
         print("OOB vs n_trees...")
-        n_trees_vals = [10, 25, 50, 100, 200, 300]
+        n_trees_vals = [10, 25, 50, 75, 100, 200, 300]
         oob_scores = []
         for n in tqdm(n_trees_vals, desc="n_trees"):
             clf = RandomForestClassifier(
@@ -540,7 +540,7 @@ if __name__ == "__main__":
     save_results(results)
 
     # 2. F1 vs n_trees (pixel-level inference per variant, ~1hr each)
-    n_trees_variants = [10, 25, 100, 200, 300]  # 50 is baseline, skip if already run
+    n_trees_variants = [10, 25, 75, 100, 200, 300]  # 50 is baseline, skip if already run
     for n in n_trees_variants:
         vname = f"ablation_ntrees_{n}"
         m = run_variant_full(vname, n_trees=n, results=results)

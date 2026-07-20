@@ -1,28 +1,34 @@
 """
-Local pixel-level inference for Gaza damage mapping.
+Pixel-level inference for the Mosul retraining comparison.
 
-Classifies exported feature rasters using the trained sklearn Random Forest,
-producing damage probability rasters at 10m resolution across Gaza.
+Adaptation of src/inference/local_pixel_inference.py, with the model and
+output path swapped to use the Mosul-retrained classifier instead of the
+Gaza-trained one. Classifies Mosul's *existing* feature rasters (already
+exported for the zero-shot transfer evaluation) so that the retrained
+model's output is evaluated by the exact same downstream script
+(evaluate_pixel_transfer.py) used for every other pixel-level result in
+this dissertation.
 
-This is the local equivalent of the GEE-based inference approach used by Dietrich et al. (2025).
-Follows Dietrich et al. (2025) methodology exactly:
-    - Loads 28-band feature GeoTIFFs exported by export_feature_rasters.py
-    - Applies sklearn RF to every pixel
-    - Aggregates predictions across 3 orbits (mean) — mirrors predict_geo()
-    - Exports probability rasters scaled 0-255 (Uint8) — matches full_gaza.py output
-    - Output format matches drive_to_results.py input exactly
+Adaptations from local_pixel_inference.py (noted individually below):
+    1. ORBITS: Mosul's three orbits (72, 145, 152) replace Gaza's (87, 94, 160).
+    2. MODEL_FP: points to the Mosul-retrained model (trained on west-bank
+       points only, see main_local_mosul_retrain.py) instead of Gaza's
+       baseline model.
+    3. FEATURE_RASTERS_DIR / PROBABILITY_RASTERS_DIR: point to Mosul's
+       existing transfer-city raster folders instead of Gaza's.
+    4. No other change. Classification, orbit aggregation (mean), and
+       output scaling (Uint8, 0-255) are identical to local_pixel_inference.py.
 
 Pipeline position:
-    export_feature_rasters.py → [this script] → local_postprocessing_pixel.py
+    (existing) export_feature_rasters_transfer.py
+        -> main_local_mosul_retrain.py (trains model on west-bank points)
+        -> [this script] (classifies Mosul's feature rasters with the
+           retrained model)
+        -> evaluate_pixel_transfer.py (unmodified; evaluated on east-bank
+           test points only -- see note in that call below)
 
-Input:
-    data/feature_rasters/{window_str}/orbit{orbit}/qk_{qk_id}.tif
-        - 28-band Float32 feature GeoTIFF per tile per orbit
-
-Output:
-    data/probability_rasters/{window_str}/qk_{qk_id}.tif
-        - Single-band Uint8 probability raster (0-255) per tile
-        - Orbit-aggregated mean (mirrors Dietrich et al. aggregation_method='mean')
+Usage:
+    python3 alex/tmp/mosul_retrain_pixel_inference.py
 """
 
 import pickle
@@ -38,14 +44,19 @@ from src.classification.utils import get_features_names
 from src.constants import DATA_PATH, PRE_PERIOD
 
 # ==================== CONSTANTS ====================
+# Adaptation 1: Mosul's orbits, not Gaza's (87, 94, 160).
+ORBITS = [72, 145, 152]
 
-ORBITS = [87, 94, 160]
-FEATURE_RASTERS_DIR = DATA_PATH / "feature_rasters"
-PROBABILITY_RASTERS_DIR = DATA_PATH / "probability_rasters"
-RUN_NAME = "rf_s1_2months_50trees_1x1_all7reducers"
-MODEL_FP = DATA_PATH / f"runs/{RUN_NAME}/model.pkl"
+# Adaptation 3: Mosul's existing transfer-city raster folders.
+FEATURE_RASTERS_DIR = DATA_PATH / "transfer_cities" / "feature_rasters" / "MOS"
+PROBABILITY_RASTERS_DIR = DATA_PATH / "transfer_cities" / "probability_rasters" / "MOS_RETRAINED_EAST_ONLY"
 
-# Config needed to get feature names in correct order
+# Adaptation 2: the Mosul-retrained model, not Gaza's baseline model.
+MODEL_FP = DATA_PATH / "transfer_cities" / "runs" / "MOS_retrained" / "model.pkl"
+
+# Unchanged from local_pixel_inference.py: same feature config, same
+# reducer set, same extraction window, so the 28 feature names and their
+# order are identical to Gaza's.
 CFG = OmegaConf.create(
     dict(
         data=dict(
@@ -57,10 +68,10 @@ CFG = OmegaConf.create(
         reducer_names=["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"],
     )
 )
-FEATURE_COLS = get_features_names(CFG)  # 28 feature names in correct order
+FEATURE_COLS = get_features_names(CFG)
 
 
-# ==================== LOADING ====================
+# ==================== LOADING (unchanged) ====================
 
 
 def load_model(fp: Path = MODEL_FP):
@@ -73,22 +84,15 @@ def load_model(fp: Path = MODEL_FP):
 
 
 def load_tile(fp: Path) -> tuple[np.ndarray, list[str], dict]:
-    """
-    Load a single feature GeoTIFF tile.
-
-    Returns:
-        data: (28, H, W) float32 array
-        band_names: list of band names from GeoTIFF metadata
-        profile: rasterio profile for output
-    """
+    """Load a single feature GeoTIFF tile. Unchanged from local_pixel_inference.py."""
     with rasterio.open(fp) as src:
         data = src.read().astype(np.float32)
-        band_names = list(src.descriptions)  # GEE exports band names here
+        band_names = list(src.descriptions)
         profile = src.profile.copy()
     return data, band_names, profile
 
 
-# ==================== CLASSIFICATION ====================
+# ==================== CLASSIFICATION (unchanged) ====================
 
 
 def classify_tile(
@@ -97,15 +101,15 @@ def classify_tile(
     clf,
     feature_cols: list[str],
 ) -> np.ndarray:
+    """Unchanged from local_pixel_inference.py."""
     n_bands, H, W = data.shape
 
-    # Reorder bands to match model's expected feature order
     band_index = {name: i for i, name in enumerate(band_names)}
     try:
         order = [band_index[col] for col in feature_cols]
     except KeyError as e:
         raise ValueError(f"Band {e} not found in GeoTIFF. Available: {band_names}")
-    data = data[order]  # reorder to match feature_cols
+    data = data[order]
 
     X = data.reshape(n_bands, -1).T
     valid_mask = ~np.any(np.isnan(X), axis=1)
@@ -117,24 +121,9 @@ def classify_tile(
     return prob_flat.reshape(H, W)
 
 
-def aggregate_orbits(
-    probs: list[np.ndarray],
-    method: str = "mean",
-) -> np.ndarray:
-    """
-    Aggregate probability rasters across orbits.
-
-    Mirrors Dietrich et al. aggregation_method='mean' in predict_geo().
-
-    Args:
-        probs: list of (H, W) probability arrays, one per orbit
-        method: aggregation method ('mean', 'max', 'min', 'median')
-
-    Returns:
-        aggregated (H, W) probability array
-    """
-    stack = np.stack(probs, axis=0)  # (n_orbits, H, W)
-
+def aggregate_orbits(probs: list[np.ndarray], method: str = "mean") -> np.ndarray:
+    """Unchanged from local_pixel_inference.py."""
+    stack = np.stack(probs, axis=0)
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=RuntimeWarning)
         if method == "mean":
@@ -149,38 +138,22 @@ def aggregate_orbits(
             raise ValueError(f"Unknown aggregation method: {method}")
 
 
-# ==================== SAVING ====================
+# ==================== SAVING (unchanged) ====================
 
 
-def save_probability_tile(
-    prob: np.ndarray,
-    profile: dict,
-    fp_out: Path,
-) -> None:
-    """
-    Save probability raster as Uint8 GeoTIFF scaled 0-255.
-
-    Matches full_gaza.py output format:
-        preds.multiply(2**8 - 1).toUint8()
-    """
+def save_probability_tile(prob: np.ndarray, profile: dict, fp_out: Path) -> None:
+    """Unchanged from local_pixel_inference.py."""
     fp_out.parent.mkdir(exist_ok=True, parents=True)
-
-    # Scale to 0-255, set NaN to 0
     prob_uint8 = np.where(np.isnan(prob), 0, prob * 255).astype(np.uint8)
 
     out_profile = profile.copy()
-    out_profile.update(
-        dtype=rasterio.uint8,
-        count=1,
-        nodata=0,
-        compress="lzw",
-    )
+    out_profile.update(dtype=rasterio.uint8, count=1, nodata=0, compress="lzw")
 
     with rasterio.open(fp_out, "w", **out_profile) as dst:
         dst.write(prob_uint8[np.newaxis, :, :])
 
 
-# ==================== PIPELINE ====================
+# ==================== PIPELINE (unchanged except ORBITS source) ====================
 
 
 def classify_window(
@@ -191,27 +164,10 @@ def classify_window(
     aggregation_method: str = "mean",
     force_recreate: bool = False,
 ) -> None:
-    """
-    Classify all tiles for one time window.
-
-    For each quadkey tile:
-        1. Load feature rasters for all 3 orbits
-        2. Classify each orbit
-        3. Aggregate across orbits (mean)
-        4. Save probability raster
-
-    Args:
-        window_str: Window identifier e.g. 'w07_2023-10-07_2023-12-06'
-        clf: Trained sklearn RF
-        feature_rasters_dir: Base directory for feature rasters
-        probability_rasters_dir: Output directory for probability rasters
-        aggregation_method: Orbit aggregation method (default: 'mean')
-        force_recreate: Overwrite existing probability rasters
-    """
+    """Unchanged from local_pixel_inference.py (uses module-level ORBITS)."""
     out_dir = probability_rasters_dir / window_str
     out_dir.mkdir(exist_ok=True, parents=True)
 
-    # Find all tile IDs for this window (from first available orbit)
     tile_ids = set()
     for orbit in ORBITS:
         orbit_dir = feature_rasters_dir / window_str / f"orbit{orbit}"
@@ -219,7 +175,7 @@ def classify_window(
             tile_ids.update(fp.stem.replace("qk_", "") for fp in orbit_dir.glob("qk_*.tif"))
 
     if not tile_ids:
-        print(f"  No tiles found for {window_str} — skipping")
+        print(f"  No tiles found for {window_str} -- skipping")
         return
 
     print(f"  {len(tile_ids)} tiles, aggregating {len(ORBITS)} orbits with {aggregation_method}")
@@ -232,7 +188,6 @@ def classify_window(
             n_skipped += 1
             continue
 
-        # Load and classify each orbit
         orbit_probs = []
         reference_profile = None
 
@@ -250,10 +205,7 @@ def classify_window(
         if not orbit_probs:
             continue
 
-        # Aggregate across orbits
         prob_agg = aggregate_orbits(orbit_probs, method=aggregation_method)
-
-        # Save
         save_probability_tile(prob_agg, reference_profile, fp_out)
 
     if n_skipped:
@@ -266,24 +218,16 @@ def run_local_inference(
     aggregation_method: str = "mean",
     force_recreate: bool = False,
 ) -> None:
-    """
-    Run local pixel inference for all available time windows.
-
-    Processes whatever windows are already downloaded — can be run
-    incrementally as GEE exports complete.
-    """
-    # Load model
+    """Unchanged from local_pixel_inference.py."""
     clf = load_model()
 
-    # Find all downloaded windows
     if not feature_rasters_dir.exists():
         print(f"Feature rasters directory not found: {feature_rasters_dir}")
-        print("Run export_feature_rasters.py and download from Drive first.")
         return
 
     windows = sorted(d.name for d in feature_rasters_dir.iterdir() if d.is_dir())
     if not windows:
-        print("No windows found. Download feature rasters from Drive first.")
+        print("No windows found.")
         return
 
     print(f"\nFound {len(windows)} windows to classify")
