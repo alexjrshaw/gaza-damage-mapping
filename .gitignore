@@ -131,3 +131,6 @@ logs/*.err
 pylint_report.txt
 *_log.txt
 alex/
+*.log
+*_log.txt
+*_err.txt
