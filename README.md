@@ -30,6 +30,9 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 **Training areas (Gaza):** North Gaza, Gaza City
 **Test areas (Gaza):** Deir al-Balah, Khan Younis, Rafah
 
+**Training areas (Mosul retrain):** West bank (lon < 43.1262°E) — 6,184 points
+**Test areas (Mosul retrain):** East bank (lon ≥ 43.1262°E) — 7,250 points
+
 ---
 
 ## Key methodological adaptations from Dietrich et al. (2025)
