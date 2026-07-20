@@ -97,7 +97,15 @@ source alex/bin/activate        # Linux/Mac
 pip install -r requirements.txt
 ```
 
-### 3. Google Earth Engine
+### 3. Verify your environment
+
+```bash
+python3 check_environment.py
+```
+
+This checks all required packages are installed and reports any that are missing.
+
+### 4. Google Earth Engine
 
 You need a GEE account with access to the `gaza-damage-mapping` project, or your own registered cloud project.
 
@@ -108,7 +116,7 @@ earthengine set_project gaza-damage-mapping
 
 Update `ASSETS_PATH` in `src/constants.py` to point to your GEE project if using your own.
 
-### 4. Google Drive credentials
+### 5. Google Drive credentials
 
 Required for downloading feature rasters exported by GEE. GEE exports to a shared Drive folder; the download scripts poll Drive and delete files after download to manage quota.
 
@@ -130,7 +138,7 @@ oauth_scope:
 
 Note: Drive authentication must be completed interactively on the Forth login node before running any download scripts. Run `python3 src/utils/gdrive.py` once to trigger the OAuth flow and cache credentials.
 
-### 4. Data
+### 6. Data
 
 All data is either downloaded automatically or publicly available:
 
