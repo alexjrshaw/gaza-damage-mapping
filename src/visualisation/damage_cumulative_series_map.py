@@ -22,7 +22,7 @@ PREDS_FP = DATA_PATH / "pixel_postprocessing/buildings_preds.parquet"
 ADMIN2_FP = DATA_PATH / "raw/pse_admin2.geojson"
 OUT_FP = DATA_PATH / "ablation_runs/figures/damage_cumulative_series.png"
 
-THRESHOLD = int(0.670 * 255)  # corrected from stale 0.655
+THRESHOLD = int(0.670 * 255)  # Gaza-calibrated threshold: int(0.670 * 255) = 170
 UTM_CRS = "EPSG:32636"
 MARKER_SIZE = 0.1
 

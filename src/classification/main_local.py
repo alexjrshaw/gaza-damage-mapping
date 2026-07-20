@@ -18,7 +18,7 @@ The output GeoDataFrame matches the format produced by main.py:
 This allows metrics.py to be used without modification, computing
 the same date-wise evaluation as Dietrich et al. (2025).
 
-Gaza adaptation: local pandas/sklearn instead of GEE SMILE RF.
+Gaza adaptation: feature computation and training run locally (pandas/scikit-learn) — GEE SMILE RF was infeasible at Gaza's point density.
 """
 
 import json

@@ -17,7 +17,7 @@ Mirrors Dietrich et al. (2025) feature raster export approach:
     - Same orbit aggregation (mean over 3 orbits)
 
 The only deviation from Dietrich et al.:
-    - Classification uses sklearn RF locally instead of GEE SMILE RF
+    - Classification uses scikit-learn RF locally — GEE SMILE RF replaced due to Gaza's computational scale
     - Feature export replaces in-GEE classification
 
 Output:
