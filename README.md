@@ -49,8 +49,9 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 | Mosul local retraining comparison | Tests whether training on local data improves on zero-shot transfer, and under what conditions |
 
 ---
-```
+
 ## Repository structure
+```
 gaza-damage-mapping/
 ├── check_environment.py
 ├── requirements.txt
