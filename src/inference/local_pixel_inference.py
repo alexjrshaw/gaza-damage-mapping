@@ -9,8 +9,8 @@ Follows Dietrich et al. (2025) methodology exactly:
     - Loads 28-band feature GeoTIFFs exported by export_feature_rasters.py
     - Applies sklearn RF to every pixel
     - Aggregates predictions across 3 orbits (mean) — mirrors predict_geo()
-    - Exports probability rasters scaled 0-255 (Uint8) — matches full_gaza.py output
-    - Output format matches drive_to_results.py input exactly
+    - Exports probability rasters scaled 0-255 (Uint8) — matches pixel_postprocessing.py input
+    - Output format matches pixel_postprocessing.py input
 
 Pipeline position:
     export_feature_rasters.py → [this script] → local_postprocessing_pixel.py
@@ -160,7 +160,7 @@ def save_probability_tile(
     """
     Save probability raster as Uint8 GeoTIFF scaled 0-255.
 
-    Matches full_gaza.py output format:
+    Output format:
         preds.multiply(2**8 - 1).toUint8()
     """
     fp_out.parent.mkdir(exist_ok=True, parents=True)

@@ -28,7 +28,7 @@ def vectorize_xarray_3d(xa: xr.DataArray, dates: list[str]) -> gpd.GeoDataFrame:
         xa = xa.squeeze(dim="band")
         assert len(xa.shape) == 3, "xarray should be 3D"
 
-    # Comptue grid from coordinates
+    # Compute grid from coordinates
     x, y = xa.x.values, xa.y.values
     x, y = np.meshgrid(x, y)
     x, y = x.flatten(), y.flatten()

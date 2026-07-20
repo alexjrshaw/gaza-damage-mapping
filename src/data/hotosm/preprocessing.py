@@ -68,7 +68,7 @@ def only_in_gaza_and_relevant_properties() -> None:
     """
     Filter to buildings within Gaza Strip and compute relevant properties.
 
-    Mirrors only_in_ukraine_and_relevant_properties() but uses GeoPandas
+    Mirrors Dietrich et al. only_in_ukraine_and_relevant_properties() but uses GeoPandas
     instead of DuckDB since HOTOSM data is GeoJSON not parquet.
     """
 

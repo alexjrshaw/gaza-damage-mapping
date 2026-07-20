@@ -1,11 +1,11 @@
 """
 Pixel-level postprocessing for Gaza damage mapping.
 
-Local equivalent of drive_to_results.py from Dietrich et al. (2025).
+Local equivalent of Dietrich et al. (2025) drive_to_results.py, adapted for local computation on Forth.
 Assigns pixel-level damage probability rasters to HOTOSM building
 footprints, producing building-level damage estimates per time window.
 
-Mirrors drive_to_results.py exactly in three steps:
+Mirrors Dietrich et al. (2025) drive_to_results.py in three steps:
     1. Merge quadkey tiles → single GeoTIFF per time window
        (equivalent to download_and_merge_all_dates)
     2. Assign pixel predictions to buildings per admin unit
@@ -51,7 +51,7 @@ def merge_tiles_for_window(window_str: str, force_recreate: bool = False) -> Pat
     """
     Merge all quadkey tiles for one window into a single GeoTIFF.
 
-    Mirrors download_and_merge() in drive_to_results.py.
+    Mirrors Dietrich et al. download_and_merge() logic.
     Uses gdal.Warp to mosaic tiles — identical approach to Dietrich et al.
 
     Args:
@@ -131,7 +131,7 @@ def create_buildings_with_preds_for_admin(
     """
     Assign pixel predictions to buildings for one admin unit.
 
-    Mirrors create_gdf_overture_with_preds() in drive_to_results.py exactly:
+    Mirrors Dietrich et al. create_gdf_overture_with_preds() logic, adapted for HOTOSM footprints:
         1. Load buildings for admin unit
         2. Read and stack prediction rasters
         3. Vectorize pixels → polygons
@@ -234,7 +234,7 @@ def create_all_buildings_with_preds(
     """
     Assign pixel predictions to buildings for all admin units.
 
-    Mirrors create_all_gdf_overture_with_preds_mp() in drive_to_results.py.
+    Mirrors Dietrich et al. multi-processing aggregation logic.
     Processes each governorate separately to manage memory.
     """
     print("\n" + "=" * 60)
@@ -288,7 +288,7 @@ def aggregate_all_preds() -> pd.DataFrame:
     """
     Aggregate all admin predictions into buildings_preds.parquet.
 
-    Mirrors aggregate_all_preds() in drive_to_results.py exactly.
+    Mirrors Dietrich et al. aggregate_all_preds() logic.
     """
     print("\n" + "=" * 60)
     print("Step 3: Aggregating all admin predictions")
@@ -353,7 +353,7 @@ def pixel_postprocessing(force_recreate: bool = False) -> pd.DataFrame:
     """
     Full pixel-level postprocessing pipeline.
 
-    Local equivalent of drive_to_result() in drive_to_results.py.
+    Local equivalent of Dietrich et al. drive_to_result() pipeline step.
     """
     OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
 

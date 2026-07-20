@@ -105,7 +105,7 @@ def create_folders_recursively(full_path: str, last_one_is_asset: bool = False):
         create_folder(folder)
 
 
-# --- moved from dense_inference.py ---
+# Functions moved from src/inference/dense_inference.py (now deleted). See git history for original.
 
 
 def col_to_features(

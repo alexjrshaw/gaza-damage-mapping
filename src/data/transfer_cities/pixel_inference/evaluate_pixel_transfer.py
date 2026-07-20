@@ -47,7 +47,7 @@ from src.data.transfer_cities.constants_transfer import TRANSFER_CITIES
 TRANSFER_PROB_BASE = DATA_PATH / "transfer_cities" / "probability_rasters"
 TRANSFER_RUNS_DIR = DATA_PATH / "transfer_cities" / "runs"
 WINDOW_SIZE = 3
-THRESHOLDS = [0.5, 0.655, 0.670]
+THRESHOLDS = [0.5, 0.670]  # 0.5 default; 0.670 Gaza-calibrated (90% precision target)
 USABLE_THRESHOLD_PCT = 50.0
 
 

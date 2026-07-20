@@ -47,7 +47,7 @@ init_gee(project="gaza-damage-mapping")
 # ==================== CONSTANTS ====================
 
 RUN_NAME = "gaza_feature_rasters"
-QUADKEY_ZOOM = 12  # Same as full_gaza.py — ~2.4km² tiles
+QUADKEY_ZOOM = 12  # Same quadkey zoom as Dietrich et al. original pipeline — ~2.4km² tiles
 SCALE = 10  # 10m resolution — same as Dietrich et al.
 ORBITS = [87, 94, 160]  # Gaza S1 orbits
 REDUCER_NAMES = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
@@ -66,7 +66,7 @@ def export_feature_rasters_for_window(
     """
     Export 28-band feature rasters for one time window, for each orbit.
 
-    One GeoTIFF per quadkey tile per orbit — mirrors full_gaza.py tile structure.
+    One GeoTIFF per quadkey tile per orbit — mirrors Dietrich et al. tile structure.
     Bands: VV_pre_1x1_mean ... VH_post_1x1_kurtosis (28 bands total)
 
     Args:
