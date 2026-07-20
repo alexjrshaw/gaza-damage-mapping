@@ -166,8 +166,8 @@ def main():
 
     print("Plotting 4×4 series (A4 portrait)...")
     fig, axes = plt.subplots(
-        4,
-        4,
+        7,
+        2,
         figsize=(8.27, 11.69),
         gridspec_kw={"wspace": 0.02, "hspace": 0.08},
     )
@@ -193,8 +193,6 @@ def main():
             spine.set_visible(False)
 
     legend_ax = axes_flat[13]
-    axes_flat[14].axis("off")
-    axes_flat[15].axis("off")
     legend_ax.axis("off")
     legend_ax.legend(
         handles=[
