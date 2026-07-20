@@ -87,7 +87,9 @@ def create_gaza_quadkeys_grid(zoom: int, fp_to_save: str | Path):
     """Create a quadkeys grid for Gaza at a specific zoom level."""
     gaza = load_gaza_strip_boundary()
     quadkeys = get_intersecting_quadkeys(gaza, zoom)
-    quadkeys["area_in_gaza"] = quadkeys.geometry.apply(lambda geo: geo.intersection(gaza).area / geo.area)
+    quadkeys["area_in_gaza"] = quadkeys.geometry.apply(
+        lambda geo: geo.intersection(gaza).area / geo.area
+    )
     quadkeys.to_file(fp_to_save, driver="GeoJSON")
     print(f"Saved quadkeys grid for Gaza at zoom level {zoom}.")
 
@@ -95,7 +97,9 @@ def create_gaza_quadkeys_grid(zoom: int, fp_to_save: str | Path):
 def get_intersecting_quadkeys(polygon: GeometryType, zoom: int) -> gpd.GeoDataFrame:
     minx, miny, maxx, maxy = polygon.bounds
     top_left_x, top_left_y = global_pixel_to_tile(*position_to_global_pixel(minx, maxy, zoom))
-    bottom_right_x, bottom_right_y = global_pixel_to_tile(*position_to_global_pixel(maxx, miny, zoom))
+    bottom_right_x, bottom_right_y = global_pixel_to_tile(
+        *position_to_global_pixel(maxx, miny, zoom)
+    )
 
     quadkeys = []
     geoms = []

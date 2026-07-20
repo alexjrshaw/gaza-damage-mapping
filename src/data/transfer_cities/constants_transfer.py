@@ -256,5 +256,9 @@ TRANSFER_CITIES = {
 # for training and would inflate apparent performance if included here.
 TRANSFER_CITIES["MOS_RETRAINED_EAST_ONLY"] = {
     **TRANSFER_CITIES["MOS"],
-    "unosat_labels": PROJECT_PATH / "test_sites" / "processed" / "mos" / "unosat_labels_east_bank_only.geojson",
+    "unosat_labels": PROJECT_PATH
+    / "test_sites"
+    / "processed"
+    / "mos"
+    / "unosat_labels_east_bank_only.geojson",
 }

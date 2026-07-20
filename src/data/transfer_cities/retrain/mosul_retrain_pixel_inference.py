@@ -49,7 +49,9 @@ ORBITS = [72, 145, 152]
 
 # Adaptation 3: Mosul's existing transfer-city raster folders.
 FEATURE_RASTERS_DIR = DATA_PATH / "transfer_cities" / "feature_rasters" / "MOS"
-PROBABILITY_RASTERS_DIR = DATA_PATH / "transfer_cities" / "probability_rasters" / "MOS_RETRAINED_EAST_ONLY"
+PROBABILITY_RASTERS_DIR = (
+    DATA_PATH / "transfer_cities" / "probability_rasters" / "MOS_RETRAINED_EAST_ONLY"
+)
 
 # Adaptation 2: the Mosul-retrained model, not Gaza's baseline model.
 MODEL_FP = DATA_PATH / "transfer_cities" / "runs" / "MOS_retrained" / "model.pkl"

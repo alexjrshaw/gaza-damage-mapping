@@ -129,7 +129,9 @@ def evaluate_pixel_city(city_id: str) -> dict:
         pred_cols[window_str] = vals
         valid_pct = (~np.isnan(vals)).sum() / len(vals) * 100
         window_meta[window_str] = (end_post, valid_pct)
-        print(f"  {window_str}: {len(tiles)} tiles, mean={np.nanmean(vals):.1f}, valid={valid_pct:.1f}%")
+        print(
+            f"  {window_str}: {len(tiles)} tiles, mean={np.nanmean(vals):.1f}, valid={valid_pct:.1f}%"
+        )
 
     if not pred_cols:
         print("  No probability rasters found.")

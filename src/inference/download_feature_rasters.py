@@ -71,7 +71,11 @@ def get_drive_tiles_by_id(orbit_id: str) -> list[tuple[str, str]]:
     """Returns list of (filename, file_id) tuples within an orbit folder."""
     try:
         items = drive.ListFile({"q": f"'{orbit_id}' in parents and trashed=false"}).GetList()
-        return [(i["title"], i["id"]) for i in items if i["title"].startswith("qk_") and i["title"].endswith(".tif")]
+        return [
+            (i["title"], i["id"])
+            for i in items
+            if i["title"].startswith("qk_") and i["title"].endswith(".tif")
+        ]
     except Exception:
         return []
 
@@ -91,7 +95,9 @@ def download_orbit_folder(
     local_dir.mkdir(exist_ok=True, parents=True)
 
     tiles = get_drive_tiles_by_id(orbit_id)
-    new_tiles = [(name, fid) for name, fid in tiles if not already_downloaded(window_str, orbit_str, name)]
+    new_tiles = [
+        (name, fid) for name, fid in tiles if not already_downloaded(window_str, orbit_str, name)
+    ]
 
     if not new_tiles:
         return 0
@@ -144,7 +150,10 @@ def run_download_loop() -> None:
             local_size_gb = sum(f.stat().st_size for f in LOCAL_BASE.rglob("*.tif")) / 1e9
             print(f"Local storage used: {local_size_gb:.2f} GB")
         else:
-            print(f"No new tiles. Waiting {POLL_INTERVAL}s... " f"(total downloaded: {total_downloaded})")
+            print(
+                f"No new tiles. Waiting {POLL_INTERVAL}s... "
+                f"(total downloaded: {total_downloaded})"
+            )
 
         time.sleep(POLL_INTERVAL)
 

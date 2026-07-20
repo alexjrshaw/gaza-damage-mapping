@@ -107,6 +107,7 @@ def create_folders_recursively(full_path: str, last_one_is_asset: bool = False):
 
 # --- moved from dense_inference.py ---
 
+
 def col_to_features(
     col: ee.ImageCollection,
     reducer_names: list[str],
@@ -142,7 +143,9 @@ def col_to_features(
 
         # Reduce to features, and rename the bands
         _s1_features = s1_dates.reduce(reducer)
-        _s1_features = _s1_features.select(original_col_names, get_new_names(original_col_names, prefix))
+        _s1_features = _s1_features.select(
+            original_col_names, get_new_names(original_col_names, prefix)
+        )
         s1_features = _s1_features if s1_features is None else s1_features.addBands(_s1_features)
 
     return s1_features
@@ -159,8 +162,12 @@ def find_orbits(
         s1_ = s1.filterDate(start, end)
         orbits_counts = s1_.aggregate_histogram("relativeOrbitNumber_start")
         # At least 5 images per orbit (two months of data)
-        orbits_counts = orbits_counts.map(lambda k, v: ee.Algorithms.If(ee.Number(v).gte(min_number), k, None))
-        orbits_inference = orbits_counts.keys().map(lambda k: ee.Number.parse(k))  # cast keys back to number
+        orbits_counts = orbits_counts.map(
+            lambda k, v: ee.Algorithms.If(ee.Number(v).gte(min_number), k, None)
+        )
+        orbits_inference = orbits_counts.keys().map(
+            lambda k: ee.Number.parse(k)
+        )  # cast keys back to number
         list_orbits.append(orbits_inference)
     return list_orbits[0].filter(ee.Filter.inList("item", list_orbits[1]))
 
@@ -174,7 +181,9 @@ def convolve_collection(
     """Convolve each image in the collection with a focal mean of radius `radius`"""
 
     def _convolve_mean(img):
-        return img.focalMean(radius, kernel_type, units=units).set("system:time_start", img.get("system:time_start"))
+        return img.focalMean(radius, kernel_type, units=units).set(
+            "system:time_start", img.get("system:time_start")
+        )
 
     return img_col.map(_convolve_mean)
 

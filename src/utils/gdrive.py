@@ -123,7 +123,9 @@ def get_folder_id(folder_name: str, create_if_missing: bool = False) -> str:
     return folder_id
 
 
-def get_files_in_folder(folder_name: str, return_names: bool = False) -> list[GoogleDriveFile | str]:
+def get_files_in_folder(
+    folder_name: str, return_names: bool = False
+) -> list[GoogleDriveFile | str]:
     """
     Returns list of all files inside the folder.
 

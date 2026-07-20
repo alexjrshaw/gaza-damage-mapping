@@ -22,10 +22,22 @@ OUT_FP = ABLATION_DIR / "mtry_extended_results.json"
 
 # Load known results from previous run
 known_results = {
-    1: 0.2789, 2: 0.2699, 3: 0.2671, 4: 0.2661,
-    5: 0.2654, 6: 0.2655, 7: 0.2652, 8: 0.2652,
-    9: 0.2652, 10: 0.2652, 11: 0.2650, 12: 0.2651,
-    13: 0.2652, 14: 0.2650, 15: 0.2650, 28: 0.2666,
+    1: 0.2789,
+    2: 0.2699,
+    3: 0.2671,
+    4: 0.2661,
+    5: 0.2654,
+    6: 0.2655,
+    7: 0.2652,
+    8: 0.2652,
+    9: 0.2652,
+    10: 0.2652,
+    11: 0.2650,
+    12: 0.2651,
+    13: 0.2652,
+    14: 0.2650,
+    15: 0.2650,
+    28: 0.2666,
 }
 
 print("Loading train features...")
@@ -33,13 +45,17 @@ df_train = get_dataset_ready_local(
     sat="s1", split="train", post_dates="2months", extract_wind="1x1"
 )
 
-cfg = OmegaConf.create(dict(
-    data=dict(
-        s1=dict(subset_bands=None), s2=None, extract_winds="1x1",
-        time_periods=dict(pre=PRE_PERIOD, post="2months"),
-    ),
-    reducer_names=["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"],
-))
+cfg = OmegaConf.create(
+    dict(
+        data=dict(
+            s1=dict(subset_bands=None),
+            s2=None,
+            extract_winds="1x1",
+            time_periods=dict(pre=PRE_PERIOD, post="2months"),
+        ),
+        reducer_names=["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"],
+    )
+)
 feature_cols = get_features_names(cfg)
 df_train = df_train.dropna(subset=feature_cols)
 X = df_train[feature_cols].values

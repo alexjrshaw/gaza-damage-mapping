@@ -46,7 +46,10 @@ TRANSFER_PROB_BASE = DATA_PATH / "transfer_cities" / "probability_rasters"
 CFG = OmegaConf.create(
     dict(
         data=dict(
-            s1=dict(subset_bands=None), s2=None, extract_winds="1x1", time_periods=dict(pre=PRE_PERIOD, post="2months")
+            s1=dict(subset_bands=None),
+            s2=None,
+            extract_winds="1x1",
+            time_periods=dict(pre=PRE_PERIOD, post="2months"),
         ),
         reducer_names=["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"],
     )

@@ -48,7 +48,9 @@ def wait_for_task(task, asset_id: str) -> None:
             print(f"  Done: {asset_id.split('/')[-1]}")
             return
         elif state in ["FAILED", "CANCELLED"]:
-            raise RuntimeError(f"Export failed for {asset_id}: " f"{status.get('error_message', 'unknown error')}")
+            raise RuntimeError(
+                f"Export failed for {asset_id}: " f"{status.get('error_message', 'unknown error')}"
+            )
         time.sleep(10)
 
 

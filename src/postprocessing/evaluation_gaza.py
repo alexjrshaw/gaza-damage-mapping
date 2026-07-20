@@ -4,8 +4,6 @@
 # In[ ]:
 
 
-
-
 # In[ ]:
 
 
@@ -31,7 +29,7 @@ MERGED_RASTERS_DIR = DATA_PATH / "merged_probability_rasters"
 
 
 # # Evaluate predictions vs UNOSAT labels
-# 
+#
 # Gaza adaptation of Dietrich et al. evaluation.ipynb.
 # Uses pixel-level probability rasters from local_pixel_inference.py.
 
@@ -42,6 +40,7 @@ MERGED_RASTERS_DIR = DATA_PATH / "merged_probability_rasters"
 
 
 import re
+
 
 def find_post_dates_gaza(merged_rasters_dir=MERGED_RASTERS_DIR):
     """
@@ -56,6 +55,7 @@ def find_post_dates_gaza(merged_rasters_dir=MERGED_RASTERS_DIR):
         if match:
             post_dates.append((match.group(1), match.group(2)))
     return sorted(post_dates)
+
 
 post_dates = find_post_dates_gaza()
 print(f"Found {len(post_dates)} post dates:")
@@ -74,7 +74,9 @@ def get_preds_geo(geo, run_name):
     post_dates_ = [p[0] for p in post_dates]  # keep only first date for reference
 
     # Read and stack preds for each date
-    fp_preds = [DATA_PATH / run_name / f'ukraine_{"_".join(post_date)}.tif' for post_date in post_dates]
+    fp_preds = [
+        DATA_PATH / run_name / f'ukraine_{"_".join(post_date)}.tif' for post_date in post_dates
+    ]
     dates = xr.Variable("date", pd.to_datetime(post_dates_))
     preds = xr.concat([read_fp_within_geo(fp, geo) for fp in fp_preds], dim=dates).squeeze()
     return preds
@@ -95,8 +97,10 @@ def get_preds_geo_gaza(geo, merged_rasters_dir=MERGED_RASTERS_DIR):
     post_dates = find_post_dates_gaza(merged_rasters_dir)
     post_dates_ = [p[0] for p in post_dates]
 
-    fp_preds = [merged_rasters_dir / f"gaza_w{str(i+1).zfill(2)}_{start}_{end}.tif"
-                for i, (start, end) in enumerate(post_dates)]
+    fp_preds = [
+        merged_rasters_dir / f"gaza_w{str(i+1).zfill(2)}_{start}_{end}.tif"
+        for i, (start, end) in enumerate(post_dates)
+    ]
     dates = xr.Variable("date", pd.to_datetime(post_dates_))
     preds = xr.concat([read_fp_within_geo(fp, geo) for fp in fp_preds], dim=dates).squeeze()
     return preds
@@ -117,7 +121,7 @@ def extract_raster_value_with_window(point, raster, window=1, agg="mean"):
         y_idx = np.argmin(np.abs(raster.y.values - point.y))
         raster_wind = raster.isel(
             x=slice(x_idx - half_window, x_idx + half_window + 1),
-            y=slice(y_idx - half_window, y_idx + half_window + 1)
+            y=slice(y_idx - half_window, y_idx + half_window + 1),
         )
         if agg == "mean":
             return raster_wind.mean().item()
@@ -160,13 +164,19 @@ def combine_all_unosat_points_with_preds_gaza(window=1, agg="mean"):
         geo = load_unosat_geo(aoi)
         preds = get_preds_geo_gaza(geo)
 
-        gdf_labels = load_unosat_labels(aoi, labels_to_keep=None, combine_epoch="first_severe")[["geometry", "date", "aoi", "damage"]]
+        gdf_labels = load_unosat_labels(aoi, labels_to_keep=None, combine_epoch="first_severe")[
+            ["geometry", "date", "aoi", "damage"]
+        ]
         for post_date in post_dates:
             date = post_date[0]
             gdf_labels[f"pred_{date}"] = gdf_labels.geometry.apply(
-                lambda x: extract_raster_value_with_window_or_nan(x, preds.sel(date=date), window, agg)
+                lambda x: extract_raster_value_with_window_or_nan(
+                    x, preds.sel(date=date), window, agg
+                )
             )
-        gdf_labels_ = pd.concat([gdf_labels_, gdf_labels]) if gdf_labels_ is not None else gdf_labels
+        gdf_labels_ = (
+            pd.concat([gdf_labels_, gdf_labels]) if gdf_labels_ is not None else gdf_labels
+        )
 
     gdf_labels_.fillna(0, inplace=True)
     gdf_labels_.to_file(fp, driver="GeoJSON")
@@ -205,12 +215,13 @@ from src.classification.metrics import get_metrics
 
 THRESHOLDS = np.arange(0.1, 0.95, 0.005)  # unchanged from Dietrich et al.
 
+
 def unosat_vs_preds_comparison_gaza(
     window=3,
     agg="max",
     labels_to_keep=[1, 2],
     only_2022_for_pos=False,  # Gaza adaptation: False (war started Oct 2023, not 2022)
-    metrics="all"
+    metrics="all",
 ):
     """
     Compare UNOSAT labels vs pixel predictions across thresholds.
@@ -219,15 +230,15 @@ def unosat_vs_preds_comparison_gaza(
     """
     gdf_points = load_unosat_points_with_preds_gaza(window=window, agg=agg)
     gdf_train = gdf_points[gdf_points.aoi.isin(AOIS_TRAIN)]
-    gdf_test  = gdf_points[gdf_points.aoi.isin(AOIS_TEST)]
+    gdf_test = gdf_points[gdf_points.aoi.isin(AOIS_TEST)]
 
     if labels_to_keep is not None:
         gdf_train = gdf_train[gdf_train.damage.isin(labels_to_keep)]
-        gdf_test  = gdf_test[gdf_test.damage.isin(labels_to_keep)]
+        gdf_test = gdf_test[gdf_test.damage.isin(labels_to_keep)]
 
     # Convert date column to datetime — required by get_metrics()
     gdf_train["date"] = pd.to_datetime(gdf_train["date"])
-    gdf_test["date"]  = pd.to_datetime(gdf_test["date"])
+    gdf_test["date"] = pd.to_datetime(gdf_test["date"])
 
     d_metrics_list = defaultdict(list)
     for t in THRESHOLDS:
@@ -247,6 +258,7 @@ def unosat_vs_preds_comparison_gaza(
 
     return d_metrics_list
 
+
 d_metrics_list = unosat_vs_preds_comparison_gaza(
     window=3, agg="max", labels_to_keep=[1, 2], only_2022_for_pos=False
 )
@@ -265,6 +277,7 @@ def find_best_threshold(d_metrics_list, metric="precision", target=0.9):
     best_threshold = THRESHOLDS[idx_min] if diff[idx_min] > 0 else THRESHOLDS[idx_min + 1]
     print(f"Best threshold for {metric}@{target} = {best_threshold:.3f}")
     return best_threshold
+
 
 best_threshold = find_best_threshold(d_metrics_list, metric="precision", target=0.9)
 print(f"Dietrich et al. threshold (Ukraine): 0.655")
@@ -310,10 +323,10 @@ def plot_metrics_vs_thresholds(
             plt.savefig(save_fp, dpi=300, bbox_inches="tight")
         plt.show()
 
+
 plot_metrics_vs_thresholds(
     d_metrics_list,
     vlines=[0.5, best_threshold, 0.670],
     label_with_max=True,
-    save_fp=DATA_PATH / "ablation_runs/figures/evaluation_threshold_sweep.png"
+    save_fp=DATA_PATH / "ablation_runs/figures/evaluation_threshold_sweep.png",
 )
-

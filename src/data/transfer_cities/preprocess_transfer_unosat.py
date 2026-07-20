@@ -71,7 +71,10 @@ CITIES = [
         "country": "Syria",
         "assessment_date": "2017-10-21",
         "conflict_start": "2014-01-01",
-        "shp": ("_static_unosat_filesystem_1192_CE20130604SYR_Raqqa_Deir_shp" "/Damage_Sites_Raqqa_CDA.shp"),
+        "shp": (
+            "_static_unosat_filesystem_1192_CE20130604SYR_Raqqa_Deir_shp"
+            "/Damage_Sites_Raqqa_CDA.shp"
+        ),
         "damage_field": "DaSitCl5",  # most recent epoch column
     },
     {

@@ -174,7 +174,9 @@ def create_buildings_with_preds_for_admin(
     from src.data.utils import read_fp_within_geo
 
     dates_var = xr.Variable("date", pd.to_datetime(post_dates))
-    preds = xr.concat([read_fp_within_geo(fp, total_bounds) for fp in merged_fps], dim=dates_var).squeeze(dim="band")
+    preds = xr.concat(
+        [read_fp_within_geo(fp, total_bounds) for fp in merged_fps], dim=dates_var
+    ).squeeze(dim="band")
 
     if verbose:
         print(f"  {adm2_name}: rasters stacked {preds.shape}")
@@ -185,7 +187,9 @@ def create_buildings_with_preds_for_admin(
         print(f"  {adm2_name}: {len(gdf_pixels):,} pixels vectorized")
 
     # Intersect buildings with pixels — identical to Dietrich et al.
-    overlap = gpd.overlay(gdf_buildings.reset_index(), gdf_pixels, how="intersection").set_index("building_id")
+    overlap = gpd.overlay(gdf_buildings.reset_index(), gdf_pixels, how="intersection").set_index(
+        "building_id"
+    )
 
     if len(overlap) == 0:
         print(f"  {adm2_name}: no overlaps found")
@@ -218,7 +222,9 @@ def create_buildings_with_preds_for_admin(
 
     # Save
     gdf_buildings_with_preds.reset_index().to_file(fp_out, driver="GeoJSON")
-    print(f"  {adm2_name}: saved {len(gdf_buildings_with_preds):,} building-date rows → {fp_out.name}")
+    print(
+        f"  {adm2_name}: saved {len(gdf_buildings_with_preds):,} building-date rows → {fp_out.name}"
+    )
 
 
 def create_all_buildings_with_preds(
@@ -292,7 +298,9 @@ def aggregate_all_preds() -> pd.DataFrame:
     adm2_names = sorted(df["adm2_name"].dropna().unique())
 
     folder_preds = OUTPUT_DIR / "admin_preds"
-    available = [a for a in adm2_names if (folder_preds / f"{a.replace(' ', '_')}.geojson").exists()]
+    available = [
+        a for a in adm2_names if (folder_preds / f"{a.replace(' ', '_')}.geojson").exists()
+    ]
     print(f"Aggregating {len(available)} admin units...")
 
     df_preds = []

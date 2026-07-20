@@ -91,7 +91,9 @@ def get_city_quadkeys_gee(city_id: str, aoi_fp: Path) -> tuple:
     return grids, ids
 
 
-def already_exported(city_id: str, window_str: str, orbit: int, qk_id: str, drive_folder: str) -> bool:
+def already_exported(
+    city_id: str, window_str: str, orbit: int, qk_id: str, drive_folder: str
+) -> bool:
     """Check if tile already exists locally or on Drive."""
     fp_local = LOCAL_BASE / city_id / window_str / f"orbit{orbit}" / f"qk_{qk_id}.tif"
     if fp_local.exists():
@@ -160,7 +162,11 @@ def export_feature_rasters_city(
             ids_to_export = (
                 ids
                 if force
-                else [qk_id for qk_id in ids if not already_exported(city_id, window_str, orbit, qk_id, drive_folder)]
+                else [
+                    qk_id
+                    for qk_id in ids
+                    if not already_exported(city_id, window_str, orbit, qk_id, drive_folder)
+                ]
             )
 
             if not ids_to_export:

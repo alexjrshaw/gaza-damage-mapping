@@ -35,7 +35,9 @@ def vectorize_xarray_3d(xa: xr.DataArray, dates: list[str]) -> gpd.GeoDataFrame:
 
     # Flatten the values of each band
     vs = {d: xa.sel(date=d).values.flatten() for d in dates}
-    gdf_pixels = gpd.GeoDataFrame(vs, geometry=gpd.GeoSeries.from_xy(x, y), columns=vs.keys(), crs=xa.rio.crs)
+    gdf_pixels = gpd.GeoDataFrame(
+        vs, geometry=gpd.GeoSeries.from_xy(x, y), columns=vs.keys(), crs=xa.rio.crs
+    )
     gdf_pixels.index.name = "pixel_id"
     gdf_pixels.reset_index(inplace=True)
 

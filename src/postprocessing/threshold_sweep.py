@@ -4,6 +4,7 @@ merged probability rasters (from tonight's pixel_postprocessing.py run).
 Reuses sample_rasters_at_unosat_points() from ablation_pixel_level.py
 directly, avoiding any retraining or re-inference.
 """
+
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -32,7 +33,9 @@ for t in np.arange(0.0, 1.005, 0.005):
     m = get_metrics(gdf_test, threshold=t, method="date-wise", print_classification_report=False)
     results.append({"threshold": round(t, 3), **m})
     if abs(m["precision"] - 0.90) < 0.01:
-        print(f"  t={t:.3f}: precision={m['precision']:.3f}, recall={m['recall']:.3f}, f1={m['f1']:.3f}  <-- near 90% precision")
+        print(
+            f"  t={t:.3f}: precision={m['precision']:.3f}, recall={m['recall']:.3f}, f1={m['f1']:.3f}  <-- near 90% precision"
+        )
 
 df_results = pd.DataFrame(results)
 df_results.to_csv(DATA_PATH / "threshold_sweep_current_results.csv", index=False)

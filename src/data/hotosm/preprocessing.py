@@ -22,7 +22,11 @@ from src.constants import OVERTURE_PATH
 from src.data.hotosm.download import HOTOSM_RAW_FP, download_hotosm_buildings
 from src.data.unosat import load_unosat_geo, load_unosat_labels
 from src.data.utils import get_all_aois
-from src.utils.geo import get_best_utm_crs_from_gdf, load_gaza_admin_polygons, load_gaza_strip_boundary
+from src.utils.geo import (
+    get_best_utm_crs_from_gdf,
+    load_gaza_admin_polygons,
+    load_gaza_strip_boundary,
+)
 from src.utils.time import timeit
 
 # Output path — mirrors OVERTURE_PROCESSED_FP in Ukraine pipeline
@@ -130,7 +134,9 @@ def add_unosat_info(buffer: int = 5) -> None:
 
     for aoi in tqdm(get_all_aois()):
         # Labels for the given AOI (all damage classes)
-        points = load_unosat_labels(aoi, labels_to_keep=None, combine_epoch="first_severe").reset_index()
+        points = load_unosat_labels(
+            aoi, labels_to_keep=None, combine_epoch="first_severe"
+        ).reset_index()
 
         # Keep only buildings within the AOI
         geo = load_unosat_geo(aoi)

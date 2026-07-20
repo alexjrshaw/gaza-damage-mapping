@@ -29,7 +29,11 @@ from omegaconf import DictConfig, OmegaConf
 
 from src.classification.dataset_local import get_dataset_ready_local
 from src.classification.metrics import get_metrics
-from src.classification.models_local import classifier_factory_local, load_classifier_local, save_classifier_local
+from src.classification.models_local import (
+    classifier_factory_local,
+    load_classifier_local,
+    save_classifier_local,
+)
 from src.classification.utils import get_features_names, get_run_name
 from src.constants import DATA_PATH, PRE_PERIOD
 from src.data.unosat import load_unosat_labels
@@ -235,7 +239,9 @@ def _format_predictions(df_test: pd.DataFrame, cfg: DictConfig) -> gpd.GeoDataFr
         all_labels[["unosat_id", "aoi", "date", "geometry"]].set_index(["unosat_id", "aoi"]),
         on=["unosat_id", "aoi"],
     )
-    assert len(gdf) == len(preds_wide), "Row count changed during join — investigate before trusting results"
+    assert len(gdf) == len(
+        preds_wide
+    ), "Row count changed during join — investigate before trusting results"
     gdf["date"] = pd.to_datetime(gdf["date"])
 
     return gpd.GeoDataFrame(gdf, geometry="geometry")
@@ -273,4 +279,3 @@ if __name__ == "__main__":
     )
 
     result = full_pipeline_local(cfg, force_recreate=True)
-

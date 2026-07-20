@@ -78,7 +78,11 @@ def compute_features_for_window(
     pre_df = df[(df["s1_date"] >= pre_period[0]) & (df["s1_date"] <= pre_period[1])]
     post_df = df[(df["s1_date"] >= post_period[0]) & (df["s1_date"] <= post_period[1])]
 
-    meta = df.groupby("unosat_id").first()[["damage", "aoi", "date_first_severe", "site_id"]].reset_index()
+    meta = (
+        df.groupby("unosat_id")
+        .first()[["damage", "aoi", "date_first_severe", "site_id"]]
+        .reset_index()
+    )
     meta = meta.rename(columns={"date_first_severe": "date"})
 
     results = meta.copy()
@@ -125,7 +129,9 @@ def get_aoi_point_assignment(
         assignment = {}
         for aoi in ALL_AOIS:
             fp = CACHE_DIR / f"{aoi}_orbit{ORBITS[0]}.parquet"
-            assert fp.exists(), f"Cache file {fp} not found. Run download_intermediate_assets.py first."
+            assert (
+                fp.exists()
+            ), f"Cache file {fp} not found. Run download_intermediate_assets.py first."
             ids = pd.read_parquet(fp, columns=["unosat_id"])["unosat_id"].unique()
             train_ids, test_ids = train_test_split(ids, test_size=test_frac, random_state=seed)
             assignment[aoi] = list(train_ids) if split == "train" else list(test_ids)
@@ -149,7 +155,9 @@ def extract_features_local(
         print(f"\nProcessing {aoi}...")
         for orbit in ORBITS:
             fp = CACHE_DIR / f"{aoi}_orbit{orbit}.parquet"
-            assert fp.exists(), f"Cache file {fp} not found. Run download_intermediate_assets.py first."
+            assert (
+                fp.exists()
+            ), f"Cache file {fp} not found. Run download_intermediate_assets.py first."
 
             print(f"  Loading {aoi}_orbit{orbit}...")
             df = pd.read_parquet(fp)

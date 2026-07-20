@@ -47,7 +47,9 @@ def create_fc_aoi_orbit(
     geo = load_unosat_geo_gee(aoi)
 
     # Load S1 collection for this AOI and orbit
-    s1 = get_s1_collection(geo, START_DATE, END_DATE).filterMetadata("relativeOrbitNumber_start", "equals", orbit)
+    s1 = get_s1_collection(geo, START_DATE, END_DATE).filterMetadata(
+        "relativeOrbitNumber_start", "equals", orbit
+    )
     s1 = fill_nan_with_mean(s1)
 
     def extract_image(img):

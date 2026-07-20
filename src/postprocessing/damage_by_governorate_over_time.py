@@ -73,7 +73,9 @@ WINDOW_END_DATES = [
 ]
 
 
-def first_damaged_window_index(row: pd.Series, pre_cols: list[str], post_cols: list[str]) -> int | None:
+def first_damaged_window_index(
+    row: pd.Series, pre_cols: list[str], post_cols: list[str]
+) -> int | None:
     """
     First post-war window index at which this building is classified as
     damaged, applying the full Equation 3 condition: eligible only if the
@@ -95,11 +97,17 @@ def main():
     print(f"  {len(df):,} buildings")
     print(f"  Governorates: {sorted(df['adm2_name'].unique())}")
 
-    print("Finding first-detected window index per building (Equation 3, pre-war exclusion applied)...")
-    df["first_idx"] = df.apply(lambda row: first_damaged_window_index(row, PRE_WINDOW_COLS, POST_WINDOW_COLS), axis=1)
+    print(
+        "Finding first-detected window index per building (Equation 3, pre-war exclusion applied)..."
+    )
+    df["first_idx"] = df.apply(
+        lambda row: first_damaged_window_index(row, PRE_WINDOW_COLS, POST_WINDOW_COLS), axis=1
+    )
 
     n_damaged_final = df["first_idx"].notna().sum()
-    print(f"  Total damaged (final window): {n_damaged_final:,} ({n_damaged_final/len(df)*100:.1f}%)")
+    print(
+        f"  Total damaged (final window): {n_damaged_final:,} ({n_damaged_final/len(df)*100:.1f}%)"
+    )
     print("  (Should match Table 1's total: 151,368 / 220,820 = 68.5%)")
 
     governorates = sorted(df["adm2_name"].unique())
@@ -124,12 +132,16 @@ def main():
     results_df = pd.DataFrame(results)
 
     print("\n=== Cumulative % damaged by governorate and window ===\n")
-    pivot = results_df.pivot(index="governorate", columns="window_end_date", values="pct_damaged_cumulative")
+    pivot = results_df.pivot(
+        index="governorate", columns="window_end_date", values="pct_damaged_cumulative"
+    )
     pivot = pivot[WINDOW_END_DATES]  # keep chronological column order
     print(pivot.to_string())
 
     print("\n=== Final-window check against Table 3 ===")
-    print("Table 3 (validated): North Gaza 81.2, Rafah 81.9, Gaza 71.3, Khan Younis 71.3, Deir al-Balah 36.6")
+    print(
+        "Table 3 (validated): North Gaza 81.2, Rafah 81.9, Gaza 71.3, Khan Younis 71.3, Deir al-Balah 36.6"
+    )
     print(f"This script (final window, {WINDOW_END_DATES[-1]}):")
     print(pivot[WINDOW_END_DATES[-1]].to_string())
 

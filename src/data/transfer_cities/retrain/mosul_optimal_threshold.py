@@ -116,7 +116,9 @@ def metrics_at_threshold(y_true: np.ndarray, y_scores: np.ndarray, t_scaled: flo
         "precision": round(sk_metrics.precision_score(y_true, y_pred, zero_division=0), 4),
         "recall": round(sk_metrics.recall_score(y_true, y_pred, zero_division=0), 4),
         "f1": round(sk_metrics.f1_score(y_true, y_pred, zero_division=0), 4),
-        "balanced_accuracy_AUC": round(sk_metrics.roc_auc_score(y_true, y_pred), 4),  # matches Gaza/Dietrich "AUC" convention
+        "balanced_accuracy_AUC": round(
+            sk_metrics.roc_auc_score(y_true, y_pred), 4
+        ),  # matches Gaza/Dietrich "AUC" convention
         "balanced_accuracy": round(sk_metrics.balanced_accuracy_score(y_true, y_pred), 4),
         "accuracy": round(sk_metrics.accuracy_score(y_true, y_pred), 4),
     }

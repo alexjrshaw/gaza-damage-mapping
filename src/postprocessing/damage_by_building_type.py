@@ -41,7 +41,10 @@ def main():
     n_any_tag = joined["building"].notna().sum()
     n_meaningful = (joined["building"].notna() & (joined["building"] != "yes")).sum()
     print(f"  Buildings with any 'building' tag: {n_any_tag:,} ({n_any_tag/n_total*100:.1f}%)")
-    print(f"  Buildings with a specific (non-generic) type: {n_meaningful:,} " f"({n_meaningful/n_total*100:.1f}%)")
+    print(
+        f"  Buildings with a specific (non-generic) type: {n_meaningful:,} "
+        f"({n_meaningful/n_total*100:.1f}%)"
+    )
 
     # Restrict to the meaningful subset for the headline breakdown
     subset = joined[joined["building"].notna() & (joined["building"] != "yes")].copy()

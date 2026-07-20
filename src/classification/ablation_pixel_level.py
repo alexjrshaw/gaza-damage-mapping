@@ -299,7 +299,9 @@ def sample_rasters_at_unosat_points(
     """
     aoi_preds_dir = ABLATION_DIR / variant_name / "aoi_preds"
     aoi_preds_dir.mkdir(parents=True, exist_ok=True)
-    fp_out = aoi_preds_dir / f"unosat_points_with_preds_window_{SPATIAL_WINDOW}_{WINDOW_AGG}.geojson"
+    fp_out = (
+        aoi_preds_dir / f"unosat_points_with_preds_window_{SPATIAL_WINDOW}_{WINDOW_AGG}.geojson"
+    )
 
     if fp_out.exists() and not force_recreate:
         print(f"  Loading existing sampled points: {variant_name}")
@@ -338,7 +340,9 @@ def sample_rasters_at_unosat_points(
 
         for start, _ in post_dates:
             date = start
-            gdf_aoi[f"pred_{date}"] = gdf_aoi.geometry.apply(lambda pt: _safe_extract(pt, preds.sel(date=date)))
+            gdf_aoi[f"pred_{date}"] = gdf_aoi.geometry.apply(
+                lambda pt: _safe_extract(pt, preds.sel(date=date))
+            )
 
         gdf_out = pd.concat([gdf_out, gdf_aoi]) if gdf_out is not None else gdf_aoi
 

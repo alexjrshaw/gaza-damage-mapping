@@ -75,7 +75,9 @@ def create_orbits_file(fp) -> None:
         print(f"    All orbits: {orbit_counts}")
 
         # Keep orbits with at least 10 images (roughly one per month)
-        valid_orbits = [int(float(orbit)) for orbit, count in orbit_counts.items() if int(float(count)) >= 10]
+        valid_orbits = [
+            int(float(orbit)) for orbit, count in orbit_counts.items() if int(float(count)) >= 10
+        ]
         valid_orbits.sort()
         print(f"    Valid orbits (>=10 images): {valid_orbits}")
 

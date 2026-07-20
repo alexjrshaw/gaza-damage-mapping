@@ -39,12 +39,18 @@ def get_dataset_ready_local(
     """
     assert sat == "s1", "Only s1 supported for Gaza local pipeline."
     assert post_dates == "2months", "Only 2months supported for Gaza local pipeline."
-    assert split_strategy in ("aoi", "random_all", "random_per_aoi"), f"Unknown split_strategy: {split_strategy}"
+    assert split_strategy in (
+        "aoi",
+        "random_all",
+        "random_per_aoi",
+    ), f"Unknown split_strategy: {split_strategy}"
 
     suffix = "" if split_strategy == "aoi" else f"_{split_strategy}"
     fp = FEATURES_DIR / f"{sat}_{extract_wind}_{post_dates}_{split}{suffix}.parquet"
 
-    assert fp.exists(), f"Features not found: {fp}. " f"Run src/data/sentinel1/extract_features_local.py first."
+    assert fp.exists(), (
+        f"Features not found: {fp}. " f"Run src/data/sentinel1/extract_features_local.py first."
+    )
     df = pd.read_parquet(fp)
     print(f"  Loaded {split} set ({split_strategy}): {len(df):,} rows")
     return df

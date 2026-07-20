@@ -29,7 +29,9 @@ import pandas as pd
 
 from src.constants import DATA_PATH, GAZA_WAR_START
 
-THRESHOLD = int(0.670 * 255)  # = Gaza pixel-level optimal (P>=0.9 target, re-verified 5 July; differs from Dietrich et al.'s 0.655)
+THRESHOLD = int(
+    0.670 * 255
+)  # = Gaza pixel-level optimal (P>=0.9 target, re-verified 5 July; differs from Dietrich et al.'s 0.655)
 INPUT_FP = DATA_PATH / "pixel_postprocessing/buildings_preds.parquet"
 OUTPUT_FP = DATA_PATH / "pixel_postprocessing/buildings_damage.parquet"
 

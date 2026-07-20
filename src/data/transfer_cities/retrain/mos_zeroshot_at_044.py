@@ -2,8 +2,10 @@
 Quick check: Mosul zero-shot performance at t=0.44 (retrained's own
 optimal threshold, applied here just out of curiosity).
 """
+
 import shutil
 import sys
+
 sys.path.insert(0, "/scratch/s1214882/gaza-damage-mapping")
 
 import geopandas as gpd
@@ -25,6 +27,7 @@ cfg = TRANSFER_CITIES["MOS_RETRAINED_EAST_ONLY"]
 conflict_start = cfg["conflict_start"]
 gdf = gpd.read_file(cfg["unosat_labels"])
 
+
 def sample_merged_raster(tiles, gdf, window=3):
     srcs = [rasterio.open(fp) for fp in tiles]
     try:
@@ -44,6 +47,7 @@ def sample_merged_raster(tiles, gdf, window=3):
     finally:
         for src in srcs:
             src.close()
+
 
 all_periods = [cfg["pre_period"]] + list(cfg["post_periods"])
 pred_cols, window_meta = {}, {}

@@ -2,6 +2,7 @@
 Plot the pixel-level threshold sweep: precision, recall, and F1 vs
 threshold, with the chosen optimal threshold (0.670) marked.
 """
+
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -13,7 +14,9 @@ fig, ax = plt.subplots(figsize=(8, 5))
 ax.plot(df["threshold"], df["precision"], label="Precision", color="#1f77b4", linewidth=2)
 ax.plot(df["threshold"], df["recall"], label="Recall", color="#ff7f0e", linewidth=2)
 ax.plot(df["threshold"], df["f1"], label="F1", color="#2ca02c", linewidth=2)
-ax.plot(df["threshold"], df["roc_auc"], label="'AUC' (balanced accuracy)", color="#9467bd", linewidth=2)
+ax.plot(
+    df["threshold"], df["roc_auc"], label="'AUC' (balanced accuracy)", color="#9467bd", linewidth=2
+)
 ax.plot(df["threshold"], df["accuracy"], label="Accuracy", color="#8c564b", linewidth=2)
 
 ax.axvline(0.670, color="grey", linestyle="--", linewidth=1, label="Chosen threshold (t=0.670)")
