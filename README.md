@@ -46,7 +46,7 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 | Mosul local retraining comparison | Tests whether training on local data improves on zero-shot transfer, and under what conditions |
 
 ---
-
+```
 ## Repository structure
 src/
 ├── constants.py # Data paths, AOI definitions, study period constants
@@ -72,7 +72,7 @@ src/
 ├── postprocessing/ # Building damage classification, analysis and export
 ├── utils/ # GEE, geometry, time and Google Drive utilities
 └── visualisation/ # Ablation figures, threshold sweep, damage map series
-
+```
 ---
 
 ## Setup
