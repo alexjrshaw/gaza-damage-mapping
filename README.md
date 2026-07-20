@@ -72,7 +72,7 @@ gaza-damage-mapping/
 │   ├── utils/             (4 scripts)
 │   └── visualisation/     (5 scripts)
 └── test_sites/
-    ├── processed/ (Aleppo, Mosul, Raqqa)
+    ├── processed/ (Mosul, Raqqa, Aleppo)
     └── raw/       (Mosul, Raqqa, Aleppo + excluded: Fallujah, Myanmar)
 ```
 ---
