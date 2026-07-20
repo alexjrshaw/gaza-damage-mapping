@@ -1,9 +1,7 @@
 """
-Gaza cumulative damage map series — v3.
+Gaza cumulative damage map series: 2x7 version.
 Reverts to scatter centroids (footprints are 0.24px at this scale,
-physically invisible). Applies two fixes over the original:
-  1. wspace=0.02 closes horizontal gaps between panels
-  2. Threshold corrected to int(0.670*255) matching verified pipeline
+physically invisible).
 """
 
 import geopandas as gpd
@@ -166,10 +164,10 @@ def main():
 
     print("Plotting 4×4 series (A4 portrait)...")
     fig, axes = plt.subplots(
-        7,
         2,
+        7,
         figsize=(8.27, 11.69),
-        gridspec_kw={"wspace": 0.02, "hspace": 0.08},
+        gridspec_kw={"wspace": 0.02, "hspace": 0.00},
     )
     axes_flat = axes.flat
 
