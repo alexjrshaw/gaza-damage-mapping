@@ -51,30 +51,29 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 ---
 ```
 ## Repository structure
-src/
-├── constants.py # Data paths, AOI definitions, study period constants
-├── classification/ # Model training and ablation
-│ ├── ablation_mtry.py # mtry ablation (OOB error)
-│ ├── ablation_pixel_level.py # Pixel-level ablation (n_trees, bands, reducers)
-│ ├── dataset_local.py # Training dataset preparation
-│ ├── main_local.py # Main training entry point
-│ ├── metrics.py # Evaluation metrics
-│ ├── models_local.py # Random Forest classifier (scikit-learn)
-│ ├── reducers.py # SAR statistic reducers
-│ └── utils.py # Shared utilities
-├── data/
-│ ├── hotosm/ # HOTOSM footprint download and preprocessing
-│ ├── sentinel1/ # Sentinel-1 GEE extraction and local feature computation
-│ ├── transfer_cities/
-│ │ ├── pixel_inference/ # Zero-shot transfer evaluation pipeline
-│ │ └── retrain/ # Mosul local retraining pipeline
-│ ├── quadkeys.py # Quadkey tiling for GEE export
-│ ├── unosat.py # UNOSAT ingestion, epoch-combining, GEE upload
-│ └── utils.py # Shared data utilities
-├── inference/ # GEE feature raster export and local pixel inference
-├── postprocessing/ # Building damage classification, analysis and export
-├── utils/ # GEE, geometry, time and Google Drive utilities
-└── visualisation/ # Ablation figures, threshold sweep, damage map series
+gaza-damage-mapping/
+├── check_environment.py
+├── requirements.txt
+├── reauth_gdrive.py
+├── setup.py / setup.cfg / pyproject.toml
+├── LICENSE / README.md / .gitignore
+├── secrets/.gitkeep
+├── src/
+│   ├── classification/    (8 scripts)
+│   ├── data/
+│   │   ├── hotosm/        (3 scripts)
+│   │   ├── sentinel1/     (5 scripts)
+│   │   ├── transfer_cities/
+│   │   │   ├── pixel_inference/  (4 scripts)
+│   │   │   └── retrain/          (6 scripts)
+│   │   ├── unosat.py, quadkeys.py, utils.py
+│   ├── inference/         (3 scripts)
+│   ├── postprocessing/    (8 scripts)
+│   ├── utils/             (4 scripts)
+│   └── visualisation/     (5 scripts)
+└── test_sites/
+    ├── processed/ (alp, mos, raq)
+    └── raw/       (Mosul, Raqqa, Aleppo + excluded: Fallujah, Myanmar)
 ```
 ---
 
