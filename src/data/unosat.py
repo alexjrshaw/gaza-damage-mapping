@@ -7,7 +7,7 @@ from shapely.geometry import Polygon
 
 from src.constants import ASSETS_PATH, DATA_PATH
 
-# ==================== LOCAL DATA ====================
+# Local data
 
 
 def load_unosat_labels(
@@ -23,7 +23,7 @@ def load_unosat_labels(
         labels_to_keep (list[int]): Which labels to keep. Default to [1,2] (destroyed, major damage)
         combine_epoch (bool): For points that have multiple observations, we keep only one label.
             Either the 'last' one, the 'min' one (eg the strongest label), or 'first_severe'
-            (earliest epoch where damage is class 1 or 2 — Gaza adaptation). Default to 'last'
+            (earliest epoch where damage is class 1 or 2 - Gaza adaptation). Default to 'last'
 
     Returns:
         gpd.GeoDataFrame: The GeoDataFrame with all UNOSAT labels
@@ -50,11 +50,11 @@ def load_unosat_labels(
             ]
         elif combine_epoch == "first_severe":
             # Keep earliest epoch where damage is class 1 or 2.
-            # This is tunosat in Dietrich et al. (2025) eq. 1 —
+            # This is tunosat in Dietrich et al. (2025) eq. 1 -
             # the date severe damage was first confirmed by UNOSAT.
             # Gaza-specific adaptation: Ukraine had one epoch per point
             # so combine_epoch='last' naturally gave the detection date.
-            # Gaza has 14 epochs so we must explicitly find first severe.
+            # Gaza has 14 epochs so I must explicitly find first severe.
             severe = gdf[gdf["damage"].isin([1, 2])]
             gdf = severe.loc[
                 severe.groupby(severe.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))[
@@ -103,7 +103,7 @@ def load_unosat_geo(aoi: str) -> Polygon:
     return geo
 
 
-# ==================== GEE DATA ====================
+# GEE data
 
 
 def load_unosat_labels_gee(aoi: str, all_labels: bool = False) -> ee.FeatureCollection:
@@ -137,7 +137,7 @@ def load_unosat_geo_gee(aoi: str) -> ee.FeatureCollection:
     return ee.FeatureCollection(ASSETS_PATH + f"AOIs/{aoi}").geometry()
 
 
-# ==================== GAZA PREPROCESSING ====================
+# Gaza preprocessing
 
 # Raw GDB downloaded from UNOSAT
 GDB_PATH = DATA_PATH / "raw/UNOSAT_GazaStrip_CDA_11October2025.gdb"
@@ -166,7 +166,7 @@ def preprocess_gaza_unosat(
     to classes [1,2] at load time rather than preprocessing time.
 
     Gaza-specific adaptation: because the same points are assessed across
-    14 epochs (unlike Ukraine where each point had one assessment), we
+    14 epochs (unlike Ukraine where each point had one assessment), I
     pre-compute four summary date fields per point to support correct
     label assignment per Dietrich et al. equation 1:
 
@@ -198,7 +198,7 @@ def preprocess_gaza_unosat(
         f"{gdf_raw['Governorate'].nunique()} governorates"
     )
 
-    # --- Convert wide format to long format ---
+    # Convert wide format to long format
     # Ukraine data was already long format (one row per point).
     # Gaza data is wide format (one row per point, 14 epoch columns).
     # We convert to long format to match the Ukraine schema exactly.
@@ -220,7 +220,7 @@ def preprocess_gaza_unosat(
                 )
             )
 
-        # Build per-epoch records — skip epochs with no assessment
+        # Build per-epoch records - skip epochs with no assessment
         point_records = []
         for sensor_date, damage_class, ep_num in epochs:
             if pd.isna(damage_class):
@@ -242,7 +242,7 @@ def preprocess_gaza_unosat(
         if not point_records:
             continue
 
-        # --- Compute summary fields across all epochs for this point ---
+        # Compute summary fields across all epochs for this point
         # These follow the spirit of Dietrich et al. eq. 1 where tunosat
         # is the date the post-event image was acquired confirming damage.
         dates = [pd.to_datetime(r["date"]) for r in point_records if r["date"] is not None]
@@ -278,14 +278,14 @@ def preprocess_gaza_unosat(
     gdf_long = gpd.GeoDataFrame(records, geometry="geometry", crs="EPSG:4326")
     print(f"  Long format: {len(gdf_long):,} rows across all damage classes")
 
-    # --- Save labels ---
-    # Store ALL damage classes — filtering to [1,2] happens at load time
+    # Save labels
+    # Store ALL damage classes - filtering to [1,2] happens at load time
     # in load_unosat_labels(), exactly as in the Ukraine pipeline.
     out_labels = DATA_PATH / "unosat_labels.geojson"
     gdf_long.set_index("unosat_id").to_file(out_labels, driver="GeoJSON")
     print(f"Saved {out_labels} ({len(gdf_long):,} rows)")
 
-    # --- Create AOI polygons from OCHA admin boundaries ---
+    # Create AOI polygons from OCHA admin boundaries
     # Use official boundaries rather than convex hulls of damage points
     print("Creating AOI polygons from OCHA admin boundaries ...")
     from src.utils.geo import load_gaza_admin_polygons
@@ -309,7 +309,7 @@ def preprocess_gaza_unosat(
     gdf_aois.to_file(out_aois, driver="GeoJSON")
     print(f"Saved {out_aois} ({len(gdf_aois)} AOIs)")
 
-    # --- Summary ---
+    # Summary
     print("\n── Label counts by AOI and damage class ──")
     severe_only = gdf_long[gdf_long["damage"].isin([1, 2])]
     first_severe = severe_only.loc[
@@ -489,7 +489,7 @@ def upload_gaza_unosat_to_gee(aois: list[str] | None = None) -> None:
     for aoi in aois_to_process:
         print(f"\nProcessing {aoi}...")
 
-        # AOI boundary (always tiny — direct upload)
+        # AOI boundary (always tiny - direct upload)
         aoi_row = gdf_aois[gdf_aois["aoi"] == aoi].copy()
         upload_direct(aoi_row, ASSETS_PATH + f"AOIs/{aoi}", f"AOI_{aoi}")
 

@@ -45,7 +45,7 @@ import re
 def find_post_dates_gaza(merged_rasters_dir=MERGED_RASTERS_DIR):
     """
     Find post dates from merged probability raster filenames.
-    Gaza adaptation of find_post_dates() — uses gaza_w{n}_{start}_{end}.tif naming.
+    Gaza adaptation of find_post_dates() - uses gaza_w{n}_{start}_{end}.tif naming.
     Returns list of (start, end) tuples sorted by date.
     """
     post_dates = []
@@ -91,7 +91,7 @@ def get_preds_geo(geo, run_name):
 def get_preds_geo_gaza(geo, merged_rasters_dir=MERGED_RASTERS_DIR):
     """
     Load and stack probability rasters for a given geometry.
-    Gaza adaptation of get_preds_geo() — uses gaza_w{n}_{start}_{end}.tif naming.
+    Gaza adaptation of get_preds_geo() - uses gaza_w{n}_{start}_{end}.tif naming.
     Mirrors Dietrich et al. exactly.
     """
     post_dates = find_post_dates_gaza(merged_rasters_dir)
@@ -143,7 +143,7 @@ def extract_raster_value_with_window_or_nan(point, raster, window, agg):
 def combine_all_unosat_points_with_preds_gaza(window=1, agg="mean"):
     """
     Assign pixel predictions to each UNOSAT point for all AOIs.
-    Gaza adaptation of combine_all_unosat_points_with_preds() — mirrors Dietrich et al. exactly.
+    Gaza adaptation of combine_all_unosat_points_with_preds() - mirrors Dietrich et al. exactly.
     """
     folder = DATA_PATH / run_name / "aoi_preds"
     folder.mkdir(exist_ok=True, parents=True)
@@ -201,7 +201,7 @@ def load_unosat_points_with_preds_gaza(window=1, agg=None):
 # In[ ]:
 
 
-# Gaza adaptation: window=3, agg="max" — unchanged from Dietrich et al.
+# Gaza adaptation: window=3, agg="max" - unchanged from Dietrich et al.
 _ = load_unosat_points_with_preds_gaza(window=3, agg="max")
 
 
@@ -236,7 +236,7 @@ def unosat_vs_preds_comparison_gaza(
         gdf_train = gdf_train[gdf_train.damage.isin(labels_to_keep)]
         gdf_test = gdf_test[gdf_test.damage.isin(labels_to_keep)]
 
-    # Convert date column to datetime — required by get_metrics()
+    # Convert date column to datetime - required by get_metrics()
     gdf_train["date"] = pd.to_datetime(gdf_train["date"])
     gdf_test["date"] = pd.to_datetime(gdf_test["date"])
 
@@ -265,7 +265,7 @@ d_metrics_list = unosat_vs_preds_comparison_gaza(
 
 
 # ## Best threshold
-# Unchanged from Dietrich et al. — finds threshold closest to 90% precision.
+# Unchanged from Dietrich et al. - finds threshold closest to 90% precision.
 
 # In[ ]:
 
@@ -285,7 +285,7 @@ print(f"Gaza optimal threshold:              {best_threshold:.3f}")
 
 
 # ## Plot
-# Unchanged from Dietrich et al. — mirrors Fig. S1 for Gaza.
+# Unchanged from Dietrich et al. - mirrors Fig. S1 for Gaza.
 
 # In[ ]:
 

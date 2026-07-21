@@ -1,7 +1,7 @@
 """
 Local equivalent of dataset.py.
 Replaces GEE asset loading with local parquet files on Forth.
-Mirrors the interface of get_dataset_ready() exactly.
+Mirrors the interface of get_dataset_ready().
 Gaza adaptation: features stored locally instead of GEE assets.
 """
 

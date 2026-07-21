@@ -75,7 +75,7 @@ def apply_equation3(threshold: int = THRESHOLD) -> pd.DataFrame:
     print(f"Damaged (Eq. 3): {damaged.sum():,} ({damaged.mean()*100:.1f}%)")
     print(f"Undamaged:       {(1-damaged).sum():,} ({(1-damaged).mean()*100:.1f}%)")
 
-    print("\n=== Per-governorate damage summary ===")
+    print("\n Per-governorate damage summary")
     summary = (
         result.groupby("adm2_name")
         .agg(

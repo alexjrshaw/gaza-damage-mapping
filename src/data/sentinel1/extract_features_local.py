@@ -4,9 +4,9 @@ Local feature extraction for Gaza damage mapping.
 Replaces the GEE-based extract_features.py for the feature computation step.
 Gaza's density (65,000+ points in 365km²) creates computation graphs too large
 for GEE to handle. This script downloads the intermediate time series assets
-from GEE and computes features locally using pandas — same result, far faster.
+from GEE and computes features locally using pandas.
 
-Follows Dietrich et al. (2025) methodology exactly:
+Follows Dietrich et al. (2025) methodology:
     - Same 7 statistical features: mean, stdDev, median, min, max, skew, kurtosis
     - Same label assignment (eq. 1): y=0 pre-conflict, y=1 post-damage, y=-1 discard
     - Same feature naming convention: VV_pre_1x1_mean, VH_post_1x1_stdDev etc.
@@ -16,8 +16,8 @@ split_strategy support (added):
 
 Gaza-specific adaptation: computation moved from GEE to local pandas.
 Forth HPC compute nodes lack internet access, so pipeline is split:
-    Step 1 (download.py): Run interactively — downloads GEE assets to local parquet
-    Step 2 (this script): Run as Slurm batch job — computes features from local cache
+    Step 1 (download.py): Run interactively - downloads GEE assets to local parquet
+    Step 2 (this script): Run as Slurm batch job - computes features from local cache
 """
 
 import argparse

@@ -24,7 +24,7 @@ def download_hotosm_buildings() -> None:
     Download HOTOSM building footprints for Palestine from HDX.
 
     Saves raw GeoJSON to data/raw/. Skips download if file already exists.
-    Covers all of Palestine (West Bank + Gaza) — filtering to Gaza
+    Covers all of Palestine (West Bank + Gaza) - filtering to Gaza
     happens in preprocessing.py.
     """
     if HOTOSM_RAW_FP.exists():

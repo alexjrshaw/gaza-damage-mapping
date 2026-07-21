@@ -2,7 +2,7 @@
 Download GEE intermediate assets to local parquet cache.
 
 Run this interactively (not as a Slurm batch job) since Forth compute
-nodes don't have internet access. Login node and interactive sessions do.
+nodes don't have internet access.
 
 Usage:
     python src/data/sentinel1/download_intermediate_assets.py
@@ -26,7 +26,7 @@ EXTRACT_WINDOW = "1x1"
 def download_intermediate_asset(aoi: str, orbit: int, force: bool = False) -> Path:
     """
     Download a GEE intermediate asset to local parquet cache via Drive export.
-    Uses Export.table.toDrive() — proven reliable for large collections.
+    Uses Export.table.toDrive() - proven reliable for large collections.
 
     Args:
         aoi: AOI name e.g. 'GAZ1'
@@ -44,7 +44,7 @@ def download_intermediate_asset(aoi: str, orbit: int, force: bool = False) -> Pa
     fp = CACHE_DIR / f"{aoi}_orbit{orbit}.parquet"
 
     if fp.exists() and not force:
-        print(f"  {aoi}_orbit{orbit}: already cached ✓")
+        print(f"  {aoi}_orbit{orbit}: already cached")
         return fp
 
     print(f"  {aoi}_orbit{orbit}: exporting to Drive...")
@@ -82,7 +82,7 @@ def download_intermediate_asset(aoi: str, orbit: int, force: bool = False) -> Pa
     csv_fp = tmp_dir / f"{description}.csv"
     df = pd.read_csv(csv_fp)
     df.to_parquet(fp)
-    print(f"  {aoi}_orbit{orbit}: {len(df):,} rows saved ✓")
+    print(f"  {aoi}_orbit{orbit}: {len(df):,} rows saved")
     return fp
 
 

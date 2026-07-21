@@ -1,10 +1,10 @@
 """
 One-off re-authorization for Google Drive access, using CommandLineAuth
-instead of LocalWebserverAuth - no port forwarding or local webserver
-needed. Just visit the printed URL on any device, approve access, and
+instead of LocalWebserverAuth. No port forwarding or local webserver
+needed. Just visit the printed URL on any device, approve access and
 paste the verification code back here.
 
-Run this once; it saves fresh credentials to secrets/pydrive_credentials.json.
+Run this once. It saves fresh credentials to secrets/pydrive_credentials.json.
 After this succeeds, download_intermediate_assets.py should run normally.
 """
 import sys

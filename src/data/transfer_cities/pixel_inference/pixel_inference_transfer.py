@@ -1,10 +1,10 @@
 """
-Local pixel-level inference for transfer city proof-of-concept.
+Local pixel-level inference for transfer cities.
 
 Applies the Gaza-trained Random Forest to quadkey-tiled feature rasters,
 producing damage probability rasters at 10m resolution.
 
-Mirrors src/inference/local_pixel_inference.py exactly:
+Mirrors src/inference/local_pixel_inference.py:
     - Loads feature rasters per quadkey tile per orbit
     - Classifies each tile
     - Aggregates across orbits (mean)
@@ -65,7 +65,7 @@ def load_model():
 
 
 def classify_tile(fp: Path, clf) -> tuple:
-    """Classify a single feature raster tile — mirrors classify_window() in local_pixel_inference.py."""
+    """Classify a single feature raster tile - mirrors classify_window() in local_pixel_inference.py."""
     with rasterio.open(fp) as src:
         data = src.read().astype(np.float32)
         band_names = list(src.descriptions)
@@ -92,7 +92,7 @@ def classify_tile(fp: Path, clf) -> tuple:
 
 
 def save_probability_tile(prob: np.ndarray, profile: dict, fp_out: Path) -> None:
-    """Save probability raster as Uint8 0-255 — mirrors Gaza pipeline."""
+    """Save probability raster as Uint8 0-255 - mirrors Gaza pipeline."""
     fp_out.parent.mkdir(parents=True, exist_ok=True)
     prob_uint8 = np.where(np.isnan(prob), 0, prob * 255).astype(np.uint8)
     out_profile = profile.copy()
@@ -113,7 +113,7 @@ def run_pixel_inference_city(city_id: str, force: bool = False) -> None:
     prob_base.mkdir(parents=True, exist_ok=True)
 
     if not feat_base.exists():
-        print(f"No feature rasters at {feat_base} — run export first.")
+        print(f"No feature rasters at {feat_base} - run export first.")
         return
 
     clf = load_model()
@@ -156,7 +156,7 @@ def run_pixel_inference_city(city_id: str, force: bool = False) -> None:
             if not orbit_probs:
                 continue
 
-            # Aggregate orbits (mean — mirrors Dietrich et al.)
+            # Aggregate orbits (mean - mirrors Dietrich et al.)
             stack = np.stack(orbit_probs, axis=0)
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")

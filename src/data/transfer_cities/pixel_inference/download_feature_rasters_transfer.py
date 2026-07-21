@@ -2,7 +2,7 @@
 Download transfer city feature rasters from Google Drive to Forth.
 
 Downloads quadkey-tiled GeoTIFFs, deleting from Drive after each download
-to manage Drive space — mirrors Gaza's download_feature_rasters.py exactly.
+to manage Drive space - mirrors Gaza's download_feature_rasters.py.
 
 Output:
     data/transfer_cities/feature_rasters/{city_id}/{window_str}/orbit{orbit}/

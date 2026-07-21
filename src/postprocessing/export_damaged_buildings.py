@@ -20,7 +20,7 @@ date_cols = sorted(
 )
 post_cols = [c for c in date_cols if c >= GAZA_WAR_START]
 
-# Filter to damaged buildings and RESET INDEX — this is the critical fix
+# Filter to damaged buildings and RESET INDEX - this is the critical fix
 damaged_idx = df_damage[df_damage["damaged"] == 1].index
 df_sub = df_preds.loc[damaged_idx].copy().reset_index(drop=True)
 print(f"Damaged buildings: {len(df_sub):,}")
@@ -36,7 +36,7 @@ window_num = np.where(has_any, first_col + 1, -1).astype(int)
 window_labels = {col: f"T{i+7:02d} ({col})" for i, col in enumerate(post_cols)}
 window_label = np.array([window_labels.get(w, "unknown") for w in first_end_date])
 
-# Decode WKB geometry — index now matches (both 0-based)
+# Decode WKB geometry - index now matches (both 0-based)
 print("Decoding WKB geometry...")
 geom_col = "geometry_wkb" if "geometry_wkb" in df_sub.columns else "geometry"
 geom_series = gpd.GeoSeries(df_sub[geom_col].apply(lambda x: wkb_loads(bytes(x))), crs="EPSG:4326")
@@ -44,7 +44,7 @@ print(f"  Sample geometry type: {geom_series.iloc[0].geom_type}")
 print(f"  All valid: {geom_series.is_valid.all()}")
 print(f"  Any None: {geom_series.isna().any()}")
 
-# Build GeoDataFrame — index alignment now guaranteed
+# Build GeoDataFrame - index alignment now guaranteed
 gdf = gpd.GeoDataFrame(
     {
         "fid": range(1, len(df_sub) + 1),

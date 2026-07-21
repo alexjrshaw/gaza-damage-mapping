@@ -2,20 +2,8 @@
 Pixel-level evaluation for transfer cities.
 
 Merges quadkey probability raster tiles per window, then samples at
-UNOSAT point locations with 3x3 pixel window (max aggregation) —
-mirrors Dietrich et al. evaluation methodology exactly.
-
-Fixes applied (vs original):
-1. Column collision: windows were originally keyed by end-date string,
-   so two windows sharing the same end-date (e.g. w02/w08, or w02/w10)
-   silently overwrote one another in the predictions dict, discarding
-   one window's data entirely. Now keyed by unique window_str instead.
-2. NaN coercion: all-NaN patches (e.g. from insufficient Sentinel-1
-   temporal density to compute skew/kurtosis reducers) were previously
-   coerced to 0.0, which falsely counts as a confident "undamaged"
-   prediction and corrupts recall. Now kept as NaN and excluded from
-   metric calculation entirely. Windows with <50% valid coverage are
-   flagged and reported as "excluded" in the output.
+UNOSAT point locations with 3x3 pixel window (max aggregation) -
+mirrors Dietrich et al. evaluation methodology.
 
 Input:
     data/transfer_cities/probability_rasters/{city_id}/{window_str}/
@@ -95,7 +83,7 @@ def evaluate_pixel_city(city_id: str) -> dict:
     prob_base = TRANSFER_PROB_BASE / city_id
 
     print(f"\n{'='*60}")
-    print(f"{city_id} — {cfg['city_name']} — PIXEL-LEVEL (3x3 max)")
+    print(f"{city_id} - {cfg['city_name']} - PIXEL-LEVEL (3x3 max)")
     print(f"{'='*60}")
 
     if not prob_base.exists():

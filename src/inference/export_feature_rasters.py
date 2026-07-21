@@ -1,13 +1,9 @@
 """
 Export Sentinel-1 feature rasters from GEE for local pixel-level inference.
 
-Option D implementation — exports 28-band GeoTIFF feature rasters from GEE
+Exports 28-band GeoTIFF feature rasters from GEE
 covering Gaza at 10m resolution, one per time window per orbit. These are
 then classified locally using the trained sklearn Random Forest.
-
-This avoids the GEE computation graph scaling problem that prevented
-extract_features.py from working at Gaza's point density. GEE raster
-operations scale reliably to Gaza's full extent.
 
 Mirrors Dietrich et al. (2025) feature raster export approach:
     - Same 7 statistical reducers: mean, stdDev, median, min, max, skew, kurtosis
@@ -17,7 +13,7 @@ Mirrors Dietrich et al. (2025) feature raster export approach:
     - Same orbit aggregation (mean over 3 orbits)
 
 The only deviation from Dietrich et al.:
-    - Classification uses scikit-learn RF locally — GEE SMILE RF replaced due to Gaza's computational scale
+    - Classification uses scikit-learn RF locally - GEE SMILE RF replaced due to Gaza's computational scale
     - Feature export replaces in-GEE classification
 
 Output:
@@ -44,18 +40,18 @@ from src.utils.gee import init_gee
 
 init_gee(project="gaza-damage-mapping")
 
-# ==================== CONSTANTS ====================
+# Constants
 
 RUN_NAME = "gaza_feature_rasters"
-QUADKEY_ZOOM = 12  # Same quadkey zoom as Dietrich et al. original pipeline — ~2.4km² tiles
-SCALE = 10  # 10m resolution — same as Dietrich et al.
+QUADKEY_ZOOM = 12  # Same quadkey zoom as Dietrich et al. original pipeline: ~2.4km² tiles
+SCALE = 10  # 10m resolution - same as Dietrich et al.
 ORBITS = [87, 94, 160]  # Gaza S1 orbits
 REDUCER_NAMES = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
 EXTRACT_WINDOW = "1x1"
 LOCAL_BASE = DATA_PATH / "feature_rasters"
 
 
-# ==================== EXPORT ====================
+# Export
 
 
 def export_feature_rasters_for_window(
@@ -66,7 +62,7 @@ def export_feature_rasters_for_window(
     """
     Export 28-band feature rasters for one time window, for each orbit.
 
-    One GeoTIFF per quadkey tile per orbit — mirrors Dietrich et al. tile structure.
+    One GeoTIFF per quadkey tile per orbit - mirrors Dietrich et al. tile structure.
     Bands: VV_pre_1x1_mean ... VH_post_1x1_kurtosis (28 bands total)
 
     Args:
@@ -100,7 +96,7 @@ def export_feature_rasters_for_window(
             s1 = get_s1_collection(geo)
             s1_orbit = s1.filter(ee.Filter.eq("relativeOrbitNumber_start", orbit))
 
-            # Compute 28-band feature image — uses col_to_features from src/utils/gee.py
+            # Compute 28-band feature image - uses col_to_features from src/utils/gee.py
             feature_img = col_to_features(s1_orbit, REDUCER_NAMES, time_periods, EXTRACT_WINDOW)
 
             # Export to Drive as Float32 GeoTIFF
@@ -139,12 +135,12 @@ def _filter_existing(ids: list[str], drive_folder: str, local_dir: Path = None) 
     return ids
 
 
-# ==================== MAIN ====================
+# Main
 
 if __name__ == "__main__":
     # All 19 windows: 1 pre-period window + 18 post windows
-    # Window 1 (w01) = PRE_PERIOD post window — label=0 reference
-    # Windows 7-19 = post-war windows — label=1
+    # Window 1 (w01) = PRE_PERIOD post window - label=0 reference
+    # Windows 7-19 = post-war windows - label=1
     all_periods = [PRE_PERIOD] + list(POST_PERIODS)
 
     print(f"Exporting feature rasters for {len(all_periods)} windows × {len(ORBITS)} orbits")

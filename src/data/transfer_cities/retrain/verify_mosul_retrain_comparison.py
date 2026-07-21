@@ -1,7 +1,7 @@
 """
 Full re-verification of the Mosul zero-shot vs retrained comparison.
 Reruns all three pieces fresh and explicitly checks each against the
-previously saved/reported figures, rather than trusting them blind.
+previously saved/reported figures.
 """
 
 import json

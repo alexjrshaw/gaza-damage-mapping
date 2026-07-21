@@ -1,9 +1,9 @@
 """
 Export Sentinel-1 feature rasters from GEE for local pixel-level inference.
 
-Option D implementation - exports 28-band GeoTIFF feature rasters from GEE
-covering Gaza at 10m resolution, one per time window per orbit. These are
-then classified locally using the trained sklearn Random Forest.
+Exports 28-band GeoTIFF feature rasters from GEE covering Gaza at 10m
+resolution, one per time window per orbit. These are then classified locally
+using the trained sklearn Random Forest.
 
 This avoids the GEE computation graph scaling problem that prevented
 extract_features.py from working at Gaza's point density. GEE raster

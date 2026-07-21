@@ -1,5 +1,5 @@
 """
-Quick check: Mosul zero-shot performance at t=0.44 (retrained's own
+Mosul zero-shot performance at t=0.44 (retrained's own
 optimal threshold, applied here just out of curiosity).
 """
 

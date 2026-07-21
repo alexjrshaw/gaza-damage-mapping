@@ -9,8 +9,8 @@ The structure and logic follows Dietrich et al. (2025) exactly, with three
 adaptations for Gaza:
     1. HOTOSM GeoJSON instead of Overture Maps parquet
     2. OCHA admin boundaries instead of Ukraine admin shapefiles
-    3. gpd.sjoin instead of gpd.overlay in add_unosat_info — same result
-       but far more memory efficient for Gaza's dense urban geography
+    3. gpd.sjoin instead of gpd.overlay in add_unosat_info - far more memory
+    efficient for Gaza's dense urban geography
 """
 
 import geopandas as gpd
@@ -29,10 +29,10 @@ from src.utils.geo import (
 )
 from src.utils.time import timeit
 
-# Output path — mirrors OVERTURE_PROCESSED_FP in Ukraine pipeline
+# Output path - mirrors OVERTURE_PROCESSED_FP in Ukraine pipeline
 HOTOSM_PROCESSED_FP = OVERTURE_PATH / "gaza_buildings.parquet"
 
-# Minimum building area — matches Dietrich et al. (2025)
+# Minimum building area - matches Dietrich et al. (2025)
 MIN_BUILDING_AREA_M2 = 50
 
 
@@ -47,16 +47,12 @@ def process_hotosm() -> None:
         3. Add admin info
     """
 
-    # Step 1 — Download if needed
+    # Step 1 - Download if needed
     download_hotosm_buildings()
 
     # Keep only buildings within Gaza Strip and relevant properties
     print("Keeping only buildings within Gaza Strip and relevant properties...")
     only_in_gaza_and_relevant_properties()
-
-    # Add UNOSAT info - DEFERRED: not needed for core pipeline, ADD BACK LATER
-    # print("Adding UNOSAT info...")
-    # add_unosat_info()
 
     # Add admin info
     print("Adding admin info...")
@@ -89,17 +85,17 @@ def only_in_gaza_and_relevant_properties() -> None:
     gdf["lon"] = centroids.x
     gdf["lat"] = centroids.y
 
-    # Filter small buildings — matches Dietrich et al. (2025)
+    # Filter small buildings
     gdf = gdf[gdf["area_m2"] >= MIN_BUILDING_AREA_M2].copy()
     print(f"  Buildings >= {MIN_BUILDING_AREA_M2}m2: {len(gdf):,}")
 
     # Rename osm_id to building_id for pipeline compatibility
     gdf = gdf.rename(columns={"osm_id": "building_id"}).reset_index(drop=True)
 
-    # Keep relevant columns — mirrors Ukraine pipeline
+    # Keep relevant columns - mirrors Ukraine pipeline
     gdf = gdf[["building_id", "geometry", "area_m2", "lon", "lat"]]
 
-    # Save geometry as WKB — mirrors Ukraine pipeline (geometry_wkb column)
+    # Save geometry as WKB - mirrors Ukraine pipeline (geometry_wkb column)
     gdf["geometry_wkb"] = gdf.geometry.apply(lambda g: g.wkb)
     gdf = gdf.drop(columns=["geometry"])
 
@@ -115,21 +111,21 @@ def add_unosat_info(buffer: int = 5) -> None:
     Add UNOSAT damage info to buildings using a 5m buffer spatial join.
 
     Mirrors add_unosat_info() in Ukraine pipeline. Gaza-specific adaptation:
-    uses gpd.sjoin instead of gpd.overlay — identical output but more memory
-    efficient for Gaza's dense urban geography where gpd.overlay causes OOM.
+    uses gpd.sjoin instead of gpd.overlay, which has identical output but is
+    more memory efficient for Gaza where gpd.overlay causes OOM.
 
     Args:
         buffer (int): Buffer around buildings in metres. Defaults to 5.
     """
 
-    # Read processed buildings — mirrors Ukraine pipeline
+    # Read processed buildings - mirrors Ukraine pipeline
     df = pd.read_parquet(HOTOSM_PROCESSED_FP)
     df["geometry"] = df.geometry_wkb.apply(lambda x: wkb_loads(bytes(x)))
     gdf_all = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
     del df
     print("Buildings loaded")
 
-    # Loop over AOIs — mirrors Ukraine pipeline
+    # Loop over AOIs - mirrors Ukraine pipeline
     gdf_buildings_with_unosat = []
 
     for aoi in tqdm(get_all_aois()):
@@ -151,9 +147,9 @@ def add_unosat_info(buffer: int = 5) -> None:
         gdf = gdf.copy()
         gdf.geometry = gdf.to_crs(crs_proj).buffer(buffer).to_crs("EPSG:4326")
 
-        # Spatial join — Gaza adaptation: sjoin instead of overlay
+        # Spatial join - Gaza adaptation: sjoin instead of overlay
         # gpd.overlay creates intersection geometries (OOM for dense Gaza data)
-        # gpd.sjoin just matches IDs — identical output, fraction of memory
+        # gpd.sjoin just matches IDs - identical output, fraction of memory
         pts_in = gpd.sjoin(
             points[["unosat_id", "damage", "date", "aoi", "geometry"]],
             gdf[["building_id", "geometry"]],
@@ -164,7 +160,7 @@ def add_unosat_info(buffer: int = 5) -> None:
         if len(pts_in) == 0:
             continue
 
-        # Keep lowest damage level (most severe) — mirrors Ukraine pipeline
+        # Keep lowest damage level (most severe) - mirrors Ukraine pipeline
         pts_sorted = pts_in.sort_values(by=["damage"])
         buildings_with_unosat = pts_sorted.groupby("building_id").agg(
             {"damage": "first", "unosat_id": "first", "date": "first"}
@@ -196,7 +192,7 @@ def add_admin_info() -> None:
     gpd.sjoin instead of DuckDB for simplicity.
     """
 
-    # Load buildings — mirrors Ukraine pipeline
+    # Load buildings - mirrors Ukraine pipeline
     df = pd.read_parquet(HOTOSM_PROCESSED_FP)
     df["geometry"] = df.geometry_wkb.apply(lambda x: wkb_loads(bytes(x)))
     gdf_all = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")

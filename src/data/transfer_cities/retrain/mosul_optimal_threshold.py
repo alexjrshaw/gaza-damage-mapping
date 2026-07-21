@@ -1,9 +1,9 @@
 """
-TEST script: find each Mosul model's OWN optimal pixel-level threshold,
-mirroring exactly how Gaza's t=0.655 was selected (fine-grained sweep,
+Find Mosul model's optimal threshold,
+mirroring exactly how Gaza's t=0.67 was selected (fine-grained sweep,
 step=0.005, first threshold where precision crosses 90%).
 
-Does NOT modify any production script. Reuses the same tile-merging and
+Does not modify any production script. Reuses the same tile-merging and
 point-sampling logic as test_true_auc_transfer.py (3x3 max window, NaN
 preserved), for both:
     - Zero-shot Mosul (Gaza-trained model, evaluated on all of Mosul)
@@ -11,7 +11,7 @@ preserved), for both:
       east-bank-only points)
 
 For each, reports:
-    - True AUC (threshold-independent, already computed)
+    - AUC (threshold-independent, already computed)
     - Mosul's own optimal threshold (90% precision target)
     - Precision/recall/F1/balanced accuracy at that optimal threshold
     - The same four metrics at Gaza's borrowed threshold (0.655), for

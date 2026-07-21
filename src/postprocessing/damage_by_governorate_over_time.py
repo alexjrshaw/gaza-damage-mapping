@@ -1,22 +1,5 @@
 """
-Per-governorate cumulative damage over time, for grounding the Results
-"spatial evolution of damage" paragraph in real, verified numbers rather
-than unverified narrative claims -- mirrors the kind of governorate-by-
-governorate, date-by-date figures Scher and Van Den Hoek (2025b) report
-for Gaza (e.g. "by the end of November 2023, over half of North Gaza...").
-
-CORRECTED VERSION: the original version of this script only checked
-whether a building's post-war prediction crossed the threshold in some
-window, without also checking the pre-war exclusion that Dietrich et
-al.'s Equation 3 requires (max_pre < threshold). This meant a building
-whose PRE-war windows also happened to cross the threshold (a likely
-false positive, not genuine war damage) was still counted as "damaged",
-inflating every governorate's final-window total above the validated
-Table 3 figures (e.g. Rafah: 91.4% here vs the correct 82.6% in Table 3).
-This version applies the full Equation 3 condition -- a building is only
-ever eligible to be classified as damaged if its pre-war maximum stays
-below the threshold -- so the final window's totals now agree exactly
-with Table 3.
+Per-governorate cumulative damage (%) over time.
 
 Usage:
     python3 alex/tmp/damage_by_governorate_over_time.py
@@ -84,7 +67,7 @@ def first_damaged_window_index(
     """
     max_pre = row[pre_cols].max()
     if max_pre >= THRESHOLD:
-        return None  # excluded by Equation 3's pre-war condition -- never "damaged"
+        return None  # excluded by Equation 3's pre-war condition - never "damaged"
     for i, col in enumerate(post_cols):
         if row[col] >= THRESHOLD:
             return i
@@ -131,14 +114,14 @@ def main():
 
     results_df = pd.DataFrame(results)
 
-    print("\n=== Cumulative % damaged by governorate and window ===\n")
+    print("\n Cumulative % damaged by governorate and window \n")
     pivot = results_df.pivot(
         index="governorate", columns="window_end_date", values="pct_damaged_cumulative"
     )
     pivot = pivot[WINDOW_END_DATES]  # keep chronological column order
     print(pivot.to_string())
 
-    print("\n=== Final-window check against Table 3 ===")
+    print("\n Final-window check against Table 3 ")
     print(
         "Table 3 (validated): North Gaza 81.2, Rafah 81.9, Gaza 71.3, Khan Younis 71.3, Deir al-Balah 36.6"
     )

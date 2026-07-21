@@ -5,7 +5,7 @@ Local scikit-learn Random Forest, replacing GEE SMILE classifier (required by lo
 Mirrors the classifier_factory() interface and hyperparameters from
 Dietrich et al. (2025).
 
-Gaza adaptation: scikit-learn replaces GEE SMILE Random Forest — local feature computation made GEE training infeasible.
+Gaza adaptation: scikit-learn replaces GEE SMILE Random Forest.
 """
 
 import pickle
