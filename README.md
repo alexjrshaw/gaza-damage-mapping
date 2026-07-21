@@ -22,7 +22,7 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 | Component | Source | Details |
 |---|---|---|
 | SAR imagery | Sentinel-1 (Copernicus / ESA) | GRD Product, VV+VH, IW mode, via Google Earth Engine |
-| Damage labels | UNOSAT Gaza CDAs | 14 releases, Oct 2023–Oct 2025; 198,308 assessed structures |
+| Damage labels | UNOSAT Gaza 'Comprehensive Damage Assessments' | 14 releases, Oct 2023–Oct 2025; 198,308 assessed structures |
 | Building footprints | HOTOSM Gaza Buildings | 330,079 outlines; 220,820 after 50m² filter |
 | Admin boundaries | OCHA COD-AB Palestine | Governorate level (admin2) |
 | Transfer cities | UNOSAT: products 1188 (Mosul), 1192 (Raqqa), 1118 (Aleppo) | Single release per city |
