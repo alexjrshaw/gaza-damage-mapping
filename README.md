@@ -88,6 +88,13 @@ gaza-damage-mapping/
 ```
 ---
 
+## Prerequisites
+- Python 3.10+
+- Google account with access to Google Earth Engine (used for all Sentinel-1 processing)
+- Google Cloud Console project with the Google Drive API enabled (used to retrieve GEE exports)
+
+---
+
 ## Setup
 
 Developed on the University of Edinburgh Forth HPC cluster (Python 3.10.12, Ubuntu).
