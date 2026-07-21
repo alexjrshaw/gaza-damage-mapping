@@ -1,5 +1,7 @@
 import ee
 
+from src.classification.reducers import get_reducers
+
 
 def init_gee(project: str = "gaza-damage-mapping") -> None:
     """
@@ -29,7 +31,7 @@ def fill_nan_with_mean(col: ee.FeatureCollection) -> ee.FeatureCollection:
     return col.map(_fill_nan_with_mean)
 
 
-# ======= ASSET MANAGEMENT =======
+# Asset management
 def asset_exists(asset_id: str) -> bool:
     """Check if an asset exists."""
     try:
