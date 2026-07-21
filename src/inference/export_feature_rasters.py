@@ -1,9 +1,13 @@
 """
 Export Sentinel-1 feature rasters from GEE for local pixel-level inference.
 
-Exports 28-band GeoTIFF feature rasters from GEE
+Option D implementation - exports 28-band GeoTIFF feature rasters from GEE
 covering Gaza at 10m resolution, one per time window per orbit. These are
 then classified locally using the trained sklearn Random Forest.
+
+This avoids the GEE computation graph scaling problem that prevented
+extract_features.py from working at Gaza's point density. GEE raster
+operations scale reliably to Gaza's full extent.
 
 Mirrors Dietrich et al. (2025) feature raster export approach:
     - Same 7 statistical reducers: mean, stdDev, median, min, max, skew, kurtosis
@@ -40,10 +44,10 @@ from src.utils.gee import init_gee
 
 init_gee(project="gaza-damage-mapping")
 
-# Constants
+# ==================== CONSTANTS ====================
 
 RUN_NAME = "gaza_feature_rasters"
-QUADKEY_ZOOM = 12  # Same quadkey zoom as Dietrich et al. original pipeline: ~2.4km² tiles
+QUADKEY_ZOOM = 12  # Same quadkey zoom as Dietrich et al. original pipeline - ~2.4km² tiles
 SCALE = 10  # 10m resolution - same as Dietrich et al.
 ORBITS = [87, 94, 160]  # Gaza S1 orbits
 REDUCER_NAMES = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
@@ -51,7 +55,7 @@ EXTRACT_WINDOW = "1x1"
 LOCAL_BASE = DATA_PATH / "feature_rasters"
 
 
-# Export
+# ==================== EXPORT ====================
 
 
 def export_feature_rasters_for_window(
@@ -135,7 +139,7 @@ def _filter_existing(ids: list[str], drive_folder: str, local_dir: Path = None) 
     return ids
 
 
-# Main
+# ==================== MAIN ====================
 
 if __name__ == "__main__":
     # All 19 windows: 1 pre-period window + 18 post windows

@@ -2,23 +2,32 @@
 Local training pipeline for Mosul, as a retraining comparison against
 the Gaza-trained zero-shot transfer result.
 
-Mirrors src/classification/main_local.py's training step, with
+Mirrors src/classification/main_local.py's training step exactly, with
 two adaptations, both noted at point of use below:
     1. Data source: data/transfer_cities/features_ready/MOS_features.parquet
        instead of Gaza's data/features_ready/s1_*.parquet.
     2. Train/test split: spatial east/west split on longitude (Tigris River,
        lon = 43.13), instead of Gaza's AOI-based split. Chosen to approximate
-       Gaza's own train/test point ratio.
+       Gaza's own train/test point ratio (53.5% / 46.5%): the west-bank/train
+       split yields 57.1% / 42.9%, the closest match found by sweeping
+       candidate longitudes against the actual point distribution.
 
 Train (west bank, lon < 43.13): historic Old City, west-bank neighbourhoods.
 Test  (east bank, lon >= 43.13): east-bank neighbourhoods.
 
 This script only trains and saves the model (model.pkl), matching the
 output location and format expected by Gaza's local_pixel_inference.py.
-Pixel-level evaluation is intentionally not done here: doing so on the
+Pixel-level evaluation is intentionally NOT done here: doing so on the
 tabular point-level features would not be comparable to the zero-shot
 Mosul result, which is pixel-level (3x3 max window, sampled from
-classified rasters).
+classified rasters). Instead:
+
+    [this script] (train, save model.pkl)
+        -> mosul_retrain_pixel_inference.py (classify Mosul's existing
+           feature rasters with this model)
+        -> evaluate_pixel_transfer.py (unmodified; the same script used
+           for the zero-shot Mosul result, run on east-bank test points
+           only -- see usage note in that script's call)
 
 Usage:
     python3 alex/tmp/main_local_mosul_retrain.py
@@ -52,8 +61,8 @@ def load_and_split_mosul() -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Load Mosul features, join geometry, apply east/west spatial split.
 
-    Spatial split on longitude, not Gaza's AOI-based split, since Mosul
-    has no AOI subdivisions.
+    Adaptation 2 (see module docstring): spatial split on longitude,
+    not Gaza's AOI-based split, since Mosul has no AOI subdivisions.
 
     Returns (df_train, df_test). df_test is retained here only to report
     its size; pixel-level test-set geometry filtering happens later, in

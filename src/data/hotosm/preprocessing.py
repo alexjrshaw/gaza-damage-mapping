@@ -9,8 +9,8 @@ The structure and logic follows Dietrich et al. (2025) exactly, with three
 adaptations for Gaza:
     1. HOTOSM GeoJSON instead of Overture Maps parquet
     2. OCHA admin boundaries instead of Ukraine admin shapefiles
-    3. gpd.sjoin instead of gpd.overlay in add_unosat_info - far more memory
-    efficient for Gaza's dense urban geography
+    3. gpd.sjoin instead of gpd.overlay in add_unosat_info - same result
+       but far more memory efficient for Gaza's dense urban geography
 """
 
 import geopandas as gpd
@@ -54,6 +54,10 @@ def process_hotosm() -> None:
     print("Keeping only buildings within Gaza Strip and relevant properties...")
     only_in_gaza_and_relevant_properties()
 
+    # Add UNOSAT info - DEFERRED: not needed for core pipeline, ADD BACK LATER
+    # print("Adding UNOSAT info...")
+    # add_unosat_info()
+
     # Add admin info
     print("Adding admin info...")
     add_admin_info()
@@ -85,7 +89,7 @@ def only_in_gaza_and_relevant_properties() -> None:
     gdf["lon"] = centroids.x
     gdf["lat"] = centroids.y
 
-    # Filter small buildings
+    # Filter small buildings - matches Dietrich et al. (2025)
     gdf = gdf[gdf["area_m2"] >= MIN_BUILDING_AREA_M2].copy()
     print(f"  Buildings >= {MIN_BUILDING_AREA_M2}m2: {len(gdf):,}")
 
@@ -111,8 +115,8 @@ def add_unosat_info(buffer: int = 5) -> None:
     Add UNOSAT damage info to buildings using a 5m buffer spatial join.
 
     Mirrors add_unosat_info() in Ukraine pipeline. Gaza-specific adaptation:
-    uses gpd.sjoin instead of gpd.overlay, which has identical output but is
-    more memory efficient for Gaza where gpd.overlay causes OOM.
+    uses gpd.sjoin instead of gpd.overlay - identical output but more memory
+    efficient for Gaza's dense urban geography where gpd.overlay causes OOM.
 
     Args:
         buffer (int): Buffer around buildings in metres. Defaults to 5.
