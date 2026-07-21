@@ -53,14 +53,14 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 ## Repository structure
 ```
 gaza-damage-mapping/
-├── check_environment.py           # Verifies all required packages are installed before running the pipeline
-├── requirements.txt                # Pinned direct dependencies
-├── reauth_gdrive.py                 # Re-authenticates Google Drive if cached credentials expire
-├── setup.py / setup.cfg / pyproject.toml   # Package metadata; makes src/ importable as a module
-├── LICENSE / README.md / .gitignore  # Repo licence, usage instructions, and ignored paths (secrets/, raw data)
-├── secrets/.gitkeep                  # Empty placeholder — holds gitignored GEE/Drive credentials at runtime
+├── check_environment.py                   # Verifies all required packages are installed before running the pipeline
+├── requirements.txt                       # Pinned direct dependencies
+├── reauth_gdrive.py                       # Re-authenticates Google Drive if cached credentials expire
+├── setup.py / setup.cfg / pyproject.toml  # Package metadata; makes src/ importable as a module
+├── LICENSE / README.md / .gitignore       # Repo licence, usage instructions, and ignored paths (secrets/, raw data)
+├── secrets/.gitkeep                       # Empty placeholder — holds gitignored GEE/Drive credentials at runtime
 ├── src/
-│   ├── classification/              # Training, evaluation, and ablation studies (8 scripts)
+│   ├── classification/                    # Training, evaluation, and ablation studies (8 scripts)
 │   │   ├── main_local.py                  # Trains the production Random Forest, formats predictions
 │   │   ├── models_local.py                # scikit-learn classifier factory
 │   │   ├── dataset_local.py               # Builds train/test splits (AOI-based or random-per-AOI)
@@ -70,22 +70,21 @@ gaza-damage-mapping/
 │   │   ├── ablation_mtry.py               # Fine-grained max_features (mtry) sweep, full training set
 │   │   └── utils.py                       # Shared helpers
 │   ├── data/
-│   │   ├── hotosm/                  # HOTOSM building footprint download and Gaza-specific filtering (3 scripts)
-│   │   ├── sentinel1/                # Sentinel-1 collection, orbits, and time series extraction (5 scripts)
+│   │   ├── hotosm/                        # HOTOSM building footprint download and Gaza-specific filtering (3 scripts)
+│   │   ├── sentinel1/                     # Sentinel-1 collection, orbits, and time series extraction (5 scripts)
 │   │   ├── transfer_cities/
-│   │   │   ├── pixel_inference/      # Zero-shot dense inference and evaluation for Mosul/Raqqa/Aleppo (4 scripts)
-│   │   │   └── retrain/               # Mosul local retraining and threshold recalibration (6 scripts)
-│   │   ├── unosat.py                 # UNOSAT loading, wide-to-long conversion, multi-epoch label combining
-│   │   ├── quadkeys.py                # Quadkey tiling grid for dense raster export
-│   │   └── utils.py                   # Shared AOI/data helpers
-│   ├── inference/                    # Gaza dense pixel-level inference: export, download, classify (3 scripts)
-│   ├── postprocessing/                # Building-level aggregation, thresholding, and results export (8 scripts)
-│   ├── utils/                          # Cross-cutting helpers: GEE auth, Drive I/O, geometry, timing (4 scripts)
-│   └── visualisation/                  # Figure generation: ablation plots, OOB curves, threshold sweep plots (5 scripts)
+│   │   │   ├── pixel_inference/           # Zero-shot dense inference and evaluation for Mosul/Raqqa/Aleppo (4 scripts)
+│   │   │   └── retrain/                   # Mosul local retraining and threshold recalibration (6 scripts)
+│   │   ├── unosat.py                      # UNOSAT loading, wide-to-long conversion, multi-epoch label combining
+│   │   ├── quadkeys.py                    # Quadkey tiling grid for dense raster export
+│   │   └── utils.py                       # Shared AOI/data helpers
+│   ├── inference/                         # Gaza dense pixel-level inference: export, download, classify (3 scripts)
+│   ├── postprocessing/                    # Building-level aggregation, thresholding, and results export (8 scripts)
+│   ├── utils/                             # Cross-cutting helpers: GEE auth, Drive I/O, geometry, timing (4 scripts)
+│   └── visualisation/                     # Figure generation: ablation plots, OOB curves, threshold sweep plots (5 scripts)
 └── test_sites/
-    ├── processed/                   # Preprocessed UNOSAT labels/AOIs for retained transfer cities (Mosul, Raqqa, Aleppo)
-    └── raw/                          # Raw UNOSAT shapefiles for retained cities + excluded candidates
-                                       #   (Fallujah, Myanmar) kept for provenance of the exclusion decision
+    ├── processed/                         # Preprocessed UNOSAT labels/AOIs for retained transfer cities (Mosul, Raqqa, Aleppo)
+    └── raw/                               # Raw UNOSAT shapefiles for retained cities + excluded candidates (Fallujah, Myanmar), kept for provenance
 ```
 ---
 
