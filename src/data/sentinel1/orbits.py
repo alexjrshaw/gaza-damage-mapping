@@ -99,5 +99,5 @@ if __name__ == "__main__":
     init_gee(project="gaza-damage-mapping")
     fp = DATA_PATH / "s1_aoi_orbits.csv"
     if fp.exists():
-        fp.unlink()  # delete so we force recreation
+        fp.unlink()  # delete so script forces recreation
     load_df_orbits()
