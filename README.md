@@ -164,7 +164,7 @@ python3 src/data/hotosm/preprocessing.py
 
 ### Gaza (main pipeline)
 
-Steps 1–4 require internet access and should run interactively on the Forth login node in persistent `screen` sessions. Steps 5–8 can be submitted as Slurm batch jobs.
+Steps 1–4 require internet access and should run interactively on the Forth login node in persistent `screen` sessions.
 
 **1. Upload UNOSAT labels to GEE**
 ```bash
@@ -214,6 +214,8 @@ python3 src/postprocessing/classify_building_damage.py
 
 ### Cross-conflict transfer (Mosul, Raqqa, Aleppo)
 
+Steps 1–3 require internet access and must run interactively on the Forth login node.
+
 **1. Upload transfer city UNOSAT labels to GEE**
 ```bash
 python3 src/data/transfer_cities/upload_unosat_to_gee.py
@@ -229,28 +231,65 @@ python3 src/data/transfer_cities/pixel_inference/export_feature_rasters_transfer
 python3 src/data/transfer_cities/pixel_inference/download_feature_rasters_transfer.py
 python3 src/data/transfer_cities/pixel_inference/pixel_inference_transfer.py
 ```
+*Inference applies the Gaza-trained model unchanged (zero-shot transfer).*
 
 **4. Evaluate**
 ```bash
 python3 src/data/transfer_cities/pixel_inference/evaluate_pixel_transfer.py
 ```
+*Evaluation is run at two thresholds: t=0.5 (default) and t=0.670 (Gaza-calibrated, 90% precision target).*
 
 ### Mosul local retraining
 
+Tests whether training on Mosul's own data improves on zero-shot transfer.
+
+**1. Create east-bank test labels**
 ```bash
 python3 src/data/transfer_cities/retrain/create_mosul_east_bank_labels.py
+```
+*Splits Mosul UNOSAT points along the Tigris River (lon=43.1262°E): west bank for training, east bank for testing.*
+
+**2. Train Mosul-specific model**
+```bash
 python3 src/data/transfer_cities/retrain/main_local_mosul_retrain.py
+```
+
+**3. Run pixel inference with retrained model**
+```bash
 python3 src/data/transfer_cities/retrain/mosul_retrain_pixel_inference.py
+```
+*Sweeps t=0.0–1.0 to find the threshold achieving 90% precision on Mosul's own data, mirroring how Gaza's t=0.670 was derived. The retrained model's optimal threshold: t=0.44*
+
+**4. Find best threshold for retrained model**
+```bash
 python3 src/data/transfer_cities/retrain/mosul_optimal_threshold.py
+```
+
+**5. Compare zero-shot vs retrained**
+```bash
 python3 src/data/transfer_cities/retrain/verify_mosul_retrain_comparison.py
 ```
 
 ### Ablation study
 
+Run after Step 5 of the Gaza pipeline (trained model and feature rasters must exist).
+
+**1. Pixel-level ablation**
 ```bash
-python3 src/classification/ablation_pixel_level.py   # pixel-level ablation
-python3 src/classification/ablation_mtry.py           # mtry OOB ablation
-python3 src/visualisation/plot_ablation_figures.py    # generate figures
+python3 src/classification/ablation_pixel_level.py
+```
+*Runs all ablation variants at t=0.670 (Gaza-calibrated threshold)*
+
+**2. Mtry ablation**
+```bash
+python3 src/classification/ablation_mtry.py
+```
+*Tests mtry values 1–25 via OOB error during training.*
+
+**3. Make figures**
+**
+```bash
+python3 src/visualisation/plot_ablation_figures.py
 ```
 
 ---
