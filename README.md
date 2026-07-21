@@ -1,4 +1,4 @@
-# Gaza SAR Building Damage Mapping
+# Cross-Conflict Building Damage Monitoring From Space
 
 **Alex Shaw, MSc GIS, University of Edinburgh**
 
