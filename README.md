@@ -162,7 +162,7 @@ python3 src/data/hotosm/preprocessing.py
 
 ## Running the pipeline
 
-### Gaza (main pipeline)
+### A. Gaza (main pipeline)
 
 Steps 1–4 require internet access and should run interactively on the Forth login node in persistent `screen` sessions.
 
@@ -212,7 +212,7 @@ python3 src/postprocessing/pixel_postprocessing.py
 python3 src/postprocessing/classify_building_damage.py
 ```
 
-### Cross-conflict transfer (Mosul, Raqqa, Aleppo)
+### B. Cross-conflict transfer (Mosul, Raqqa, Aleppo)
 
 Steps 1–3 require internet access and must run interactively on the Forth login node.
 
@@ -239,7 +239,7 @@ python3 src/data/transfer_cities/pixel_inference/evaluate_pixel_transfer.py
 ```
 *Evaluation is run at two thresholds: t=0.5 (default) and t=0.670 (Gaza-calibrated, 90% precision target).*
 
-### Mosul local retraining
+### C. Mosul local retraining
 
 Tests whether training on Mosul's own data improves on zero-shot transfer.
 
