@@ -21,7 +21,7 @@ def load_unosat_labels(
     Args:
         aoi (str | list[str] | None): Which AOIs to keep. Default to None (all)
         labels_to_keep (list[int]): Which labels to keep. Default to [1,2] (destroyed, major damage)
-        combine_epoch (bool): For points that have multiple observations, we keep only one label.
+        combine_epoch (bool): For points that have multiple observations, I keep only one label.
             Either the 'last' one, the 'min' one (eg the strongest label), or 'first_severe'
             (earliest epoch where damage is class 1 or 2 - Gaza adaptation). Default to 'last'
 
@@ -201,7 +201,7 @@ def preprocess_gaza_unosat(
     # Convert wide format to long format
     # Ukraine data was already long format (one row per point).
     # Gaza data is wide format (one row per point, 14 epoch columns).
-    # We convert to long format to match the Ukraine schema exactly.
+    # I convert to long format to match the Ukraine schema exactly.
     print("Converting wide format to long format ...")
     records = []
     for row_idx, row in gdf_raw.iterrows():
@@ -482,7 +482,7 @@ def upload_gaza_unosat_to_gee(aois: list[str] | None = None) -> None:
             ee.data.deleteAsset(chunk_id)
         print(f"  ✓ Done ({n} features merged)")
 
-    # Feature count threshold above which we use chunked upload
+    # Feature count threshold above which I use chunked upload
     CHUNK_THRESHOLD = 30000
 
     aois_to_process = aois if aois is not None else list(GOVERNORATE_TO_AOI.values())
