@@ -3,25 +3,25 @@ Preprocess UNOSAT damage assessment shapefiles for three transfer cities.
 
 Converts raw shapefiles to the schema expected by load_unosat_labels()
 in src/data/unosat.py, filtering to damage classes 1 (Destroyed) and
-2 (Severe Damage) only — consistent with Gaza pipeline's labels_to_keep=[1,2].
+2 (Severe Damage) only - consistent with Gaza pipeline's labels_to_keep=[1,2].
 
 Cities:
-    Aleppo, Syria       — product 1118, assessed 2016-09-18
-    Raqqa, Syria        — product 1192, assessed 2017-10-21
-    Mosul, Iraq         — product 1188, assessed 2017-08-04
+    Aleppo, Syria       - product 1118, assessed 2016-09-18
+    Raqqa, Syria        - product 1192, assessed 2017-10-21
+    Mosul, Iraq         - product 1188, assessed 2017-08-04
 
 Output schema (matches load_unosat_labels()):
-    unosat_id           — unique ID: {city_id}_{row_index}_1
-    site_id             — original row index
-    aoi                 — city identifier (ALP, RAQ, MOS)
-    damage              — 1 or 2
-    ep                  — always 1 (single epoch per point)
-    date                — assessment date string
-    geometry            — point geometry (EPSG:4326)
-    date_first          — same as date (single epoch)
-    date_first_severe   — same as date (all points are class 1 or 2)
-    date_first_destroyed — same as date if damage==1, else None
-    damage_max          — same as damage (single epoch)
+    unosat_id           - unique ID: {city_id}_{row_index}_1
+    site_id             - original row index
+    aoi                 - city identifier (ALP, RAQ, MOS)
+    damage              - 1 or 2
+    ep                  - always 1 (single epoch per point)
+    date                - assessment date string
+    geometry            - point geometry (EPSG:4326)
+    date_first          - same as date (single epoch)
+    date_first_severe   - same as date (all points are class 1 or 2)
+    date_first_destroyed - same as date if damage==1, else None
+    damage_max          - same as damage (single epoch)
 
 Output files:
     test_sites/processed/{city_id}/unosat_labels.geojson
@@ -37,20 +37,20 @@ from pathlib import Path
 import geopandas as gpd
 from shapely.ops import unary_union
 
-# ── Paths ──────────────────────────────────────────────────────────────────────
+# Paths
 RAW_BASE = Path("test_sites/raw")
 OUT_BASE = Path("test_sites/processed")
 
-# ── Damage string → standard class mapping ─────────────────────────────────────
+# Damage string to standard class mapping
 DAMAGE_MAP = {
     "Destroyed": 1,
     "Severe Damage": 2,
     # All others dropped
 }
 
-# ── City configurations ────────────────────────────────────────────────────────
+# City configurations
 # damage_field: column containing the most recent damage assessment
-# date: assessment date (hardcoded — verified from shapefile inspection)
+# date: assessment date (hardcoded - verified from shapefile inspection)
 # shp: path to shapefile relative to RAW_BASE
 CITIES = [
     {
@@ -110,7 +110,7 @@ def preprocess_city(city: dict) -> None:
 
     # Reproject to WGS84 if needed
     if gdf.crs is None:
-        print("  WARNING: No CRS — assuming EPSG:4326")
+        print("  WARNING: No CRS - assuming EPSG:4326")
         gdf = gdf.set_crs("EPSG:4326")
     elif gdf.crs.to_epsg() != 4326:
         gdf = gdf.to_crs("EPSG:4326")

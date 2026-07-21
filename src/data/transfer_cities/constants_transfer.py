@@ -5,9 +5,9 @@ Mirrors src/constants.py structure for Gaza, adapted for three
 conflict cities from the Ballinger et al. PWTT dataset.
 
 Cities:
-    ALP — Aleppo, Syria       assessed 2016-09-18 (UNOSAT product 1118)
-    RAQ — Raqqa, Syria        assessed 2017-10-21 (UNOSAT product 1192)
-    MOS — Mosul, Iraq         assessed 2017-08-04 (UNOSAT product 1188)
+    ALP - Aleppo, Syria       assessed 2016-09-18 (UNOSAT product 1118)
+    RAQ - Raqqa, Syria        assessed 2017-10-21 (UNOSAT product 1192)
+    MOS - Mosul, Iraq         assessed 2017-08-04 (UNOSAT product 1188)
 
 Sentinel-1 coverage confirmed:
     ALP: first image 2014-10-06, 189 images (2014-2016)
@@ -28,13 +28,13 @@ Time period design (mirrors Gaza/Dietrich et al.):
       Windows ending after conflict_start  → label=1 (if date_first_severe <= end_post)
 
 Conflict start dates and rationale:
-    ALP: 2016-02-05 — Syrian government forces cut rebel supply lines,
+    ALP: 2016-02-05 - Syrian government forces cut rebel supply lines,
          beginning the final siege of Aleppo. Note: actual conflict began
          July 2012, prior to Sentinel-1 coverage. Windows before 2016-02-05
-         represent active but lower-intensity conflict, not true pre-conflict.
-    RAQ: 2016-11-06 — Launch of Operation Wrath of Euphrates (SDF campaign
+         represent active but lower-intensity conflict, not true peacetime.
+    RAQ: 2016-11-06 - Launch of Operation Wrath of Euphrates (SDF campaign
          to isolate and capture Raqqa from ISIS).
-    MOS: 2016-10-16 — Start of the Battle of Mosul (Iraqi forces to retake
+    MOS: 2016-10-16 - Start of the Battle of Mosul (Iraqi forces to retake
          city from ISIS, the largest urban battle since 2003).
 
 label=0 / label=1 window counts:
@@ -45,7 +45,7 @@ label=0 / label=1 window counts:
 
 from pathlib import Path
 
-# ── Project paths ──────────────────────────────────────────────────────────────
+# Project paths
 _THIS_FILE = Path(__file__)
 SRC_PATH = _THIS_FILE.parent.parent.parent  # src/
 PROJECT_PATH = SRC_PATH.parent  # repo root
@@ -62,9 +62,7 @@ TRANSFER_GEE_FOLDER = "projects/gaza-damage-mapping/assets/transfer-cities/"
 # Shared S1 bands (unchanged from Gaza)
 S1_BANDS = ["VV", "VH"]
 
-# ══════════════════════════════════════════════════════════════════════════════
-# ALEPPO (ALP) — Syria, assessed 2016-09-18
-# ══════════════════════════════════════════════════════════════════════════════
+# Aleppo (ALP) - Syria, assessed 2016-09-18
 
 ALP_CONFLICT_START = "2016-02-05"
 ALP_ASSESSMENT_DATE = "2016-09-18"
@@ -88,15 +86,13 @@ ALP_POST_PERIODS = [
     ("2015-08-07", "2015-10-06"),  # label=0
     ("2015-10-07", "2015-12-06"),  # label=0
     ("2015-12-07", "2016-02-04"),  # label=0
-    ("2016-02-05", "2016-04-05"),  # label=1 — post-escalation
+    ("2016-02-05", "2016-04-05"),  # label=1 - post-escalation
     ("2016-04-06", "2016-06-05"),  # label=1
     ("2016-06-06", "2016-08-05"),  # label=1
-    ("2016-08-06", "2016-09-18"),  # label=1 — final window (assessment date)
+    ("2016-08-06", "2016-09-18"),  # label=1 - final window (assessment date)
 ]
 
-# ══════════════════════════════════════════════════════════════════════════════
-# RAQQA (RAQ) — Syria, assessed 2017-10-21
-# ══════════════════════════════════════════════════════════════════════════════
+# Raqqa (RAQ) - Syria, assessed 2017-10-21
 
 RAQ_CONFLICT_START = "2016-11-06"
 RAQ_ASSESSMENT_DATE = "2017-10-21"
@@ -116,17 +112,15 @@ RAQ_POST_PERIODS = [
     ("2016-04-21", "2016-06-20"),  # label=0
     ("2016-06-21", "2016-08-20"),  # label=0
     ("2016-08-21", "2016-10-20"),  # label=0
-    ("2016-10-21", "2016-12-20"),  # label=1 — Operation Wrath of Euphrates launched Nov 2016
+    ("2016-10-21", "2016-12-20"),  # label=1 - Operation Wrath of Euphrates launched Nov 2016
     ("2016-12-21", "2017-02-19"),  # label=1
     ("2017-02-20", "2017-04-21"),  # label=1
     ("2017-04-22", "2017-06-21"),  # label=1
     ("2017-06-22", "2017-08-21"),  # label=1
-    ("2017-08-22", "2017-10-21"),  # label=1 — final window (assessment date)
+    ("2017-08-22", "2017-10-21"),  # label=1 - final window (assessment date)
 ]
 
-# ══════════════════════════════════════════════════════════════════════════════
-# MOSUL (MOS) — Iraq, assessed 2017-08-04
-# ══════════════════════════════════════════════════════════════════════════════
+# Mosul (MOS) - Iraq, assessed 2017-08-04
 
 MOS_CONFLICT_START = "2016-10-16"
 MOS_ASSESSMENT_DATE = "2017-08-04"
@@ -147,16 +141,14 @@ MOS_POST_PERIODS = [
     ("2016-04-04", "2016-06-03"),  # label=0
     ("2016-06-04", "2016-08-03"),  # label=0
     ("2016-08-04", "2016-10-03"),  # label=0
-    ("2016-10-04", "2016-12-03"),  # label=1 — Battle of Mosul begins Oct 16
+    ("2016-10-04", "2016-12-03"),  # label=1 - Battle of Mosul begins Oct 16
     ("2016-12-04", "2017-02-02"),  # label=1
     ("2017-02-03", "2017-04-04"),  # label=1
     ("2017-04-05", "2017-06-04"),  # label=1
-    ("2017-06-05", "2017-08-04"),  # label=1 — final window (assessment date)
+    ("2017-06-05", "2017-08-04"),  # label=1 - final window (assessment date)
 ]
 
-# ══════════════════════════════════════════════════════════════════════════════
-# YEI (YEI) — South Sudan, assessed 2017-03-05
-# ══════════════════════════════════════════════════════════════════════════════
+# Yei (YEI) - South Sudan, assessed 2017-03-05
 
 YEI_CONFLICT_START = "2016-07-01"
 YEI_ASSESSMENT_DATE = "2017-03-05"
@@ -181,10 +173,10 @@ YEI_POST_PERIODS = [
     ("2016-07-01", "2016-09-01"),  # label=1
     ("2016-09-02", "2016-11-02"),  # label=1
     ("2016-11-03", "2017-01-03"),  # label=1
-    ("2017-01-04", "2017-03-05"),  # label=1 — final window (assessment date)
+    ("2017-01-04", "2017-03-05"),  # label=1 - final window (assessment date)
 ]
 
-# ── Lookup by city ID ──────────────────────────────────────────────────────────
+# Lookup by city ID
 
 TRANSFER_CITIES = {
     "ALP": {
@@ -249,7 +241,7 @@ TRANSFER_CITIES = {
     },
 }
 
-# ── Retrained Mosul comparison (east-bank test points only) ───────────────────
+# Retrained Mosul comparison (east-bank test points only)
 # Added for the local-retraining comparison: evaluates the Mosul-retrained
 # model (trained on west-bank points, see main_local_mosul_retrain.py)
 # against the east-bank points only, since the west-bank points were used

@@ -34,7 +34,7 @@ def load_results() -> dict:
         return json.load(f)
 
 
-# ── Figure 1: OOB error vs n_trees ────────────────────────────────────────────
+# Figure 1: OOB error vs n_trees
 def plot_oob_ntrees(data: dict):
     oob = data["oob_n_trees"]
     n_trees = oob["n_trees"]
@@ -54,7 +54,7 @@ def plot_oob_ntrees(data: dict):
     print(f"Saved: {fp}")
 
 
-# ── Figure 2: OOB error vs mtry ───────────────────────────────────────────────
+# Figure 2: OOB error vs mtry
 def plot_oob_mtry(data: dict):
     oob = data["oob_mtry"]
     mtry = oob["mtry"]
@@ -72,7 +72,7 @@ def plot_oob_mtry(data: dict):
     print(f"Saved: {fp}")
 
 
-# ── Figure 3: Band ablation ────────────────────────────────────────────────────
+# Figure 3: Band ablation
 def plot_band_ablation(data: dict):
     bands = {
         "VV only": data["ablation_bands_VV"],
@@ -101,7 +101,7 @@ def plot_band_ablation(data: dict):
     print(f"Saved: {fp}")
 
 
-# ── Figure 4: Feature subset ablation ─────────────────────────────────────────
+# Figure 4: Feature subset ablation
 def plot_reducer_ablation(data: dict):
     configs = {
         "Mean + SD": data["ablation_reducers_mean_std"],
@@ -131,7 +131,7 @@ def plot_reducer_ablation(data: dict):
     print(f"Saved: {fp}")
 
 
-# ── Figure 5: F1 vs n_trees ───────────────────────────────────────────────────
+# Figure 5: F1 vs n_trees
 def plot_f1_ntrees(data: dict):
     tree_keys = sorted(
         [k for k in data.keys() if k.startswith("ablation_ntrees_")],
@@ -158,7 +158,7 @@ def plot_f1_ntrees(data: dict):
     print(f"Saved: {fp}")
 
 
-# ── Figure 6: Summary bar chart ────────────────────────────────────────────────
+# Figure 6: Summary bar chart
 def plot_summary(data: dict):
     """Single bar chart of F1 across all ablation settings at t=0.670."""
     labels, f1_vals, colours = [], [], []
@@ -211,7 +211,7 @@ def plot_summary(data: dict):
     print(f"Saved: {fp}")
 
 
-# ── Main ───────────────────────────────────────────────────────────────────────
+# Main
 if __name__ == "__main__":
     data = load_results()
     plot_oob_ntrees(data)

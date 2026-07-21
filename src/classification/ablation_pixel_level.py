@@ -4,12 +4,12 @@ Pixel-level ablation study for Gaza damage mapping.
 Runs all ablation variants using the pixel-level evaluation method from
 evaluation.ipynb (Dietrich et al. 2025 methodology):
     1. Train RF variant
-    2. Run full pixel inference → probability rasters
-    3. Merge tiles → Gaza-wide GeoTIFFs
+    2. Run full pixel inference - probability rasters
+    3. Merge tiles - Gaza-wide GeoTIFFs
     4. Sample rasters at UNOSAT test points (3x3 window, max agg)
     5. Compute metrics at t=0.670 (90% precision target, re-verified 5 July)
 
-OOB plots (n_trees, mtry) use sklearn oob_score_ — no inference needed.
+OOB plots (n_trees, mtry) use sklearn oob_score_ - no inference needed.
 
 Results saved incrementally to data/ablation_runs/pixel_level/results.json.
 Fully resumable: skips any variant whose results are already in the JSON.
@@ -40,7 +40,7 @@ from src.constants import AOIS_TEST, DATA_PATH, PRE_PERIOD
 from src.data.unosat import load_unosat_labels
 from src.data.utils import read_fp_within_geo
 
-# ── Paths ──────────────────────────────────────────────────────────────────────
+# Paths
 
 ABLATION_DIR = DATA_PATH / "ablation_runs" / "pixel_level"
 PROB_RASTERS_BASE = DATA_PATH / "probability_rasters_ablation"
@@ -50,7 +50,7 @@ RESULTS_JSON = ABLATION_DIR / "results.json"
 
 ABLATION_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── Orbits / feature config ────────────────────────────────────────────────────
+# Orbits / feature config
 
 ORBITS = [87, 94, 160]
 ALL_REDUCERS = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
@@ -58,7 +58,7 @@ THRESHOLD_TARGET = 0.670
 WINDOW_AGG = "max"
 SPATIAL_WINDOW = 3
 
-# ── Results I/O ────────────────────────────────────────────────────────────────
+# Results I/O
 
 
 def load_results() -> dict:
@@ -71,10 +71,10 @@ def load_results() -> dict:
 def save_results(results: dict) -> None:
     with open(RESULTS_JSON, "w") as f:
         json.dump(results, f, indent=2)
-    print(f"Results saved → {RESULTS_JSON}")
+    print(f"Results saved {RESULTS_JSON}")
 
 
-# ── Training ───────────────────────────────────────────────────────────────────
+# Training
 
 
 def train_variant(
@@ -156,12 +156,12 @@ def train_variant(
 
     with open(fp_model, "wb") as f:
         pickle.dump(clf, f)
-    print(f"  Model saved → {fp_model}")
+    print(f"  Model saved � {fp_model}")
 
     return clf, feature_cols, cfg
 
 
-# ── Inference ──────────────────────────────────────────────────────────────────
+# Inference
 
 
 def classify_tile_variant(data, band_names, clf, feature_cols):
@@ -195,7 +195,7 @@ def run_inference_variant(
 
     prob_dir = PROB_RASTERS_BASE / variant_name
     windows = sorted(d.name for d in FEATURE_RASTERS_DIR.iterdir() if d.is_dir())
-    print(f"  Inference: {len(windows)} windows → {prob_dir}")
+    print(f"  Inference: {len(windows)} windows {prob_dir}")
 
     for window_str in tqdm(windows, desc=f"Inference {variant_name}"):
         out_dir = prob_dir / window_str
@@ -241,11 +241,11 @@ def run_inference_variant(
                 dst.write(prob_uint8[np.newaxis])
 
 
-# ── Merge tiles ────────────────────────────────────────────────────────────────
+# Merge tiles
 
 
 def merge_tiles_variant(variant_name: str, force_recreate: bool = False) -> list:
-    """Merge quadkey tiles → Gaza-wide GeoTIFFs for this variant."""
+    """Merge quadkey tiles - Gaza-wide GeoTIFFs for this variant."""
     from osgeo import gdal
 
     prob_dir = PROB_RASTERS_BASE / variant_name
@@ -267,11 +267,11 @@ def merge_tiles_variant(variant_name: str, force_recreate: bool = False) -> list
             gdal.Warp(str(fp_out), tifs, format="GTiff")
         merged_fps.append(fp_out)
 
-    print(f"  Merged {len(merged_fps)} windows → {merged_dir}")
+    print(f"  Merged {len(merged_fps)} windows {merged_dir}")
     return merged_fps
 
 
-# ── Pixel sampling ─────────────────────────────────────────────────────────────
+# Pixel sampling
 
 
 def extract_with_window(point, raster, window=3, agg="max"):
@@ -348,7 +348,7 @@ def sample_rasters_at_unosat_points(
 
     gdf_out.fillna(0, inplace=True)
     gdf_out.to_file(fp_out, driver="GeoJSON")
-    print(f"  Saved {len(gdf_out):,} points → {fp_out}")
+    print(f"  Saved {len(gdf_out):,} points {fp_out}")
     return gpd.read_file(fp_out)
 
 
@@ -359,13 +359,13 @@ def _safe_extract(pt, raster):
         return None
 
 
-# ── Evaluation ─────────────────────────────────────────────────────────────────
+# Evaluation
 
 
 def evaluate_variant(gdf_points: gpd.GeoDataFrame, threshold: float = THRESHOLD_TARGET) -> dict:
     """
     Compute F1, precision, recall, AUC at given threshold.
-    Uses get_metrics() from metrics.py — identical to evaluation.ipynb.
+    Uses get_metrics() from metrics.py.
     """
     gdf_test = gdf_points[gdf_points.aoi.isin(AOIS_TEST)].copy()
     gdf_test = gdf_test[gdf_test.damage.isin([1, 2])].copy()
@@ -399,7 +399,7 @@ def evaluate_variant(gdf_points: gpd.GeoDataFrame, threshold: float = THRESHOLD_
     }
 
 
-# ── Full variant pipeline ──────────────────────────────────────────────────────
+# Full variant pipeline
 
 
 def run_variant_full(
@@ -411,7 +411,7 @@ def run_variant_full(
     results: dict = None,
     force_recreate: bool = False,
 ) -> dict:
-    """Train → infer → merge → sample → evaluate one variant."""
+    """Train infer merge sample evaluate one variant."""
     if results and variant_name in results:
         print(f"  Skipping {variant_name} (already in results)")
         return results[variant_name]
@@ -453,13 +453,13 @@ def run_variant_full(
     return metrics
 
 
-# ── OOB study (training-time only, no inference) ───────────────────────────────
+# OOB study (training-time only, no inference)
 
 
 def run_oob_study(results: dict) -> dict:
     """OOB error vs n_trees and vs max_features. No inference needed."""
     if "oob_n_trees" in results and "oob_mtry" in results:
-        print("OOB studies already complete — skipping")
+        print("OOB studies already complete - skipping")
         return results
 
     print("\n" + "=" * 60)
@@ -534,12 +534,12 @@ def run_oob_study(results: dict) -> dict:
     return results
 
 
-# ── Main ───────────────────────────────────────────────────────────────────────
+# Main
 
 if __name__ == "__main__":
     results = load_results()
 
-    # 1. OOB studies (fast — training only)
+    # 1. OOB studies (fast - training only)
     results = run_oob_study(results)
     save_results(results)
 
@@ -554,7 +554,7 @@ if __name__ == "__main__":
 
         gc.collect()
 
-    # 3. Band ablation (VV only, VH only — VV+VH is baseline)
+    # 3. Band ablation (VV only, VH only - VV+VH is baseline)
     band_variants = {
         "ablation_bands_VV": ["VV"],
         "ablation_bands_VH": ["VH"],
