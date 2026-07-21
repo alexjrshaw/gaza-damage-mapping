@@ -1,6 +1,6 @@
 from pathlib import Path
 
-# ------------------- PROJECT CONSTANTS -------------------
+# Project constants
 
 # AOIs correspond to Gaza governorates:
 # GAZ1=North Gaza, GAZ2=Gaza, GAZ3=Deir Al-Balah, GAZ4=Khan Yunis, GAZ5=Rafah
@@ -13,11 +13,11 @@ S2_BANDS = ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B11", 
 
 GAZA_WAR_START = "2023-10-07"
 
-# ------------------- TIME PERIODS -------------------
+# Time periods
 # One year pre-conflict baseline (Oct 2021 - Oct 2022), consistent with Dietrich et al. (2025)
 PRE_PERIOD = ("2021-10-07", "2022-10-06")  # shifted back one year
 
-# XXXX x 2-month post-conflict windows covering full conflict period, plus some pre-war for backscatter comparison
+# 19 x 2-month post-conflict windows covering full conflict period, plus some pre-war for backscatter comparison
 POST_PERIODS = [
     ("2022-10-07", "2022-12-06"),  # Pre-war window 1 → label=0
     ("2022-12-07", "2023-02-06"),  # Pre-war window 2 → label=0
@@ -40,7 +40,7 @@ POST_PERIODS = [
     ("2025-10-07", "2025-12-06"),  # Post-war window 13 → label=1
 ]
 
-# ------------------- LOCAL PATH CONSTANTS -------------------
+# Local path constants
 constants_path = Path(__file__)
 SRC_PATH = constants_path.parent
 PROJECT_PATH = SRC_PATH.parent
@@ -49,6 +49,6 @@ SECRETS_PATH = PROJECT_PATH / "secrets"
 DATA_PATH = PROJECT_PATH / "data"
 OVERTURE_PATH = DATA_PATH / "hotosm_buildings"
 
-# ------------------- GEE PATH CONSTANTS -------------------
+# GEE path constants
 ASSETS_PATH = "projects/gaza-damage-mapping/assets/gaza-mapping-tool/"
 OLD_ASSETS_PATH = "projects/gaza-damage-mapping/assets/"

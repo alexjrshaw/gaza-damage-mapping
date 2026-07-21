@@ -17,7 +17,7 @@ Key adaptations from Dietrich et al.:
     - Reads from local probability rasters instead of Drive
     - Uses HOTOSM buildings (gaza_buildings.parquet) instead of Overture
     - Admin units are governorates (adm2_name) instead of adm3
-    - Window naming follows our w{i}_{start}_{end} convention
+    - Window naming follows w{i}_{start}_{end} convention
 
 Usage:
     python3 src/postprocessing/pixel_postprocessing.py
@@ -35,7 +35,7 @@ from src.constants import DATA_PATH, GAZA_WAR_START
 from src.postprocessing.utils import vectorize_xarray_3d
 from src.utils.time import timeit
 
-# ==================== CONSTANTS ====================
+# Constants
 
 PROBABILITY_RASTERS_DIR = DATA_PATH / "probability_rasters"
 BUILDINGS_FP = DATA_PATH / "hotosm_buildings/gaza_buildings.parquet"
@@ -44,7 +44,7 @@ OUTPUT_DIR = DATA_PATH / "pixel_postprocessing"
 UTM_CRS = "EPSG:32636"
 
 
-# ==================== STEP 1: MERGE TILES ====================
+# Step 1: merge tiles
 
 
 def merge_tiles_for_window(window_str: str, force_recreate: bool = False) -> Path | None:
@@ -102,7 +102,7 @@ def merge_all_windows(force_recreate: bool = False) -> list[Path]:
     return merged
 
 
-# ==================== STEP 2: ASSIGN TO BUILDINGS ====================
+# Step 2: assign to buildings
 
 
 def load_buildings() -> gpd.GeoDataFrame:
@@ -170,7 +170,7 @@ def create_buildings_with_preds_for_admin(
     # Get post dates from window strings
     post_dates = [get_post_date_from_window(fp.stem.replace("gaza_", "")) for fp in merged_fps]
 
-    # Read and stack prediction rasters — mirrors Dietrich et al. exactly
+    # Read and stack prediction rasters - mirrors Dietrich et al. exactly
     from src.data.utils import read_fp_within_geo
 
     dates_var = xr.Variable("date", pd.to_datetime(post_dates))
@@ -181,12 +181,12 @@ def create_buildings_with_preds_for_admin(
     if verbose:
         print(f"  {adm2_name}: rasters stacked {preds.shape}")
 
-    # Vectorize pixels — reuses Dietrich et al.'s vectorize_xarray_3d unchanged
+    # Vectorize pixels - reuses Dietrich et al.'s vectorize_xarray_3d unchanged
     gdf_pixels = vectorize_xarray_3d(preds, post_dates)
     if verbose:
         print(f"  {adm2_name}: {len(gdf_pixels):,} pixels vectorized")
 
-    # Intersect buildings with pixels — identical to Dietrich et al.
+    # Intersect buildings with pixels - identical to Dietrich et al.
     overlap = gpd.overlay(gdf_buildings.reset_index(), gdf_pixels, how="intersection").set_index(
         "building_id"
     )
@@ -198,12 +198,12 @@ def create_buildings_with_preds_for_admin(
     if verbose:
         print(f"  {adm2_name}: {len(overlap):,} overlaps")
 
-    # Compute intersection area — identical to Dietrich et al.
+    # Compute intersection area - identical to Dietrich et al.
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=UserWarning)
         overlap["polygon_area"] = overlap.area
 
-    # Compute area-weighted mean — identical to Dietrich et al.
+    # Compute area-weighted mean - identical to Dietrich et al.
     cols_weighted = [f"{d}_weighted_value" for d in post_dates]
     overlap[cols_weighted] = overlap[post_dates].multiply(overlap["polygon_area"], axis=0)
     grps = overlap.groupby("building_id")
@@ -213,11 +213,11 @@ def create_buildings_with_preds_for_admin(
     gdf_weighted_mean["post_date"] = gdf_weighted_mean["post_date"].apply(lambda x: x.split("_")[0])
     gdf_weighted_mean.set_index("post_date", append=True, inplace=True)
 
-    # Compute max — identical to Dietrich et al.
+    # Compute max - identical to Dietrich et al.
     gdf_max = overlap.groupby("building_id")[post_dates].max().stack().to_frame(name="max")
     gdf_max.index.names = ["building_id", "post_date"]
 
-    # Merge with buildings — identical to Dietrich et al.
+    # Merge with buildings - identical to Dietrich et al.
     gdf_buildings_with_preds = gdf_buildings.join(gdf_weighted_mean).join(gdf_max).sort_index()
 
     # Save
@@ -265,7 +265,7 @@ def create_all_buildings_with_preds(
         create_buildings_with_preds_for_admin(adm2_name, fps, folder, verbose)
 
 
-# ==================== STEP 3: AGGREGATE ====================
+# Step 3: aggregate
 
 
 def process_admin_file(adm2_name: str) -> pd.DataFrame | None:
@@ -315,7 +315,7 @@ def aggregate_all_preds() -> pd.DataFrame:
 
     df_preds = pd.concat(df_preds, axis=0)
 
-    # Merge with building metadata — mirrors Dietrich et al.
+    # Merge with building metadata - mirrors Dietrich et al.
     df_buildings = pd.read_parquet(BUILDINGS_FP).set_index("building_id")
     df_buildings_with_preds = df_buildings.join(df_preds, how="left")
 
@@ -345,7 +345,7 @@ def aggregate_all_preds() -> pd.DataFrame:
     return df_buildings_with_preds
 
 
-# ==================== MAIN ====================
+# Main
 
 
 @timeit

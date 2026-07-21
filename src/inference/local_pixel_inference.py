@@ -8,8 +8,8 @@ This is the local equivalent of the GEE-based inference approach used by Dietric
 Follows Dietrich et al. (2025) methodology exactly:
     - Loads 28-band feature GeoTIFFs exported by export_feature_rasters.py
     - Applies sklearn RF to every pixel
-    - Aggregates predictions across 3 orbits (mean) — mirrors predict_geo()
-    - Exports probability rasters scaled 0-255 (Uint8) — matches pixel_postprocessing.py input
+    - Aggregates predictions across 3 orbits (mean) - mirrors predict_geo()
+    - Exports probability rasters scaled 0-255 (Uint8) - matches pixel_postprocessing.py input
     - Output format matches pixel_postprocessing.py input
 
 Pipeline position:
@@ -37,7 +37,7 @@ from tqdm.auto import tqdm
 from src.classification.utils import get_features_names
 from src.constants import DATA_PATH, PRE_PERIOD
 
-# ==================== CONSTANTS ====================
+# Constants
 
 ORBITS = [87, 94, 160]
 FEATURE_RASTERS_DIR = DATA_PATH / "feature_rasters"
@@ -60,7 +60,7 @@ CFG = OmegaConf.create(
 FEATURE_COLS = get_features_names(CFG)  # 28 feature names in correct order
 
 
-# ==================== LOADING ====================
+# Loading
 
 
 def load_model(fp: Path = MODEL_FP):
@@ -88,7 +88,7 @@ def load_tile(fp: Path) -> tuple[np.ndarray, list[str], dict]:
     return data, band_names, profile
 
 
-# ==================== CLASSIFICATION ====================
+# Classification
 
 
 def classify_tile(
@@ -149,7 +149,7 @@ def aggregate_orbits(
             raise ValueError(f"Unknown aggregation method: {method}")
 
 
-# ==================== SAVING ====================
+# Saving
 
 
 def save_probability_tile(
@@ -180,7 +180,7 @@ def save_probability_tile(
         dst.write(prob_uint8[np.newaxis, :, :])
 
 
-# ==================== PIPELINE ====================
+# Pipeline
 
 
 def classify_window(
@@ -269,7 +269,7 @@ def run_local_inference(
     """
     Run local pixel inference for all available time windows.
 
-    Processes whatever windows are already downloaded — can be run
+    Processes whatever windows are already downloaded - can be run
     incrementally as GEE exports complete.
     """
     # Load model
@@ -306,7 +306,7 @@ def run_local_inference(
     print(f"Probability rasters saved to: {probability_rasters_dir}")
 
 
-# ==================== MAIN ====================
+# Main
 
 if __name__ == "__main__":
     run_local_inference(force_recreate=True)

@@ -18,7 +18,7 @@ The output GeoDataFrame matches the format produced by main.py:
 This allows metrics.py to be used without modification, computing
 the same date-wise evaluation as Dietrich et al. (2025).
 
-Gaza adaptation: feature computation and training run locally (pandas/scikit-learn) — GEE SMILE RF was infeasible at Gaza's point density.
+Gaza adaptation: feature computation and training run locally (pandas/scikit-learn). GEE SMILE RF was infeasible at Gaza's point density.
 """
 
 import json
@@ -74,10 +74,10 @@ def full_pipeline_local(cfg: DictConfig, force_recreate: bool = False) -> dict:
 
     if not fp_preds_local.exists() or force_recreate:
 
-        # --- Train or load classifier ---
+        # Train or load classifier.
         clf = load_or_create_classifier_local(cfg, force_recreate)
 
-        # --- Load test features ---
+        # Load test features.
         print("\nLoading test features...")
         df_test = get_dataset_ready_local(
             sat=get_sat_from_cfg_local(cfg),
@@ -87,25 +87,25 @@ def full_pipeline_local(cfg: DictConfig, force_recreate: bool = False) -> dict:
             split_strategy=cfg.data.get("split_strategy", "aoi"),
         )
 
-        # --- Get feature names ---
+        # Get feature names.
         feature_cols = get_features_names(cfg)
         print(f"Test set: {len(df_test):,} rows, {len(feature_cols)} features")
 
         # Drop NaN rows
         df_test = df_test.dropna(subset=feature_cols)
 
-        # --- Predict probabilities ---
+        # Predict probabilities.
         print("Classifying test set...")
         X_test = df_test[feature_cols].values
         y_prob = clf.predict_proba(X_test)[:, 1]
         df_test = df_test.copy()
         df_test["prob"] = y_prob
 
-        # --- Format predictions to match main.py output ---
+        # Format predictions to match main.py output.
         print("Formatting predictions...")
         gdf = _format_predictions(df_test, cfg)
 
-        # --- Save predictions ---
+        # Save predictions.
         fp_preds_local.parent.mkdir(exist_ok=True, parents=True)
         gdf.to_file(fp_preds_local, driver="GeoJSON")
         print(f"Predictions saved to {fp_preds_local}")
@@ -114,7 +114,7 @@ def full_pipeline_local(cfg: DictConfig, force_recreate: bool = False) -> dict:
         print(f"Predictions for {run_name} already exist, loading...")
         gdf = gpd.read_file(fp_preds_local).set_index(["unosat_id", "aoi"])
 
-    # --- Compute metrics using existing metrics.py ---
+    # Compute metrics using existing metrics.py.
     print("\nComputing metrics...")
     result_metrics = get_metrics(
         gdf,
@@ -241,7 +241,7 @@ def _format_predictions(df_test: pd.DataFrame, cfg: DictConfig) -> gpd.GeoDataFr
     )
     assert len(gdf) == len(
         preds_wide
-    ), "Row count changed during join — investigate before trusting results"
+    ), "Row count changed during join - investigate before trusting results"
     gdf["date"] = pd.to_datetime(gdf["date"])
 
     return gpd.GeoDataFrame(gdf, geometry="geometry")
