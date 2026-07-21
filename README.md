@@ -287,7 +287,6 @@ python3 src/classification/ablation_mtry.py
 *Tests mtry values 1–25 via OOB error during training.*
 
 **3. Make figures**
-**
 ```bash
 python3 src/visualisation/plot_ablation_figures.py
 ```
