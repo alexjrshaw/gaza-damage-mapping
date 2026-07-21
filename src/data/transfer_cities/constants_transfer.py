@@ -68,7 +68,7 @@ ALP_CONFLICT_START = "2016-02-05"
 ALP_ASSESSMENT_DATE = "2016-09-18"
 ALP_ORBITS = [116, 14, 21]
 
-# Fixed one-year pre-conflict baseline — mirrors Gaza PRE_PERIOD
+# Fixed one-year pre-conflict baseline - mirrors Gaza PRE_PERIOD
 # Starts at first available Sentinel-1 image for Aleppo (2014-10-06)
 ALP_PRE_PERIOD = ("2014-10-06", "2015-10-05")
 
@@ -155,7 +155,7 @@ YEI_ASSESSMENT_DATE = "2017-03-05"
 YEI_ORBITS = [21, 102]
 
 # Pre-period starts at first available S1 image (2015-01-11)
-# Only 8 images available in pre-period — noted as limitation
+# Only 8 images available in pre-period - noted as limitation
 YEI_PRE_PERIOD = ("2015-01-11", "2016-06-30")
 
 # Windows ending before YEI_CONFLICT_START (2016-07-01) → label=0

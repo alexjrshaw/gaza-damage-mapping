@@ -47,8 +47,8 @@ init_gee(project="gaza-damage-mapping")
 # Constants
 
 RUN_NAME = "gaza_feature_rasters"
-QUADKEY_ZOOM = 12  # Same quadkey zoom as Dietrich et al. original pipeline — ~2.4km² tiles
-SCALE = 10  # 10m resolution — same as Dietrich et al.
+QUADKEY_ZOOM = 12  # Same quadkey zoom as Dietrich et al. original pipeline - ~2.4km² tiles
+SCALE = 10  # 10m resolution - same as Dietrich et al.
 ORBITS = [87, 94, 160]  # Gaza S1 orbits
 REDUCER_NAMES = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
 EXTRACT_WINDOW = "1x1"
@@ -100,7 +100,7 @@ def export_feature_rasters_for_window(
             s1 = get_s1_collection(geo)
             s1_orbit = s1.filter(ee.Filter.eq("relativeOrbitNumber_start", orbit))
 
-            # Compute 28-band feature image — uses col_to_features from src/utils/gee.py
+            # Compute 28-band feature image - uses col_to_features from src/utils/gee.py
             feature_img = col_to_features(s1_orbit, REDUCER_NAMES, time_periods, EXTRACT_WINDOW)
 
             # Export to Drive as Float32 GeoTIFF
@@ -143,8 +143,8 @@ def _filter_existing(ids: list[str], drive_folder: str, local_dir: Path = None) 
 
 if __name__ == "__main__":
     # All 19 windows: 1 pre-period window + 18 post windows
-    # Window 1 (w01) = PRE_PERIOD post window — label=0 reference
-    # Windows 7-19 = post-war windows — label=1
+    # Window 1 (w01) = PRE_PERIOD post window - label=0 reference
+    # Windows 7-19 = post-war windows - label=1
     all_periods = [PRE_PERIOD] + list(POST_PERIODS)
 
     print(f"Exporting feature rasters for {len(all_periods)} windows × {len(ORBITS)} orbits")

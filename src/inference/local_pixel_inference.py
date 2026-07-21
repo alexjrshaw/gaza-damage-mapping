@@ -219,7 +219,7 @@ def classify_window(
             tile_ids.update(fp.stem.replace("qk_", "") for fp in orbit_dir.glob("qk_*.tif"))
 
     if not tile_ids:
-        print(f"  No tiles found for {window_str} — skipping")
+        print(f"  No tiles found for {window_str} - skipping")
         return
 
     print(f"  {len(tile_ids)} tiles, aggregating {len(ORBITS)} orbits with {aggregation_method}")

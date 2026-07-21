@@ -225,7 +225,7 @@ def unosat_vs_preds_comparison_gaza(
 ):
     """
     Compare UNOSAT labels vs pixel predictions across thresholds.
-    Gaza adaptation of unosat_vs_preds_comparaison() — mirrors Dietrich et al. exactly
+    Gaza adaptation of unosat_vs_preds_comparaison() - mirrors Dietrich et al. exactly
     except only_2022_for_pos=False.
     """
     gdf_points = load_unosat_points_with_preds_gaza(window=window, agg=agg)

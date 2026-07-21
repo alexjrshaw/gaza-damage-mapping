@@ -52,7 +52,7 @@ def merge_tiles_for_window(window_str: str, force_recreate: bool = False) -> Pat
     Merge all quadkey tiles for one window into a single GeoTIFF.
 
     Mirrors Dietrich et al. download_and_merge() logic.
-    Uses gdal.Warp to mosaic tiles — identical approach to Dietrich et al.
+    Uses gdal.Warp to mosaic tiles - identical approach to Dietrich et al.
 
     Args:
         window_str: Window identifier e.g. 'w07_2023-10-07_2023-12-06'
@@ -69,12 +69,12 @@ def merge_tiles_for_window(window_str: str, force_recreate: bool = False) -> Pat
 
     tile_dir = PROBABILITY_RASTERS_DIR / window_str
     if not tile_dir.exists():
-        print(f"  {window_str}: no tiles found — skipping")
+        print(f"  {window_str}: no tiles found - skipping")
         return None
 
     tif_files = sorted(str(fp) for fp in tile_dir.glob("qk_*.tif"))
     if not tif_files:
-        print(f"  {window_str}: no .tif files found — skipping")
+        print(f"  {window_str}: no .tif files found - skipping")
         return None
 
     print(f"  {window_str}: merging {len(tif_files)} tiles...")

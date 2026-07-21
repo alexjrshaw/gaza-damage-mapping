@@ -166,6 +166,6 @@ def report(label: str, city_id: str):
 
 if __name__ == "__main__":
     report(
-        "MOSUL — RETRAINED (trained on west bank, evaluated on east bank)",
+        "MOSUL - RETRAINED (trained on west bank, evaluated on east bank)",
         "MOS_RETRAINED_EAST_ONLY",
     )
