@@ -3,7 +3,7 @@ Pixel-level inference for the Mosul retraining comparison.
 
 Adaptation of src/inference/local_pixel_inference.py, with the model and
 output path swapped to use the Mosul-retrained classifier instead of the
-Gaza-trained one. Classifies Mosul's *existing* feature rasters (already
+Gaza-trained one. Classifies Mosul's existing feature rasters (already
 exported for the zero-shot transfer evaluation) so that the retrained
 model's output is evaluated by the exact same downstream script
 (evaluate_pixel_transfer.py) used for every other pixel-level result in
@@ -21,10 +21,10 @@ Adaptations from local_pixel_inference.py (noted individually below):
 
 Pipeline position:
     (existing) export_feature_rasters_transfer.py
-        -> main_local_mosul_retrain.py (trains model on west-bank points)
-        -> [this script] (classifies Mosul's feature rasters with the
+        - main_local_mosul_retrain.py (trains model on west-bank points)
+        - [this script] (classifies Mosul's feature rasters with the
            retrained model)
-        -> evaluate_pixel_transfer.py (unmodified; evaluated on east-bank
+        - evaluate_pixel_transfer.py (unmodified; evaluated on east-bank
            test points only -- see note in that call below)
 
 Usage:
@@ -43,7 +43,7 @@ from tqdm.auto import tqdm
 from src.classification.utils import get_features_names
 from src.constants import DATA_PATH, PRE_PERIOD
 
-# ==================== CONSTANTS ====================
+# Constants
 # Adaptation 1: Mosul's orbits, not Gaza's (87, 94, 160).
 ORBITS = [72, 145, 152]
 
@@ -73,7 +73,7 @@ CFG = OmegaConf.create(
 FEATURE_COLS = get_features_names(CFG)
 
 
-# ==================== LOADING (unchanged) ====================
+# Loading (unchanged)
 
 
 def load_model(fp: Path = MODEL_FP):
@@ -94,7 +94,7 @@ def load_tile(fp: Path) -> tuple[np.ndarray, list[str], dict]:
     return data, band_names, profile
 
 
-# ==================== CLASSIFICATION (unchanged) ====================
+# Classification (unchanged)
 
 
 def classify_tile(
@@ -140,7 +140,7 @@ def aggregate_orbits(probs: list[np.ndarray], method: str = "mean") -> np.ndarra
             raise ValueError(f"Unknown aggregation method: {method}")
 
 
-# ==================== SAVING (unchanged) ====================
+# Saving (unchanged)
 
 
 def save_probability_tile(prob: np.ndarray, profile: dict, fp_out: Path) -> None:
@@ -155,7 +155,7 @@ def save_probability_tile(prob: np.ndarray, profile: dict, fp_out: Path) -> None
         dst.write(prob_uint8[np.newaxis, :, :])
 
 
-# ==================== PIPELINE (unchanged except ORBITS source) ====================
+# Pipeline (unchanged except ORBITS source)
 
 
 def classify_window(
@@ -252,7 +252,7 @@ def run_local_inference(
     print(f"Probability rasters saved to: {probability_rasters_dir}")
 
 
-# ==================== MAIN ====================
+# Main
 
 if __name__ == "__main__":
     run_local_inference(force_recreate=True)

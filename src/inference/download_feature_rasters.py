@@ -6,7 +6,7 @@ Run this script in a separate screen session while GEE export tasks
 are running. It polls Drive every POLL_INTERVAL seconds and downloads
 completed tiles, freeing Drive space as it goes.
 
-This allows full inference to proceed even with limited Drive storage —
+This allows full inference to proceed even with limited Drive storage -
 tiles are downloaded and deleted as soon as they complete, so Drive
 usage stays low regardless of total export size.
 
@@ -25,7 +25,7 @@ import time
 from src.constants import DATA_PATH
 from src.utils.gdrive import drive, get_folder_id
 
-# ==================== CONSTANTS ====================
+# Constants
 
 DRIVE_BASE = "gaza_feature_rasters"
 LOCAL_BASE = DATA_PATH / "feature_rasters"
@@ -33,7 +33,7 @@ POLL_INTERVAL = 120  # seconds between Drive checks
 DELETE_AFTER_DOWNLOAD = True  # free Drive space after download
 
 
-# ==================== DOWNLOAD ====================
+# Download
 
 
 def get_drive_windows() -> list[str]:
@@ -114,7 +114,7 @@ def download_orbit_folder(
     return len(new_tiles)
 
 
-# ==================== MAIN LOOP ====================
+# Main loop
 
 
 def run_download_loop() -> None:
