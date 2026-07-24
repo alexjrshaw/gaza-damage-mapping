@@ -23,7 +23,8 @@ def create_fc_aoi_orbit(
     for each date and each UNOSAT point (one row per point per image).
 
     Uses ee.Image.reduceRegions() instead of nested map for performance.
-    This reduces GEE operations from ~3 million to ~91 for Gaza-scale data.
+    This reduces GEE operations from ~52.6 million to ~1,870 for Gaza-scale data
+    (140,604 points × 374 images → 15 AOI-orbit pairs × ~125 images each).
 
     Args:
         aoi (str): The area of interest (e.g. 'GAZ1').
