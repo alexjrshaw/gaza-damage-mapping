@@ -139,3 +139,4 @@ overture_buildings_gaza*.gpkg
 verify_threshold_bug_counts.py
 ee
 pd
+*.log
