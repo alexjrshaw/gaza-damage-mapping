@@ -134,3 +134,8 @@ alex/
 *.log
 *_log.txt
 *_err.txt
+overture_env/
+overture_buildings_gaza*.gpkg
+verify_threshold_bug_counts.py
+ee
+pd
