@@ -74,7 +74,7 @@ gaza-damage-mapping/
 │   │   ├── sentinel1/                     # Sentinel-1 collection, orbits, and time series extraction (5 scripts)
 │   │   ├── transfer_cities/
 │   │   │   ├── pixel_inference/           # Zero-shot dense inference and evaluation for Mosul/Raqqa/Aleppo (4 scripts)
-│   │   │   └── retrain/                   # Mosul local retraining and threshold recalibration (6 scripts)
+│   │   │   └── retrain/                   # Mosul local retraining and threshold recalibration (5 scripts)
 │   │   ├── unosat.py                      # UNOSAT loading, wide-to-long conversion, multi-epoch label combining
 │   │   ├── quadkeys.py                    # Quadkey tiling grid for dense raster export
 │   │   └── utils.py                       # Shared AOI/data helpers
@@ -280,11 +280,6 @@ python3 src/data/transfer_cities/retrain/mosul_retrain_pixel_inference.py
 **4. Find best threshold for retrained model**
 ```bash
 python3 src/data/transfer_cities/retrain/mosul_optimal_threshold.py
-```
-
-**5. Compare zero-shot vs retrained**
-```bash
-python3 src/data/transfer_cities/retrain/verify_mosul_retrain_comparison.py
 ```
 
 ### Ablation study
