@@ -19,3 +19,4 @@ black==24.10.0
 ipython==8.39.0
 ipython_pygments_lexers==1.1.1
 setuptools==69.5.1
+omegaconf==2.3.1
