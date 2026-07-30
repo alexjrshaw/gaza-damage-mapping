@@ -5,6 +5,7 @@ geemap==0.35.1
 geopandas==0.14.4
 matplotlib==3.10.8
 numpy==1.26.4
+omegaconf==2.3.1
 pandas==2.2.3
 pyarrow==18.0.0
 PyDrive2==1.21.1
@@ -14,11 +15,5 @@ rioxarray==0.18.1
 scikit-learn==1.7.2
 scipy==1.15.3
 shapely==2.0.7
+tqdm==4.70.0
 xarray==2024.10.0
-black==24.10.0
-ipython==8.39.0
-ipython_pygments_lexers==1.1.1
-setuptools==69.5.1
-omegaconf==2.3.1
-tqdm==4.70.0
-tqdm==4.70.0
