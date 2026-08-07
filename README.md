@@ -52,6 +52,7 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 | Mosul local retraining comparison | Tests whether local retraining improves on zero-shot transfer |
 
 ---
+## Project structure
 ```
 gaza-damage-mapping/
 ├── check_environment.py              # Verifies all required packages are installed
@@ -328,9 +329,3 @@ If you use this code, please cite the original Ukraine methodology:
 ## Licence
 
 MIT — see [LICENSE](LICENSE) for details.
-
-
-cd /scratch/s1214882/gaza-damage-mapping
-git add README.md
-git commit -m "Update README: correct versions, paths, structure, pipeline steps"
-git push origin main
