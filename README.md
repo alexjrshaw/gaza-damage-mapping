@@ -38,8 +38,6 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 
 ## Key methodological adaptations from Dietrich et al. (2025)
 
-## Key methodological adaptations from Dietrich et al. (2025)
-
 | Adaptation | Rationale |
 |---|---|
 | Two-month assessment windows instead of three-month | Matched the frequency of UNOSAT Gaza releases |
