@@ -328,7 +328,7 @@ If you use this code, please cite the original Ukraine methodology:
 ## Licence
 
 MIT — see [LICENSE](LICENSE) for details.
-ENDOFREADME
+
 
 cd /scratch/s1214882/gaza-damage-mapping
 git add README.md
