@@ -107,6 +107,7 @@ def classify_tile(
         raise ValueError(f"Band {e} not found in GeoTIFF. Available: {band_names}")
     data = data[order]  # reorder to match feature_cols
 
+    # Predict damage probability for each pixel
     X = data.reshape(n_bands, -1).T
     valid_mask = ~np.any(np.isnan(X), axis=1)
     prob_flat = np.full(H * W, np.nan, dtype=np.float32)
