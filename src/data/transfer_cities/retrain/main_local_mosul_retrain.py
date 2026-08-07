@@ -7,9 +7,9 @@ two adaptations, both noted at point of use below:
     1. Data source: data/transfer_cities/features_ready/MOS_features.parquet
        instead of Gaza's data/features_ready/s1_*.parquet.
     2. Train/test split: spatial east/west split on longitude (Tigris River,
-       lon = 43.13), instead of Gaza's AOI-based split. Chosen to approximate
-       Gaza's own train/test point ratio (53.5% / 46.5%): the west-bank/train
-       split yields 57.1% / 42.9%, the closest match found by sweeping
+       lon = 43.1262), instead of Gaza's AOI-based split. Chosen to approximate
+       Gaza's own train/test point ratio (46.4% / 53.6%): the west-bank/train
+       split yields 46.0% / 54.0%, the closest match found by sweeping
        candidate longitudes against the actual point distribution.
 
 Train (west bank, lon < 43.1262): historic Old City, west-bank neighbourhoods.
