@@ -38,19 +38,23 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 
 ## Key methodological adaptations from Dietrich et al. (2025)
 
+## Key methodological adaptations from Dietrich et al. (2025)
+
 | Adaptation | Rationale |
 |---|---|
-| HOTOSM footprints instead of Overture Maps | Largest available Gaza building inventory |
+| Two-month assessment windows instead of three-month | Matched the frequency of UNOSAT Gaza releases |
+| 14 UNOSAT assessment epochs (October 2023–October 2025) | Provided full conflict-period coverage and ~80 times as many damage observations |
+| `first_severe` epoch-combining instead of most recent damage class | Gaza assessments captured worsening damage, not only refined classifications |
+| HOTOSM building footprints instead of Overture Maps | Provided the largest pre-war Gaza building inventory |
 | Sentinel-2 excluded | No performance improvement in original study |
-| Two-month assessment windows instead of three-month | Matched UNOSAT Gaza release cadence |
-| 14 assessment epochs (Oct 2023–Oct 2025) | Full two-year conflict coverage |
-| Feature computation, training and inference moved to local HPC | Gaza's point density exceeded GEE's computational limits |
-| scikit-learn Random Forest instead of GEE SMILE | Required by local feature computation; same hyperparameters retained |
-| Cross-conflict transfer evaluation (Mosul, Raqqa, Aleppo) | Tests whether model generalises across conflicts |
-| Mosul local retraining comparison | Tests whether training on local data improves on zero-shot transfer |
+| Feature extraction, training and inference moved to local HPC | Gaza's data volume exceeded GEE processing limits |
+| scikit-learn Random Forest instead of GEE SMILE | Required for local model execution; same hyperparameters retained |
+| Pixel-level ablation instead of point-level | Allows direct comparison with main results |
+| Transfer evaluation (Mosul, Raqqa, Aleppo) | Tests Dietrich et al.'s (2025) claim their model "will adapt well to new areas" |
+| Mosul local retraining comparison | Tests whether local retraining improves on zero-shot transfer |
 
 ---
-
+```
 #gaza-damage-mapping/
 ├── check_environment.py              # Verifies all required packages are installed
 ├── reauth_gdrive.py                  # Refreshes Google Drive credentials
