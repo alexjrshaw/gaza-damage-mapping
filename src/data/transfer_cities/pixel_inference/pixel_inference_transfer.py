@@ -86,6 +86,7 @@ def classify_tile(fp: Path, clf) -> tuple:
     if valid.any():
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
+            # Apply Gaza-trained model to each pixel
             prob_flat[valid] = clf.predict_proba(X[valid])[:, 1]
 
     return prob_flat.reshape(H, W), profile
