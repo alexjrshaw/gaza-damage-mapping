@@ -55,7 +55,7 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 
 ---
 ```
-#gaza-damage-mapping/
+gaza-damage-mapping/
 ├── check_environment.py              # Verifies all required packages are installed
 ├── reauth_gdrive.py                  # Refreshes Google Drive credentials
 ├── requirements.txt                  # Pinned direct dependencies
@@ -103,6 +103,8 @@ This repository adapts the open-source war damage mapping pipeline developed by 
         ├── mos/                      # Mosul (includes east-bank split)
         └── raq/                      # Raqqa
 ```
+---
+
 ## Prerequisites
 
 - Python 3.12+
