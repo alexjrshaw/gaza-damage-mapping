@@ -310,7 +310,6 @@ def preprocess_gaza_unosat(
     print(f"Saved {out_aois} ({len(gdf_aois)} AOIs)")
 
     # Summary
-    print("\n── Label counts by AOI and damage class ──")
     severe_only = gdf_long[gdf_long["damage"].isin([1, 2])]
     first_severe = severe_only.loc[
         severe_only.groupby(severe_only.geometry.apply(lambda g: f"{round(g.x,6)},{round(g.y,6)}"))[
@@ -431,7 +430,7 @@ def upload_gaza_unosat_to_gee(aois: list[str] | None = None) -> None:
             assetId=asset_id,
         )
         task.start()
-        print(f"  Uploading {len(gdf)} features → {asset_id.split('/')[-1]}")
+        print(f"  Uploading {len(gdf)} features -> {asset_id.split('/')[-1]}")
         while not asset_exists(asset_id):
             time.sleep(5)
         print(f"  ✓ Done")

@@ -60,7 +60,7 @@ gdf = gpd.GeoDataFrame(
 
 assert len(gdf) == 151368, f"Expected 151,368, got {len(gdf):,}"
 assert not gdf.geometry.isna().any(), "Null geometries detected"
-print(f"\n✓ {len(gdf):,} valid polygon features")
+print(f"\n {len(gdf):,} valid polygon features")
 
 print("\nBuildings by first-detected window:")
 summary = gdf.groupby(["window_num", "window_label"]).size().rename("n_buildings")

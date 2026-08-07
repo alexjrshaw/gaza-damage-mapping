@@ -23,9 +23,9 @@ Time period design (mirrors Gaza/Dietrich et al.):
     - PRE_PERIOD: fixed one-year baseline (T0 equivalent), used for SAR
       feature computation AND included as first POST_PERIOD entry to
       generate label=0 examples where pre==post (mirrors Gaza exactly)
-    - POST_PERIODS: 2-month windows from ~pre-period start → assessment date
-      Windows ending before conflict_start → label=0
-      Windows ending after conflict_start  → label=1 (if date_first_severe <= end_post)
+    - POST_PERIODS: 2-month windows from ~pre-period start -> assessment date
+      Windows ending before conflict_start -> label=0
+      Windows ending after conflict_start  -> label=1 (if date_first_severe <= end_post)
 
 Conflict start dates and rationale:
     ALP: 2016-02-05 - Syrian government forces cut rebel supply lines,
@@ -73,11 +73,11 @@ ALP_ORBITS = [116, 14, 21]
 ALP_PRE_PERIOD = ("2014-10-06", "2015-10-05")
 
 # 2-month post-windows: pre-period entry first (T0 equivalent, label=0),
-# then 2-month steps from 2014-10-06 → 2016-09-18
-# Windows ending before ALP_CONFLICT_START (2016-02-05) → label=0
-# Windows ending after  ALP_CONFLICT_START              → label=1
+# then 2-month steps from 2014-10-06 -> 2016-09-18
+# Windows ending before ALP_CONFLICT_START (2016-02-05) -> label=0
+# Windows ending after  ALP_CONFLICT_START              -> label=1
 ALP_POST_PERIODS = [
-    ("2014-10-06", "2015-10-05"),  # Pre-period as post-window (T0) → label=0
+    ("2014-10-06", "2015-10-05"),  # Pre-period as post-window (T0) -> label=0
     ("2014-10-06", "2014-12-05"),  # label=0
     ("2014-12-06", "2015-02-04"),  # label=0
     ("2015-02-05", "2015-04-06"),  # label=0
@@ -102,10 +102,10 @@ RAQ_ORBITS = [116, 123]
 RAQ_PRE_PERIOD = ("2015-10-21", "2016-10-20")
 
 # 2-month post-windows: pre-period entry first (T0), then 2-month steps
-# Windows ending before RAQ_CONFLICT_START (2016-11-06) → label=0
-# Windows ending after  RAQ_CONFLICT_START              → label=1
+# Windows ending before RAQ_CONFLICT_START (2016-11-06) -> label=0
+# Windows ending after  RAQ_CONFLICT_START              -> label=1
 RAQ_POST_PERIODS = [
-    ("2015-10-21", "2016-10-20"),  # Pre-period as post-window (T0) → label=0
+    ("2015-10-21", "2016-10-20"),  # Pre-period as post-window (T0) -> label=0
     ("2015-10-21", "2015-12-20"),  # label=0
     ("2015-12-21", "2016-02-19"),  # label=0
     ("2016-02-20", "2016-04-20"),  # label=0
@@ -130,10 +130,10 @@ MOS_ORBITS = [72, 152, 145]
 MOS_PRE_PERIOD = ("2015-08-04", "2016-08-03")
 
 # 2-month post-windows: pre-period entry first (T0), then 2-month steps
-# Windows ending before MOS_CONFLICT_START (2016-10-16) → label=0
-# Windows ending after  MOS_CONFLICT_START              → label=1
+# Windows ending before MOS_CONFLICT_START (2016-10-16) -> label=0
+# Windows ending after  MOS_CONFLICT_START              -> label=1
 MOS_POST_PERIODS = [
-    ("2015-08-04", "2016-08-03"),  # Pre-period as post-window (T0) → label=0
+    ("2015-08-04", "2016-08-03"),  # Pre-period as post-window (T0) -> label=0
     ("2015-08-04", "2015-10-03"),  # label=0
     ("2015-10-04", "2015-12-03"),  # label=0
     ("2015-12-04", "2016-02-02"),  # label=0
@@ -158,10 +158,10 @@ YEI_ORBITS = [21, 102]
 # Only 8 images available in pre-period - noted as limitation
 YEI_PRE_PERIOD = ("2015-01-11", "2016-06-30")
 
-# Windows ending before YEI_CONFLICT_START (2016-07-01) → label=0
-# Windows ending after  YEI_CONFLICT_START              → label=1
+# Windows ending before YEI_CONFLICT_START (2016-07-01) -> label=0
+# Windows ending after  YEI_CONFLICT_START              -> label=1
 YEI_POST_PERIODS = [
-    ("2015-01-11", "2016-06-30"),  # Pre-period as post-window (T0) → label=0
+    ("2015-01-11", "2016-06-30"),  # Pre-period as post-window (T0) -> label=0
     ("2015-01-11", "2015-03-10"),  # label=0
     ("2015-03-11", "2015-05-10"),  # label=0
     ("2015-05-11", "2015-07-10"),  # label=0
