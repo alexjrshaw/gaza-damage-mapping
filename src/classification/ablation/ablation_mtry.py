@@ -79,7 +79,6 @@ else:
 assert list(sorted(all_results.keys())) == list(range(1, 29)), "Sweep did not complete 1-28"
 
 # Print full table
-print("\n=== Full mtry results (1-28, all fresh) ===")
 print(f"{'mtry':>6} {'OOB error':>12} {'note':>20}")
 print("-" * 42)
 min_error = min(all_results.values())

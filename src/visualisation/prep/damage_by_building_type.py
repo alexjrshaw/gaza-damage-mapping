@@ -57,7 +57,6 @@ def main():
     )
     summary = summary[summary["n_buildings"] >= MIN_BUILDINGS_PER_TYPE]
 
-    print("\n=== Damage rate by OSM building type ===")
     print(summary.to_string())
 
     overall_pct = joined["damaged"].mean() * 100

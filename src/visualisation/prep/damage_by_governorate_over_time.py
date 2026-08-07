@@ -131,14 +131,12 @@ def main():
 
     results_df = pd.DataFrame(results)
 
-    print("\n=== Cumulative % damaged by governorate and window ===\n")
     pivot = results_df.pivot(
         index="governorate", columns="window_end_date", values="pct_damaged_cumulative"
     )
     pivot = pivot[WINDOW_END_DATES]  # keep chronological column order
     print(pivot.to_string())
 
-    print("\n=== Final-window check against Table 3 ===")
     print(
         "Table 3 (validated): North Gaza 81.2, Rafah 81.9, Gaza 71.3, Khan Younis 71.3, Deir al-Balah 36.6"
     )
