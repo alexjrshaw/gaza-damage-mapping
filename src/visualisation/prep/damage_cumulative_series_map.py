@@ -79,8 +79,8 @@ PANEL_LABELS = [
     "Dec 2025",
 ]
 
-COLOR_OLD = "#377eb8"
-COLOR_NEW = "#ff7f00"
+COLOUR_OLD = "#377eb8"
+COLOUR_NEW = "#ff7f00"
 
 
 def first_damaged_window_index(row, pre_cols, post_cols):
@@ -162,7 +162,7 @@ def main():
     x_rot, y_rot = rot_cents[:, 0], rot_cents[:, 1]
     first_idx_arr = df["first_idx"].values
 
-    print("Plotting 4×4 series (A4 portrait)...")
+    print("Plotting 7×2 series (A4 landscape)...")
     fig, axes = plt.subplots(
         2,
         7,
@@ -177,8 +177,8 @@ def main():
         has_old = (first_idx_arr < i) & ~pd.isna(first_idx_arr)
         has_new = (first_idx_arr == i) & ~pd.isna(first_idx_arr)
 
-        ax.scatter(x_rot[has_old], y_rot[has_old], s=MARKER_SIZE, color=COLOR_OLD, linewidths=0)
-        ax.scatter(x_rot[has_new], y_rot[has_new], s=MARKER_SIZE, color=COLOR_NEW, linewidths=0)
+        ax.scatter(x_rot[has_old], y_rot[has_old], s=MARKER_SIZE, color=COLOUR_OLD, linewidths=0)
+        ax.scatter(x_rot[has_new], y_rot[has_new], s=MARKER_SIZE, color=COLOUR_NEW, linewidths=0)
 
         for part_x, part_y in boundary_parts:
             ax.plot(part_x, part_y, color="black", linewidth=0.4)
@@ -199,7 +199,7 @@ def main():
                 [0],
                 marker="o",
                 color="w",
-                markerfacecolor=COLOR_NEW,
+                markerfacecolor=COLOUR_NEW,
                 markersize=10,
                 label="New damage",
             ),
@@ -208,7 +208,7 @@ def main():
                 [0],
                 marker="o",
                 color="w",
-                markerfacecolor=COLOR_OLD,
+                markerfacecolor=COLOUR_OLD,
                 markersize=10,
                 label="Old damage",
             ),
