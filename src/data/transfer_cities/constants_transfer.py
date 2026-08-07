@@ -10,9 +10,9 @@ Cities:
     MOS - Mosul, Iraq         assessed 2017-08-04 (UNOSAT product 1188)
 
 Sentinel-1 coverage confirmed:
-    ALP: first image 2014-10-06, 189 images (2014-2016)
-    RAQ: first image 2014-10-13, 184 images (2014-2017)
-    MOS: first image 2014-10-03, 292 images (2014-2017)
+    ALP: 187 images across 3 orbits (October 2014 - September 2016)
+    RAQ: 173 images across 2 orbits (October 2015 - October 2017)
+    MOS: 270 images across 3 orbits (August 2015 - August 2017)
 
 Valid orbits (>1 image only):
     ALP: 116, 14, 21
