@@ -1,3 +1,6 @@
+"""
+Sentinel-1 VV and VH backscatter time series extraction at UNOSAT point locations.
+"""
 import ee
 
 from src.constants import ASSETS_PATH

@@ -1,3 +1,6 @@
+"""
+Exports classified building damage to GeoPackage for mapping and analysis.
+"""
 import numpy as np
 import pandas as pd
 import geopandas as gpd

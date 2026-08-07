@@ -1,3 +1,6 @@
+"""
+UNOSAT damage label loading, wide-to-long conversion and multi-epoch combining.
+"""
 from pathlib import Path
 
 import ee

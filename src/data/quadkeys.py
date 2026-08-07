@@ -1,3 +1,6 @@
+"""
+Quadkey tiling grid generation for GEE feature raster export.
+"""
 import math
 import time
 from pathlib import Path

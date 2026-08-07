@@ -1,3 +1,6 @@
+"""
+Shared data utilities: AOI loading and file path helpers.
+"""
 from pathlib import Path
 
 import rasterio

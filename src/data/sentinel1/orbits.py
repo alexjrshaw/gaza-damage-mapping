@@ -1,3 +1,6 @@
+"""
+Sentinel-1 orbit metadata and filtering utilities.
+"""
 import ee
 import pandas as pd
 

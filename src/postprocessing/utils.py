@@ -1,3 +1,6 @@
+"""
+Shared postprocessing helpers for probability raster handling.
+"""
 import re
 import warnings
 

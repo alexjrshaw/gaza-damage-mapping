@@ -1,3 +1,6 @@
+"""
+Project-wide constants: study areas, time periods, file paths and thresholds.
+"""
 from pathlib import Path
 
 # Project constants

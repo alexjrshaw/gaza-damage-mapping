@@ -1,3 +1,6 @@
+"""
+Sentinel-1 GEE image collection construction and filtering.
+"""
 import ee
 
 from src.constants import S1_BANDS
