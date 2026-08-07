@@ -119,7 +119,6 @@ def preprocess_city(city: dict) -> None:
     dmg_field = city["damage_field"]
     gdf["damage_std"] = gdf[dmg_field].map(DAMAGE_MAP)
 
-    # Print what we're keeping and dropping
     print(f"\n  Raw damage value counts ({dmg_field}):")
     for val, count in gdf[dmg_field].value_counts(dropna=False).items():
         mapped = DAMAGE_MAP.get(val, "DROP")
