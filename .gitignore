@@ -142,3 +142,6 @@ pd
 *.log
 alex/
 alex_old_py310/
+appendix_b.txt
+repo_structure.txt
+s2_review.txt
