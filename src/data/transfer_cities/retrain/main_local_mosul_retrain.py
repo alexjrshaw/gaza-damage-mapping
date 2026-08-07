@@ -12,8 +12,8 @@ two adaptations, both noted at point of use below:
        split yields 57.1% / 42.9%, the closest match found by sweeping
        candidate longitudes against the actual point distribution.
 
-Train (west bank, lon < 43.13): historic Old City, west-bank neighbourhoods.
-Test  (east bank, lon >= 43.13): east-bank neighbourhoods.
+Train (west bank, lon < 43.1262): historic Old City, west-bank neighbourhoods.
+Test  (east bank, lon >= 43.1262): east-bank neighbourhoods.
 
 This script only trains and saves the model (model.pkl), matching the
 output location and format expected by Gaza's local_pixel_inference.py.
@@ -30,7 +30,7 @@ classified rasters). Instead:
            only -- see usage note in that script's call)
 
 Usage:
-    python3 alex/tmp/main_local_mosul_retrain.py
+    python3 src/data/transfer_cities/retrain/main_local_mosul_retrain.py
 """
 
 import geopandas as gpd
@@ -89,7 +89,7 @@ def load_and_split_mosul() -> tuple[pd.DataFrame, pd.DataFrame]:
     print(f"\nSpatial split at lon = {LON_SPLIT} (approx. Tigris River):")
     print(f"  Train (west bank): {n_train_pts:,} points ({n_train_pts / n_total_pts * 100:.1f}%)")
     print(f"  Test  (east bank): {n_test_pts:,} points ({n_test_pts / n_total_pts * 100:.1f}%)")
-    print("  (Gaza reference ratio: 53.5% / 46.5%)")
+    print("  (Gaza reference ratio: 46.4% / 53.6%)")
 
     return df_train, df_test
 
@@ -142,7 +142,7 @@ def main():
     print(f"\nModel saved to {out_fp}")
     print(
         "\nNext steps:\n"
-        "  1. python3 alex/tmp/mosul_retrain_pixel_inference.py\n"
+        "  1. python3 src/data/transfer_cities/retrain/mosul_retrain_pixel_inference.py\n"
         "  2. python3 src/data/transfer_cities/pixel_inference/evaluate_pixel_transfer.py "
         "--city MOS_RETRAINED_EAST_ONLY"
     )

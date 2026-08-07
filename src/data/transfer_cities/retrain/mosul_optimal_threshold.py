@@ -4,7 +4,7 @@ mirroring exactly how Gaza's t=0.67 was selected (fine-grained sweep,
 step=0.005, first threshold where precision crosses 90%).
 
 Does not modify any production script. Reuses the same tile-merging and
-point-sampling logic as test_true_auc_transfer.py (3x3 max window, NaN
+point-sampling logic as evaluate_pixel_transfer.py (3x3 max window, NaN
 preserved), for both:
     - Zero-shot Mosul (Gaza-trained model, evaluated on all of Mosul)
     - Retrained Mosul (trained on west-bank points, evaluated on
@@ -14,11 +14,11 @@ For each, reports:
     - AUC (threshold-independent, already computed)
     - Mosul's own optimal threshold (90% precision target)
     - Precision/recall/F1/balanced accuracy at that optimal threshold
-    - The same four metrics at Gaza's borrowed threshold (0.655), for
+    - The same four metrics at Gaza's borrowed threshold (0.670), for
       direct comparison
 
 Usage:
-    python3 alex/tmp/test_mosul_optimal_threshold.py
+    python3 src/data/transfer_cities/retrain/mosul_optimal_threshold.py
 """
 
 import sys

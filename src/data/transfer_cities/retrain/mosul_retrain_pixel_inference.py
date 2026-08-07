@@ -28,7 +28,7 @@ Pipeline position:
            test points only -- see note in that call below)
 
 Usage:
-    python3 alex/tmp/mosul_retrain_pixel_inference.py
+    python3 src/data/transfer_cities/retrain/mosul_retrain_pixel_inference.py
 """
 
 import pickle
