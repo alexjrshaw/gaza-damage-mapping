@@ -19,7 +19,7 @@ below the threshold -- so the final window's totals now agree exactly
 with Table 3.
 
 Usage:
-    python3 alex/tmp/damage_by_governorate_over_time.py
+    python3 src/visualisation/prep/damage_by_governorate_over_time.py
 """
 
 import pandas as pd

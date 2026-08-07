@@ -11,7 +11,7 @@ carrying any usable type metadata is reported alongside, mirroring their own
 "For a subset of buildings... we were able to retrieve meta-data" framing.
 
 Usage:
-    python3 alex/tmp/damage_by_building_type.py
+    python3 src/visualisation/prep/damage_by_building_type.py
 """
 
 import geopandas as gpd
