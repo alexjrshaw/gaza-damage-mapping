@@ -7,7 +7,7 @@ evaluation.ipynb (Dietrich et al. 2025 methodology):
     2. Run full pixel inference - probability rasters
     3. Merge tiles - Gaza-wide GeoTIFFs
     4. Sample rasters at UNOSAT test points (3x3 window, max agg)
-    5. Compute metrics at t=0.670 (90% precision target, re-verified 5 July)
+    5. Compute metrics at calibrated threshold t=0.670 (90% precision target)
 
 OOB plots (n_trees, mtry) use sklearn oob_score_ - no inference needed.
 

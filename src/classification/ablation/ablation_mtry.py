@@ -5,7 +5,7 @@ computes what's missing. Otherwise identical to the original fresh sweep.
 
 Usage:
     screen -S mtry_sweep
-    python3 alex/tmp/test_mtry.py 2>&1 | tee -a logs/mtry_sweep.log
+    python3 src/classification/ablation/ablation_mtry.py
     # Ctrl+A D to detach
 """
 import json
