@@ -1,3 +1,6 @@
+"""
+Timing utilities and decorators for pipeline performance logging.
+"""
 import time
 
 

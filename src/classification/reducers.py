@@ -1,3 +1,7 @@
+"""
+GEE statistical reducer helpers.
+Adapted from Dietrich et al.'s (2025a) reducer utilities.
+"""
 import ee
 
 

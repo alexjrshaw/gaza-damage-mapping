@@ -1,3 +1,7 @@
+"""
+Evaluation metrics for pixel-level damage classification.
+Shared by the main pipeline, ablation study and transfer evaluation.
+"""
 import geopandas as gpd
 import numpy as np
 from sklearn import metrics

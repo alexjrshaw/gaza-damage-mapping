@@ -1,3 +1,7 @@
+"""
+Configuration utilities: run name generation and feature name construction.
+Adapted from Dietrich et al.'s (2025a) configuration helpers.
+"""
 from omegaconf import DictConfig
 from src.constants import S1_BANDS
 

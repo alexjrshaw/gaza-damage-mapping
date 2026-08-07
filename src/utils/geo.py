@@ -1,3 +1,6 @@
+"""
+Geometry utilities: OCHA boundary loading, AOI filtering, and coordinate helpers.
+"""
 import io
 import zipfile
 

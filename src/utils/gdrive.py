@@ -1,3 +1,7 @@
+"""
+Google Drive upload and download utilities.
+Adapted from Dietrich et al.'s (2025a) Drive I/O helpers.
+"""
 from multiprocessing import Process
 from pathlib import Path
 

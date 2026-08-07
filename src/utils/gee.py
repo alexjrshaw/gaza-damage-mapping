@@ -1,3 +1,7 @@
+"""
+Google Earth Engine authentication and image collection helpers.
+Adapted from Dietrich et al.'s (2025a) GEE utility functions.
+"""
 import ee
 
 from src.classification.reducers import get_reducers
