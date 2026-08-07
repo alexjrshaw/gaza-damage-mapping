@@ -1,7 +1,7 @@
 """
 Export Sentinel-1 feature rasters from GEE for local pixel-level inference.
 
-Option D implementation - exports 28-band GeoTIFF feature rasters from GEE
+Exports 28-band GeoTIFF feature rasters from GEE for Gaza
 covering Gaza at 10m resolution, one per time window per orbit. These are
 then classified locally using the trained sklearn Random Forest.
 
@@ -139,7 +139,7 @@ def _filter_existing(ids: list[str], drive_folder: str, local_dir: Path = None) 
 
 
 if __name__ == "__main__":
-    # All 19 windows: 1 pre-period window + 18 post windows
+    # All 20 windows: 1 pre-period baseline + 19 post windows
     # Window 1 (w01) = PRE_PERIOD post window - label=0 reference
     # Windows 7-19 = post-war windows - label=1
     all_periods = [PRE_PERIOD] + list(POST_PERIODS)

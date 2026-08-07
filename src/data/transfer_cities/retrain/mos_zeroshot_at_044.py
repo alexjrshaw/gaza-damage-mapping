@@ -18,7 +18,7 @@ from sklearn import metrics as sk_metrics
 from src.data.transfer_cities.constants_transfer import TRANSFER_CITIES
 
 DATA_PATH = Path("/scratch/s1214882/gaza-damage-mapping/data")
-TEMP_DIR = Path("/tmp/zeroshot_at_044_check")
+TEMP_DIR = DATA_PATH / "tmp" / "zeroshot_at_044_check"
 if TEMP_DIR.exists():
     shutil.rmtree(TEMP_DIR)
 shutil.copytree(DATA_PATH / "transfer_cities/probability_rasters/MOS", TEMP_DIR)

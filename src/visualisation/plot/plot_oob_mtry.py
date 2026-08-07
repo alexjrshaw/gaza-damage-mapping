@@ -5,7 +5,7 @@ Saves to data/ablation_runs/figures/oob_vs_mtry_full.png
 Usage:
     cd /scratch/s1214882/gaza-damage-mapping
     source alex/bin/activate
-    python3 src/visualisation/plot_mtry_oob.py
+    python3 src/visualisation/plot/plot_oob_mtry.py
 """
 import json
 from pathlib import Path

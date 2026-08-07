@@ -5,7 +5,7 @@ Saves to data/ablation_runs/figures/governorate_damage_lines.png
 Usage:
     cd /scratch/s1214882/gaza-damage-mapping
     source alex/bin/activate
-    python3 src/visualisation/plot_governorate_damage_over_time.py
+    python3 src/visualisation/plot/plot_governorate_damage_over_time.py
 """
 import pandas as pd
 import matplotlib.pyplot as plt

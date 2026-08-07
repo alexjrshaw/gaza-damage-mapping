@@ -31,7 +31,7 @@ def drive_to_local(
         folder_name (str): The name of the drive folder
         local_folder (Path): Path to the local folder
         use_multiprocess (bool): Whether to use multiprocess or not. For now, there is
-            still a bug with multiprocess, so don't do it ! TODO: debug.
+            still a bug with multiprocess, so avoid this option
             Defaults to False
         delete_in_drive (bool): If true, delete file in Drive when downloaded.
             Defaults to True
@@ -44,7 +44,7 @@ def drive_to_local(
     all_files = get_files_in_folder(folder_name)
 
     if use_multiprocess:
-        # NOT WORKING YET
+        # multiprocess disabled
         processes = []
         for f in all_files:
             if (local_folder / f["title"]).exists():

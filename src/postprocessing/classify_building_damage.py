@@ -9,7 +9,7 @@ Equation 3:
 Where:
     - T_{post} = post-war windows (>= 2023-10-07)
     - T_{pre}  = pre-war windows  (<  2023-10-07)
-    - t        = threshold (0.5 × 255 = 127 on 0-255 scale)
+    - t        = threshold (0.670 × 255 = 170 on 0-255 scale)
 
 This mirrors metrics.py's date-wise evaluation logic exactly,
 applied to the pixel-level buildings_preds.parquet output.
@@ -22,7 +22,7 @@ Output:
         - all building metadata
 
 Usage:
-    python3 src/postprocessing/apply_equation3.py
+    python3 src/postprocessing/classify_building_damage.py
 """
 
 import pandas as pd

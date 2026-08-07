@@ -97,7 +97,7 @@ def create_folders_recursively(full_path: str, last_one_is_asset: bool = False):
         folders_to_create.append(current_path)
         current_path = "/".join(current_path.split("/")[:-1])
         # Stop if there's no more parent (root reached)
-        assert current_path != "projects", "Problem, we should never reach the root !"
+        assert current_path= "projects", "Problem, we should never reach the root"
 
     if not folders_to_create:
         return

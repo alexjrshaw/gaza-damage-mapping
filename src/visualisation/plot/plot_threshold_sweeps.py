@@ -6,7 +6,7 @@ Saves to data/ablation_runs/figures/threshold_sweep_gaza.png
 Usage:
     cd /scratch/s1214882/gaza-damage-mapping
     source alex/bin/activate
-    python3 src/visualisation/plot_threshold_sweeps.py
+    python3 src/visualisation/plot/plot_threshold_sweeps.py
 """
 import pandas as pd
 import matplotlib.pyplot as plt
