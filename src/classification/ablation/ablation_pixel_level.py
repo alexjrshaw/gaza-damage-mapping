@@ -486,8 +486,6 @@ def run_oob_study(results: dict) -> dict:
     )
     feature_cols = get_features_names(cfg_base)
     df_train = df_train.dropna(subset=feature_cols)
-    df_train = df_train.sample(n=min(200_000, len(df_train)), random_state=0)
-    print(f"  Subsampled to {len(df_train):,} rows for OOB study")
     X = df_train[feature_cols].values
     y = df_train["label"].values
 
