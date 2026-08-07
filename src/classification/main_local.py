@@ -127,7 +127,6 @@ def full_pipeline_local(cfg: DictConfig, force_recreate: bool = False) -> dict:
     )
 
     # Print comparison with Ukraine baselines
-    print("\n── Comparison with Ukraine baselines ──")
     print(f"  F1:        {result_metrics['f1']:.3f}  (Ukraine: 0.749)")
     print(f"  Precision: {result_metrics['precision']:.3f}  (Ukraine: 0.671)")
     print(f"  Recall:    {result_metrics['recall']:.3f}  (Ukraine: 0.846)")
@@ -250,8 +249,6 @@ def _format_predictions(df_test: pd.DataFrame, cfg: DictConfig) -> gpd.GeoDataFr
 def get_sat_from_cfg_local(cfg: DictConfig) -> str:
     """Get satellite name from config. Mirrors get_sat_from_cfg() in utils.py."""
     s1 = "s1" if cfg.data.s1 else None
-    s2 = "s2" if cfg.data.s2 else None
-    return "s1_s2" if s1 and s2 else s1 or s2
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 from omegaconf import DictConfig
 
-from src.constants import S1_BANDS, S2_BANDS
+from src.constants import S1_BANDS
 
 
 def get_run_name(cfg: DictConfig) -> str:
@@ -21,15 +21,11 @@ def get_run_name(cfg: DictConfig) -> str:
     clf_name = "".join([n[0] for n in clf_name.split("_")]) if "_" in clf_name else clf_name
     name = f"{clf_name}_"
 
-    # Data: satellite (s1, s2 or s1_s2) + bands (if subset) + time period
     if cfg.data.s1 is not None:
         name += "s1_"
         if cfg.data.s1.subset_bands:
             name += "only_" + "_".join(cfg.data.s1.subset_bands) + "_"
-    if cfg.data.s2 is not None:
         name += "s2_"
-        if cfg.data.s2.subset_bands:
-            name += "only_" + "_".join(cfg.data.s2.subset_bands) + "_"
 
     name += cfg.data.time_periods["post"]
 
@@ -77,12 +73,8 @@ def get_features_names(cfg: DictConfig) -> list:
     else:
         s1_bands = []
 
-    if cfg.data.s2 is not None:
-        s2_bands = cfg.data.s2.subset_bands if cfg.data.s2.subset_bands else S2_BANDS
     else:
-        s2_bands = []
 
-    bands = s1_bands + s2_bands
     assert len(bands) > 0, "No bands selected"
 
     names = cfg.data.time_periods.keys()
@@ -93,6 +85,3 @@ def get_features_names(cfg: DictConfig) -> list:
 
 
 def get_sat_from_cfg(cfg: DictConfig) -> str:
-    """Get the satellite name from the config (either s1, s2 or s1_s2)"""
-    s1, s2 = "s1" if cfg.data.s1 else None, "s2" if cfg.data.s2 else None
-    return "s1_s2" if s1 and s2 else s1 or s2
