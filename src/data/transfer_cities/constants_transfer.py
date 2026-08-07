@@ -38,9 +38,9 @@ Conflict start dates and rationale:
          city from ISIS, the largest urban battle since 2003).
 
 label=0 / label=1 window counts:
-    ALP: 9 label=0 (incl. pre-period), 4 label=1
-    RAQ: 7 label=0 (incl. pre-period), 6 label=1
-    MOS: 8 label=0 (incl. pre-period), 5 label=1
+    ALP: 9 label=0 (1 pre-period baseline + 8 assessment windows), 4 label=1
+    RAQ: 7 label=0 (1 pre-period baseline + 6 assessment windows), 6 label=1
+    MOS: 8 label=0 (1 pre-period baseline + 7 assessment windows), 5 label=1
 """
 
 from pathlib import Path
