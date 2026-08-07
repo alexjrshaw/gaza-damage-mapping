@@ -1,4 +1,4 @@
-# Cross-Conflict Building Damage Monitoring From Space
+# Echoes of War: Transferable Damage Monitoring with Space Radar
 
 **Alex Shaw, MSc GIS, University of Edinburgh**
 
@@ -10,10 +10,11 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 
 ## Key findings
 
-- The Gaza-trained model detected **85.8% of held-out UNOSAT damage** (balanced accuracy 88.9%) at a calibrated threshold of t=0.67
+- The Gaza-trained model achieved **88.9% balanced accuracy** at a calibrated threshold of t=0.670 (90% precision)
 - **151,368 buildings (68.5% of all studied)** were classified as damaged across Gaza
-- Applied without retraining to Mosul, Raqqa and Aleppo, balanced accuracy held at **64.0–64.8%** despite differing geography and conflict history
+- Applied without retraining to Mosul, Raqqa and Aleppo, balanced accuracy held at **64.0–64.8%**
 - Local retraining on Mosul data did not improve on zero-shot transfer once thresholds were properly calibrated
+
 
 ---
 
@@ -22,15 +23,15 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 | Component | Source | Details |
 |---|---|---|
 | SAR imagery | Sentinel-1 (Copernicus / ESA) | GRD Product, VV+VH, IW mode, via Google Earth Engine |
-| Damage labels | UNOSAT Gaza 'Comprehensive Damage Assessments' | 14 releases, Oct 2023–Oct 2025; 198,308 assessed structures |
-| Building footprints | HOTOSM Gaza Buildings | 330,079 outlines; 220,820 after 50m² filter |
+| Damage labels | UNOSAT Gaza Comprehensive Damage Assessments | 14 releases, Oct 2023–Oct 2025; 220,820 assessed structures |
+| Building footprints | HOTOSM Gaza Buildings | 220,820 structures after 50 m² filter |
 | Admin boundaries | OCHA COD-AB Palestine | Governorate level (admin2) |
-| Transfer cities | UNOSAT: products 1188 (Mosul), 1192 (Raqqa), 1118 (Aleppo) | Single release per city |
+| Transfer cities | UNOSAT products 1188 (Mosul), 1192 (Raqqa), 1118 (Aleppo) | Single release per city |
 
-**Training areas (Gaza):** North Gaza, Gaza City
-**Test areas (Gaza):** Deir al-Balah, Khan Younis, Rafah
+**Training areas (Gaza):** North Gaza, Gaza City  
+**Test areas (Gaza):** Deir al-Balah, Khan Yunis, Rafah
 
-**Training areas (Mosul retrain):** West bank (lon < 43.1262°E), 6,184 points
+**Training areas (Mosul retrain):** West bank (lon < 43.1262°E), 6,184 points  
 **Test areas (Mosul retrain):** East bank (lon ≥ 43.1262°E), 7,250 points
 
 ---
@@ -40,64 +41,75 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 | Adaptation | Rationale |
 |---|---|
 | HOTOSM footprints instead of Overture Maps | Largest available Gaza building inventory |
-| Sentinel-2 excluded | No performance improvement (Dietrich et al., 2025, Supplementary Note 6) |
+| Sentinel-2 excluded | No performance improvement in original study |
 | Two-month assessment windows instead of three-month | Matched UNOSAT Gaza release cadence |
 | 14 assessment epochs (Oct 2023–Oct 2025) | Full two-year conflict coverage |
 | Feature computation, training and inference moved to local HPC | Gaza's point density exceeded GEE's computational limits |
 | scikit-learn Random Forest instead of GEE SMILE | Required by local feature computation; same hyperparameters retained |
-| Cross-conflict transfer evaluation (Mosul, Raqqa, Aleppo) | Dietrich et al. (2025) argue their model "will adapt well to new areas." This study provides empirical proof |
-| Mosul local retraining comparison | Tests whether training on local data improves on zero-shot transfer, and under what conditions |
+| Cross-conflict transfer evaluation (Mosul, Raqqa, Aleppo) | Tests whether model generalises across conflicts |
+| Mosul local retraining comparison | Tests whether training on local data improves on zero-shot transfer |
 
 ---
 
-## Repository structure
-```
-gaza-damage-mapping/
-├── check_environment.py                   # Verifies all required packages are installed before running the pipeline
-├── requirements.txt                       # Pinned direct dependencies
-├── reauth_gdrive.py                       # Re-authenticates Google Drive if cached credentials expire
-├── setup.py / setup.cfg / pyproject.toml  # Package metadata; makes src/ importable as a module
-├── LICENSE / README.md / .gitignore       # Repo licence, usage instructions, and ignored paths (secrets/, raw data)
-├── secrets/.gitkeep                       # Empty placeholder — holds gitignored GEE/Drive credentials at runtime
+#gaza-damage-mapping/
+├── check_environment.py              # Verifies all required packages are installed
+├── reauth_gdrive.py                  # Refreshes Google Drive credentials
+├── requirements.txt                  # Pinned direct dependencies
+├── setup.py / setup.cfg / pyproject.toml  # Package metadata
+├── LICENSE / README.md / .gitignore  # Licence, docs, ignored paths
+├── secrets/.gitkeep                  # Placeholder for gitignored credentials
+│
 ├── src/
-│   ├── classification/                    # Training, evaluation, and ablation studies (8 scripts)
-│   │   ├── main_local.py                  # Trains the production Random Forest, formats predictions
-│   │   ├── models_local.py                # scikit-learn classifier factory
-│   │   ├── dataset_local.py               # Builds train/test splits (AOI-based or random-per-AOI)
-│   │   ├── reducers.py                    # Local (pandas) reimplementation of GEE's statistical reducers
-│   │   ├── metrics.py                     # get_metrics() — shared by production, ablation, and transfer evaluation
-│   │   ├── ablation_pixel_level.py        # Pixel-level ablation harness: n_trees, bands, reducer subsets
-│   │   ├── ablation_mtry.py               # Fine-grained max_features (mtry) sweep, full training set
-│   │   └── utils.py                       # Shared helpers
-│   ├── data/
-│   │   ├── hotosm/                        # HOTOSM building footprint download and Gaza-specific filtering (3 scripts)
-│   │   ├── sentinel1/                     # Sentinel-1 collection, orbits, and time series extraction (5 scripts)
-│   │   ├── transfer_cities/
-│   │   │   ├── pixel_inference/           # Zero-shot dense inference and evaluation for Mosul/Raqqa/Aleppo (4 scripts)
-│   │   │   └── retrain/                   # Mosul local retraining and threshold recalibration (5 scripts)
-│   │   ├── unosat.py                      # UNOSAT loading, wide-to-long conversion, multi-epoch label combining
-│   │   ├── quadkeys.py                    # Quadkey tiling grid for dense raster export
-│   │   └── utils.py                       # Shared AOI/data helpers
-│   ├── inference/                         # Gaza dense pixel-level inference: export, download, classify (3 scripts)
-│   ├── postprocessing/                    # Building-level aggregation, thresholding, and results export (8 scripts)
-│   ├── utils/                             # Cross-cutting helpers: GEE auth, Drive I/O, geometry, timing (4 scripts)
-│   └── visualisation/                     # Figure generation: ablation plots, OOB curves, threshold sweep plots (5 scripts)
+│   ├── constants.py                  # Study areas, time periods, paths, thresholds
+│   │
+│   ├── classification/               # Model training, evaluation and ablation
+│   │   ├── main_local.py             # Trains the production Random Forest
+│   │   ├── models_local.py           # scikit-learn classifier factory
+│   │   ├── dataset_local.py          # Train/test splits by governorate AOI
+│   │   ├── metrics.py                # Shared evaluation metrics
+│   │   ├── reducers.py               # SAR statistical reducers
+│   │   ├── utils.py                  # Run name and feature name helpers
+│   │   └── ablation/                 # Ablation and threshold calibration
+│   │       ├── ablation_pixel_level.py  # n_trees, polarisation, statistics ablation
+│   │       ├── ablation_mtry.py         # Full mtry sweep on complete training set
+│   │       └── threshold_sweep.py       # Gaza threshold calibration (90% precision)
+│   │
+│   ├── data/                         # Data preparation and feature extraction
+│   │   ├── unosat.py                 # Label loading, epoch combining
+│   │   ├── quadkeys.py               # Quadkey tiling grid for GEE export
+│   │   ├── utils.py                  # AOI and data helpers
+│   │   ├── hotosm/                   # HOTOSM footprint download and filtering (2 scripts)
+│   │   ├── sentinel1/                # S1 collection, time series extraction (5 scripts)
+│   │   └── transfer_cities/          # Transfer city data and evaluation
+│   │       ├── constants_transfer.py    # Transfer city settings and orbits
+│   │       ├── preprocess_transfer_unosat.py  # Standardise UNOSAT fields
+│   │       ├── pixel_inference/         # Zero-shot inference and evaluation (4 scripts)
+│   │       └── retrain/                 # Mosul local retraining (5 scripts)
+│   │
+│   ├── inference/                    # Gaza pixel-level inference (3 scripts)
+│   ├── postprocessing/               # Building-level classification (3 scripts)
+│   ├── utils/                        # GEE, Drive, geometry, timing helpers (4 scripts)
+│   └── visualisation/                # Figure generation
+│       ├── plot/                     # Chart scripts (5 scripts)
+│       └── prep/                     # Data preparation for figures (4 scripts)
+│
 └── test_sites/
-    ├── processed/                         # Preprocessed UNOSAT labels/AOIs for retained transfer cities (Mosul, Raqqa, Aleppo)
-    └── raw/                               # Raw UNOSAT shapefiles for retained cities + excluded candidates (Fallujah, Myanmar), kept for provenance
+    └── processed/                    # Preprocessed UNOSAT labels and AOIs
+        ├── alp/                      # Aleppo
+        ├── mos/                      # Mosul (includes east-bank split)
+        └── raq/                      # Raqqa
 ```
----
-
 ## Prerequisites
-- Python 3.10+
-- Google account with access to Google Earth Engine (used for all Sentinel-1 processing)
-- Google Cloud Console project with the Google Drive API enabled (used to retrieve GEE exports)
+
+- Python 3.12+
+- Google account with access to Google Earth Engine
+- Google Cloud Console project with the Google Drive API enabled
 
 ---
 
 ## Setup
 
-Developed on the University of Edinburgh Forth HPC cluster (Python 3.10.12, Ubuntu).
+Developed on the University of Edinburgh Forth HPC cluster (Python 3.12.3, Ubuntu 24.04).
 
 ### 1. Clone the repository
 
@@ -110,7 +122,7 @@ cd gaza-damage-mapping
 
 ```bash
 python3 -m venv alex
-source alex/bin/activate        # Linux/Mac
+source alex/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -120,26 +132,22 @@ pip install -r requirements.txt
 python3 check_environment.py
 ```
 
-This checks all required packages are installed and reports any that are missing.
-
 ### 4. Google Earth Engine
-
-You need a GEE account with access to the `gaza-damage-mapping` project, or your own registered cloud project.
 
 ```bash
 earthengine authenticate
 earthengine set_project gaza-damage-mapping
 ```
 
-Update `ASSETS_PATH` in `src/constants.py` to point to your GEE project if using your own.
+Update `ASSETS_PATH` in `src/constants.py` to point to your own GEE project if needed.
 
 ### 5. Google Drive credentials
 
-Required for downloading feature rasters exported by GEE. GEE exports to a shared Drive folder; the download scripts poll Drive and delete files after download to manage quota.
+Required for downloading GEE feature raster exports.
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com) → Enable **Google Drive API**
 2. Create an OAuth client ID (Desktop app) → download `client_secrets.json`
-3. Place `client_secrets.json` in the `secrets/` folder
+3. Place `client_secrets.json` in `secrets/`
 4. Create `secrets/pydrive_settings.yaml`:
 
 ```yaml
@@ -153,11 +161,9 @@ oauth_scope:
   - "https://www.googleapis.com/auth/drive"
 ```
 
-Note: Drive authentication must be completed interactively on the Forth login node before running any download scripts. Run `python3 src/utils/gdrive.py` once to trigger the OAuth flow and cache credentials.
+Run `python3 reauth_gdrive.py` once on the login node to trigger the OAuth flow and cache credentials.
 
 ### 6. Data
-
-All data is either downloaded automatically or publicly available:
 
 **UNOSAT labels** — download all 14 Gaza releases from [unosat.org](https://unosat.org) (product IDs 3714–4213) and place GDB files in `data/raw/`. Then run:
 
@@ -181,126 +187,116 @@ python3 src/data/hotosm/preprocessing.py
 
 ### A. Gaza (main pipeline)
 
-Steps 1–4 require internet access and should run interactively on the Forth login node in persistent `screen` sessions.
+Steps 1–4 require internet access and should run interactively on the login node in a persistent `screen` session.
 
-**1. Upload UNOSAT labels to GEE**
-```bash
-python3 src/data/unosat.py
-```
-
-**2. Extract Sentinel-1 intermediate time series (GEE)**
+**1. Extract Sentinel-1 time series (GEE)**
 ```bash
 python3 src/data/sentinel1/intermediate_data.py
 ```
 
-**3. Download intermediate assets to Forth**
+**2. Download intermediate assets to Forth**
 ```bash
 python3 src/data/sentinel1/download_intermediate_assets.py
 ```
 
-**4. Compute features locally**
+**3. Compute SAR features locally**
 ```bash
 python3 src/data/sentinel1/extract_features_local.py
 ```
 
-**5. Train and evaluate classifier**
+**4. Train and evaluate classifier**
 ```bash
 python3 src/classification/main_local.py
 ```
 
-**6. Export feature rasters from GEE**
+**5. Export feature rasters from GEE**
 ```bash
 python3 src/inference/export_feature_rasters.py
 ```
 
-**7. Download feature rasters from Drive**
+**6. Download feature rasters from Drive**
 ```bash
 python3 src/inference/download_feature_rasters.py
 ```
 
-**8. Run local pixel inference**
+**7. Run pixel-level inference**
 ```bash
 python3 src/inference/local_pixel_inference.py
 ```
 
-**9. Postprocess: aggregate to buildings and classify**
+**8. Aggregate to buildings and classify**
 ```bash
 python3 src/postprocessing/pixel_postprocessing.py
 python3 src/postprocessing/classify_building_damage.py
 ```
 
+**9. Calibrate threshold**
+```bash
+python3 src/classification/ablation/threshold_sweep.py
+```
+
 ### B. Cross-conflict transfer (Mosul, Raqqa, Aleppo)
 
-Steps 1–3 require internet access and must run interactively on the Forth login node.
-
-**1. Upload transfer city UNOSAT labels to GEE**
+**1. Export feature rasters**
 ```bash
-python3 src/data/transfer_cities/upload_unosat_to_gee.py
+python3 src/data/transfer_cities/pixel_inference/export_feature_rasters_transfer.py --city MOS
 ```
 
-**2. Export feature rasters**
+**2. Download rasters and run inference**
 ```bash
-python3 src/data/transfer_cities/pixel_inference/export_feature_rasters_transfer.py
+python3 src/data/transfer_cities/pixel_inference/download_feature_rasters_transfer.py --city MOS
+python3 src/data/transfer_cities/pixel_inference/pixel_inference_transfer.py --city MOS
 ```
 
-**3. Download and run inference**
+**3. Evaluate**
 ```bash
-python3 src/data/transfer_cities/pixel_inference/download_feature_rasters_transfer.py
-python3 src/data/transfer_cities/pixel_inference/pixel_inference_transfer.py
+python3 src/data/transfer_cities/pixel_inference/evaluate_pixel_transfer.py --city MOS
 ```
-*Inference applies the Gaza-trained model unchanged (zero-shot transfer).*
 
-**4. Evaluate**
-```bash
-python3 src/data/transfer_cities/pixel_inference/evaluate_pixel_transfer.py
-```
-*Evaluation is run at two thresholds: t=0.5 (default) and t=0.670 (Gaza-calibrated, 90% precision target).*
+Replace `MOS` with `RAQ` or `ALP` for Raqqa and Aleppo.
 
 ### C. Mosul local retraining
-
-Tests whether training on Mosul's own data improves on zero-shot transfer.
 
 **1. Create east-bank test labels**
 ```bash
 python3 src/data/transfer_cities/retrain/create_mosul_east_bank_labels.py
 ```
-*Splits Mosul UNOSAT points along the Tigris River (lon=43.1262°E): west bank for training, east bank for testing.*
 
 **2. Train Mosul-specific model**
 ```bash
 python3 src/data/transfer_cities/retrain/main_local_mosul_retrain.py
 ```
 
-**3. Run pixel inference with retrained model**
+**3. Run inference with retrained model**
 ```bash
 python3 src/data/transfer_cities/retrain/mosul_retrain_pixel_inference.py
 ```
-*Sweeps t=0.0–1.0 to find the threshold achieving 90% precision on Mosul's own data, mirroring how Gaza's t=0.670 was derived. The retrained model's optimal threshold: t=0.44*
 
-**4. Find best threshold for retrained model**
+**4. Find optimal threshold**
 ```bash
 python3 src/data/transfer_cities/retrain/mosul_optimal_threshold.py
 ```
 
-### Ablation study
+### D. Ablation study
 
-Run after Step 5 of the Gaza pipeline (trained model and feature rasters must exist).
+Run after Step 4 of the Gaza pipeline.
 
-**1. Pixel-level ablation**
+**1. Pixel-level ablation (n_trees, polarisation, SAR statistics)**
 ```bash
-python3 src/classification/ablation_pixel_level.py
+python3 src/classification/ablation/ablation_pixel_level.py
 ```
-*Runs all ablation variants at t=0.670 (Gaza-calibrated threshold)*
 
-**2. Mtry ablation**
+**2. mtry sweep**
 ```bash
-python3 src/classification/ablation_mtry.py
+python3 src/classification/ablation/ablation_mtry.py
 ```
-*Tests mtry values 1–25 via OOB error during training.*
 
-**3. Make figures**
+**3. Generate figures**
 ```bash
-python3 src/visualisation/plot_ablation_figures.py
+python3 src/visualisation/plot/plot_ablation_summary.py
+python3 src/visualisation/plot/plot_oob_mtry.py
+python3 src/visualisation/plot/plot_oob_ntrees.py
+python3 src/visualisation/plot/plot_threshold_sweeps.py
 ```
 
 ---
@@ -322,8 +318,15 @@ If you use this code, please cite the original Ukraine methodology:
 }
 ```
 
+
 ---
 
 ## Licence
 
 MIT — see [LICENSE](LICENSE) for details.
+ENDOFREADME
+
+cd /scratch/s1214882/gaza-damage-mapping
+git add README.md
+git commit -m "Update README: correct versions, paths, structure, pipeline steps"
+git push origin main
