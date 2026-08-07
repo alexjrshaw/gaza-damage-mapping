@@ -1,8 +1,12 @@
 """
-Fine-grained threshold sweep against the CURRENT, freshly-regenerated
-merged probability rasters (from tonight's pixel_postprocessing.py run).
-Reuses sample_rasters_at_unosat_points() from ablation_pixel_level.py
-directly, avoiding any retraining or re-inference.
+Threshold sweep for Gaza model calibration.
+
+Tests thresholds at 0.005 intervals against the merged probability rasters
+produced by pixel_postprocessing.py, sampling predictions at held-out UNOSAT
+test points using sample_rasters_at_unosat_points() from ablation_pixel_level.py.
+No retraining or re-inference is required. The lowest threshold achieving
+90% precision is selected as the calibrated threshold (t=0.670).
+Results saved to data/threshold_sweep_current_results.csv.
 """
 
 import numpy as np

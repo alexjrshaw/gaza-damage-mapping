@@ -58,7 +58,7 @@ THRESHOLD_TARGET = 0.670
 WINDOW_AGG = "max"
 SPATIAL_WINDOW = 3
 
-# Results I/O
+# Results input/output
 
 
 def load_results() -> dict:
@@ -274,7 +274,7 @@ def merge_tiles_variant(variant_name: str, force_recreate: bool = False) -> list
 
 
 def extract_with_window(point, raster, window=3, agg="max"):
-    """Sample raster at point with spatial window. Unchanged from evaluation.ipynb."""
+    """Sample raster at point location using a spatial window. Mirrors Dietrich et al. (2025a) evaluation methodology."""
     if window == 1:
         return raster.sel(x=point.x, y=point.y, method="nearest").item()
     half = window // 2
