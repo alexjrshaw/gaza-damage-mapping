@@ -44,7 +44,6 @@ from src.utils.gee import init_gee
 
 init_gee(project="gaza-damage-mapping")
 
-# ==================== CONSTANTS ====================
 
 RUN_NAME = "gaza_feature_rasters"
 QUADKEY_ZOOM = 12  # Same quadkey zoom as Dietrich et al. original pipeline - ~2.4km² tiles
@@ -55,7 +54,6 @@ EXTRACT_WINDOW = "1x1"
 LOCAL_BASE = DATA_PATH / "feature_rasters"
 
 
-# ==================== EXPORT ====================
 
 
 def export_feature_rasters_for_window(
@@ -139,7 +137,6 @@ def _filter_existing(ids: list[str], drive_folder: str, local_dir: Path = None) 
     return ids
 
 
-# ==================== MAIN ====================
 
 if __name__ == "__main__":
     # All 19 windows: 1 pre-period window + 18 post windows

@@ -6,11 +6,11 @@ Assigns pixel-level damage probability rasters to HOTOSM building
 footprints, producing building-level damage estimates per time window.
 
 Mirrors Dietrich et al. (2025) drive_to_results.py in three steps:
-    1. Merge quadkey tiles → single GeoTIFF per time window
+    1. Merge quadkey tiles -> single GeoTIFF per time window
        (equivalent to download_and_merge_all_dates)
     2. Assign pixel predictions to buildings per admin unit
        (equivalent to create_all_gdf_overture_with_preds)
-    3. Aggregate all admin results → buildings_preds.parquet
+    3. Aggregate all admin results -> buildings_preds.parquet
        (equivalent to aggregate_all_preds)
 
 Key adaptations from Dietrich et al.:
@@ -81,7 +81,7 @@ def merge_tiles_for_window(window_str: str, force_recreate: bool = False) -> Pat
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         gdal.Warp(str(fp_out), tif_files, format="GTiff")
-    print(f"  {window_str}: merged → {fp_out.name}")
+    print(f"  {window_str}: merged -> {fp_out.name}")
     return fp_out
 
 
@@ -117,7 +117,7 @@ def load_buildings() -> gpd.GeoDataFrame:
 
 
 def get_post_date_from_window(window_str: str) -> str:
-    """Extract start date from window string e.g. 'w07_2023-10-07_2023-12-06' → '2023-10-07'."""
+    """Extract start date from window string e.g. 'w07_2023-10-07_2023-12-06' -> '2023-10-07'."""
     parts = window_str.split("_")
     return f"{parts[1]}"
 
@@ -134,7 +134,7 @@ def create_buildings_with_preds_for_admin(
     Mirrors Dietrich et al. create_gdf_overture_with_preds() logic, adapted for HOTOSM footprints:
         1. Load buildings for admin unit
         2. Read and stack prediction rasters
-        3. Vectorize pixels → polygons
+        3. Vectorize pixels -> polygons
         4. Intersect with building polygons
         5. Compute area-weighted mean and max per building per date
         6. Save as GeoJSON
@@ -223,7 +223,7 @@ def create_buildings_with_preds_for_admin(
     # Save
     gdf_buildings_with_preds.reset_index().to_file(fp_out, driver="GeoJSON")
     print(
-        f"  {adm2_name}: saved {len(gdf_buildings_with_preds):,} building-date rows → {fp_out.name}"
+        f"  {adm2_name}: saved {len(gdf_buildings_with_preds):,} building-date rows -> {fp_out.name}"
     )
 
 
