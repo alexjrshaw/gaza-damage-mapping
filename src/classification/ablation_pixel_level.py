@@ -458,7 +458,7 @@ def run_variant_full(
 
 def run_oob_study(results: dict) -> dict:
     """OOB error vs n_trees and vs max_features. No inference needed."""
-    if "oob_n_trees" in results and "oob_mtry" in results:
+    if "oob_n_trees" in results:
         print("OOB studies already complete - skipping")
         return results
 
@@ -509,27 +509,6 @@ def run_oob_study(results: dict) -> dict:
             oob_scores.append(1 - clf.oob_score_)  # OOB error
             print(f"  n_trees={n}: OOB error={1-clf.oob_score_:.4f}")
         results["oob_n_trees"] = {"n_trees": n_trees_vals, "oob_error": oob_scores}
-
-    # OOB vs mtry (max_features)
-    if "oob_mtry" not in results:
-        print("OOB vs mtry...")
-        n_features = len(feature_cols)
-        mtry_vals = [2, 4, 6, 8, 10, 14, 28]
-        mtry_vals = [v for v in mtry_vals if v <= n_features]
-        oob_scores = []
-        for m in tqdm(mtry_vals, desc="mtry"):
-            clf = RandomForestClassifier(
-                n_estimators=50,
-                max_features=m,
-                min_samples_leaf=3,
-                oob_score=True,
-                n_jobs=4,
-                random_state=0,
-            )
-            clf.fit(X, y)
-            oob_scores.append(1 - clf.oob_score_)
-            print(f"  mtry={m}: OOB error={1-clf.oob_score_:.4f}")
-        results["oob_mtry"] = {"mtry": mtry_vals, "oob_error": oob_scores}
 
     return results
 
