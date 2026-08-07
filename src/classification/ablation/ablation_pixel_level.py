@@ -104,7 +104,6 @@ def train_variant(
             model_kwargs=dict(numberOfTrees=n_trees, minLeafPopulation=3, maxNodes=1e4),
             data=dict(
                 s1=dict(subset_bands=subset_bands),
-                s2=None,
                 aois_test=list(AOIS_TEST),
                 damages_to_keep=[1, 2],
                 extract_winds="1x1",
@@ -477,7 +476,6 @@ def run_oob_study(results: dict) -> dict:
         dict(
             data=dict(
                 s1=dict(subset_bands=None),
-                s2=None,
                 time_periods=dict(pre=PRE_PERIOD, post="2months"),
                 extract_winds="1x1",
             ),

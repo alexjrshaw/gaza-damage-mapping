@@ -261,7 +261,6 @@ if __name__ == "__main__":
             model_kwargs=dict(numberOfTrees=50, minLeafPopulation=3, maxNodes=1e4),
             data=dict(
                 s1=dict(subset_bands=None),
-                s2=None,
                 aois_test=AOIS_TEST,
                 damages_to_keep=[1, 2],
                 extract_winds="1x1",

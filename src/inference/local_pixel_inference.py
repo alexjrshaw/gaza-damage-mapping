@@ -13,7 +13,7 @@ Follows Dietrich et al. (2025) methodology exactly:
     - Output format matches pixel_postprocessing.py input
 
 Pipeline position:
-    export_feature_rasters.py → [this script] → local_postprocessing_pixel.py
+    export_feature_rasters.py -> [this script] -> local_postprocessing_pixel.py
 
 Input:
     data/feature_rasters/{window_str}/orbit{orbit}/qk_{qk_id}.tif
@@ -50,7 +50,6 @@ CFG = OmegaConf.create(
     dict(
         data=dict(
             s1=dict(subset_bands=None),
-            s2=None,
             extract_winds="1x1",
             time_periods=dict(pre=PRE_PERIOD, post="2months"),
         ),
