@@ -140,3 +140,5 @@ verify_threshold_bug_counts.py
 ee
 pd
 *.log
+alex/
+alex_old_py310/

@@ -2,7 +2,7 @@
 Local feature extraction for Gaza damage mapping.
 
 Replaces the GEE-based extract_features.py for the feature computation step.
-Gaza's density (65,000+ points in 365km²) creates computation graphs too large
+Gaza's density creates computation graphs too large
 for GEE to handle. This script downloads the intermediate time series assets
 from GEE and computes features locally using pandas.
 
