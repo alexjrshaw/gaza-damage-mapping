@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-from src.classification.ablation_pixel_level import sample_rasters_at_unosat_points
+from src.classification.ablation.ablation_pixel_level import sample_rasters_at_unosat_points
 from src.classification.metrics import get_metrics
 from src.constants import DATA_PATH, AOIS_TEST
 
