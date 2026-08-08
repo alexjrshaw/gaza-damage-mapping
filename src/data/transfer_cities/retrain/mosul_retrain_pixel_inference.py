@@ -25,7 +25,7 @@ Pipeline position:
         - [this script] (classifies Mosul's feature rasters with the
            retrained model)
         - evaluate_pixel_transfer.py (unmodified; evaluated on east-bank
-           test points only -- see note in that call below)
+           test points only - see note in that call below)
 
 Usage:
     python3 src/data/transfer_cities/retrain/mosul_retrain_pixel_inference.py
