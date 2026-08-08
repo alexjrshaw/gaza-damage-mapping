@@ -16,7 +16,7 @@ The output GeoDataFrame matches the format produced by main.py:
     - date: date_first_severe for each point
 
 This allows metrics.py to be used without modification, computing
-the same date-wise evaluation as Dietrich et al. (2025).
+the same date-wise evaluation as Dietrich et al. (2025a).
 
 Gaza adaptation: feature computation and training run locally (pandas/scikit-learn). GEE SMILE RF was infeasible at Gaza's point density.
 """

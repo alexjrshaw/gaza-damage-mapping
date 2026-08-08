@@ -5,7 +5,7 @@ Replaces the Overture Maps pipeline used for Ukraine (overture/preprocessing.py)
 following Scher and Van Den Hoek (2025b) who identify HOTOSM as the most
 comprehensive pre-conflict building footprint dataset for Gaza.
 
-The structure and logic follows Dietrich et al. (2025) exactly, with three
+The structure and logic follows Dietrich et al. (2025a) exactly, with three
 adaptations for Gaza:
     1. HOTOSM GeoJSON instead of Overture Maps parquet
     2. OCHA admin boundaries instead of Ukraine admin shapefiles

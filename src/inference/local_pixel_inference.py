@@ -4,8 +4,8 @@ Local pixel-level inference for Gaza damage mapping.
 Classifies exported feature rasters using the trained sklearn Random Forest,
 producing damage probability rasters at 10m resolution across Gaza.
 
-This is the local equivalent of the GEE-based inference approach used by Dietrich et al. (2025).
-Follows Dietrich et al. (2025) methodology exactly:
+This is the local equivalent of the GEE-based inference approach used by Dietrich et al. (2025a).
+Follows Dietrich et al. (2025a) methodology exactly:
     - Loads 28-band feature GeoTIFFs exported by export_feature_rasters.py
     - Applies sklearn RF to every pixel
     - Aggregates predictions across 3 orbits (mean) - mirrors predict_geo()

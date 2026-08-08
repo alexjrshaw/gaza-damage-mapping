@@ -3,7 +3,7 @@ Local equivalent of models.py.
 
 Local scikit-learn Random Forest, replacing GEE SMILE classifier (required by local feature computation at Gaza's scale).
 Mirrors the classifier_factory() interface and hyperparameters from
-Dietrich et al. (2025).
+Dietrich et al. (2025a).
 
 Gaza adaptation: scikit-learn replaces GEE SMILE Random Forest.
 """
@@ -30,7 +30,7 @@ def classifier_factory_local(
         model_name (str): Currently only 'random_forest' supported.
         seed (int): Random seed. Defaults to 0.
         verbose (int): Verbosity. Defaults to 1.
-        **kwargs: Hyperparameters matching Dietrich et al. (2025) GEE SMILE RF values:
+        **kwargs: Hyperparameters matching Dietrich et al. (2025a) GEE SMILE RF values:
             numberOfTrees, minLeafPopulation, maxNodes.
 
     Returns:

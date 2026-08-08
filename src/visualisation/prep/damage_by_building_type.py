@@ -5,7 +5,7 @@ Joins this study's building-level damage classification (buildings_damage.parque
 from Equation 3) against OSM 'building' type tags from the raw HOTOSM export, via
 building_id == osm_id (confirmed 100% match for all 220,820 Gaza buildings).
 
-Following Dietrich et al. (2025), only buildings with a specific (non-generic
+Following Dietrich et al. (2025a), only buildings with a specific (non-generic
 "yes") OSM building tag are included in the breakdown; the overall % of buildings
 carrying any usable type metadata is reported alongside
 

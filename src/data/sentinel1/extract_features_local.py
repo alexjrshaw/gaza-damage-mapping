@@ -6,7 +6,7 @@ Gaza's density creates computation graphs too large
 for GEE to handle. This script downloads the intermediate time series assets
 from GEE and computes features locally using pandas.
 
-Follows Dietrich et al. (2025) methodology:
+Follows Dietrich et al. (2025a) methodology:
     - Same 7 statistical features: mean, stdDev, median, min, max, skew, kurtosis
     - Same label assignment (eq. 1): y=0 pre-conflict, y=1 post-damage, y=-1 discard
     - Same feature naming convention: VV_pre_1x1_mean, VH_post_1x1_stdDev etc.

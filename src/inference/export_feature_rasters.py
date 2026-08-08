@@ -9,7 +9,7 @@ This avoids the GEE computation graph scaling problem that prevented
 extract_features.py from working at Gaza's point density. GEE raster
 operations scale reliably to Gaza's full extent.
 
-Mirrors Dietrich et al. (2025) feature raster export approach:
+Mirrors Dietrich et al. (2025a) feature raster export approach:
     - Same 7 statistical reducers: mean, stdDev, median, min, max, skew, kurtosis
     - Same feature naming: VV_pre_1x1_mean, VH_post_1x1_stdDev etc.
     - Same 10m resolution

@@ -53,7 +53,7 @@ def load_unosat_labels(
             ]
         elif combine_epoch == "first_severe":
             # Keep earliest epoch where damage is class 1 or 2.
-            # This is tunosat in Dietrich et al. (2025) eq. 1 -
+            # This is tunosat in Dietrich et al. (2025a) eq. 1 -
             # the date severe damage was first confirmed by UNOSAT.
             # Gaza-specific adaptation: Ukraine had one epoch per point
             # so combine_epoch='last' naturally gave the detection date.
@@ -163,7 +163,7 @@ def preprocess_gaza_unosat(
     """
     Convert raw UNOSAT Gaza GDB into unosat_labels.geojson and unosat_aois.geojson.
 
-    Follows Dietrich et al. (2025) methodology as closely as possible.
+    Follows Dietrich et al. (2025a) methodology as closely as possible.
     The underlying file stores ALL damage classes and ALL epochs (long format),
     consistent with the Ukraine pipeline where load_unosat_labels() filters
     to classes [1,2] at load time rather than preprocessing time.

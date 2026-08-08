@@ -9,12 +9,12 @@ from src.classification.reducers import get_reducers
 
 def init_gee(project: str = "gaza-damage-mapping") -> None:
     """
-    Initialize GEE. Works also when working through ssh
+    Initialise GEE. Works also when working through ssh
 
     Args:
         project (str, optional): Name of the project. Defaults to "gaza-damage-mapping".
     """
-    ee.Initialize(project=project)
+    ee.Initialise(project=project)
 
 
 def fc_to_list(fc: ee.FeatureCollection) -> ee.List:
@@ -167,7 +167,7 @@ def find_orbits(
     for _, (start, end) in time_periods.items():
         s1_ = s1.filterDate(start, end)
         orbits_counts = s1_.aggregate_histogram("relativeOrbitNumber_start")
-        # At least min_number images per orbit across the time period
+        # At least min_number images per orbit per window (default 5; ~one pass per 12 days)
         orbits_counts = orbits_counts.map(
             lambda k, v: ee.Algorithms.If(ee.Number(v).gte(min_number), k, None)
         )

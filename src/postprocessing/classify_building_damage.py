@@ -1,5 +1,5 @@
 """
-Apply Equation 3 from Dietrich et al. (2025) to produce final binary
+Apply Equation 3 from Dietrich et al. (2025a) to produce final binary
 building damage classifications.
 
 Equation 3:

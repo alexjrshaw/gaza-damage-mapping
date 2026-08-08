@@ -1,11 +1,11 @@
 """
 Pixel-level postprocessing for Gaza damage mapping.
 
-Local equivalent of Dietrich et al. (2025) drive_to_results.py, adapted for local computation on Forth.
+Local equivalent of Dietrich et al. (2025a) drive_to_results.py, adapted for local computation on Forth.
 Assigns pixel-level damage probability rasters to HOTOSM building
 footprints, producing building-level damage estimates per time window.
 
-Mirrors Dietrich et al. (2025) drive_to_results.py in three steps:
+Mirrors Dietrich et al. (2025a) drive_to_results.py in three steps:
     1. Merge quadkey tiles -> single GeoTIFF per time window
        (equivalent to download_and_merge_all_dates)
     2. Assign pixel predictions to buildings per admin unit
