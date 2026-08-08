@@ -1,5 +1,5 @@
 """
-Damage rate by OSM building type, mirroring Dietrich et al.'s (2025) Table 3.
+Damage rate by OSM building type, mirroring Dietrich et al.'s (2025a) Table 3.
 
 Joins this study's building-level damage classification (buildings_damage.parquet,
 from Equation 3) against OSM 'building' type tags from the raw HOTOSM export, via
