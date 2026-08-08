@@ -56,9 +56,8 @@ PROBABILITY_RASTERS_DIR = (
 # Adaptation 3: the Mosul-retrained model, not Gaza's baseline model.
 MODEL_FP = DATA_PATH / "transfer_cities" / "runs" / "MOS_retrained" / "model.pkl"
 
-# Unchanged from local_pixel_inference.py: same feature config, same
-# reducer set, same extraction window, so the 28 feature names and their
-# order are identical to Gaza's.
+# Same feature config, reducers, and extraction window as local_pixel_inference.py,
+# so the 28 feature names and their order match Gaza's.
 CFG = OmegaConf.create(
     dict(
         data=dict(
