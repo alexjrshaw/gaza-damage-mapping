@@ -42,6 +42,7 @@ SWEEP_STEP = 0.005
 TARGET_PRECISION = 0.90
 
 
+# Merge probability raster tiles and sample at UNOSAT point locations
 def sample_merged_raster(tiles: list, gdf: gpd.GeoDataFrame) -> np.ndarray:
     """Identical to evaluate_pixel_transfer.py's current (NaN-preserving) version."""
     srcs = [rasterio.open(fp) for fp in tiles]
@@ -70,6 +71,7 @@ def sample_merged_raster(tiles: list, gdf: gpd.GeoDataFrame) -> np.ndarray:
             src.close()
 
 
+# Load sampled probability scores and ground truth labels
 def load_scores(city_id: str) -> tuple[np.ndarray, np.ndarray]:
     """Load continuous scores and true labels for one city config."""
     cfg = TRANSFER_CITIES[city_id]
@@ -109,6 +111,7 @@ def load_scores(city_id: str) -> tuple[np.ndarray, np.ndarray]:
     return y_scores[mask], y_true[mask]
 
 
+# Compute precision, recall, F1 and balanced accuracy at a given threshold
 def metrics_at_threshold(y_true: np.ndarray, y_scores: np.ndarray, t_scaled: float) -> dict:
     y_pred = (y_scores >= t_scaled).astype(int)
     return {
@@ -125,6 +128,7 @@ def metrics_at_threshold(y_true: np.ndarray, y_scores: np.ndarray, t_scaled: flo
     }
 
 
+# Find lowest threshold achieving 90% precision (mirrors Gaza calibration)
 def find_optimal_threshold(y_true: np.ndarray, y_scores: np.ndarray) -> float:
     """Fine-grained sweep, step=0.005, first threshold where precision >= 90%."""
     thresholds = np.arange(0.0, 1.001, SWEEP_STEP) * 255
@@ -138,6 +142,7 @@ def find_optimal_threshold(y_true: np.ndarray, y_scores: np.ndarray) -> float:
     return None
 
 
+# Print metrics at Mosul optimal and Gaza borrowed thresholds for comparison
 def report(label: str, city_id: str):
     print(f"\n{'='*65}")
     print(f"{label}")

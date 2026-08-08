@@ -15,6 +15,7 @@ from shapely.ops import transform
 from src.constants import DATA_PATH
 
 
+# Load country boundary polygon from OCHA data
 def load_country_boundaries(country: str) -> tuple[Polygon, MultiPolygon]:
     """
     Load shapefile with country boundaries.
@@ -107,6 +108,7 @@ def load_gaza_admin_polygons(adm_level: int = 2) -> gpd.GeoDataFrame:
     return gdf
 
 
+# Load single Gaza Strip boundary polygon (admin level 1)
 def load_gaza_strip_boundary() -> Polygon:
     """
     Load the official Gaza Strip boundary from OCHA admin1 file.
@@ -120,12 +122,14 @@ def load_gaza_strip_boundary() -> Polygon:
     return gdf.iloc[0].geometry
 
 
+# Reproject geometry between coordinate reference systems
 def reproject_geo(geo: Geometry, current_crs: str, target_crs: str) -> Geometry:
     """Reprojects a Shapely geometry from the current CRS to a new CRS."""
     transformer = Transformer.from_crs(current_crs, target_crs, always_xy=True)
     return transform(transformer.transform, geo)
 
 
+# Find optimal UTM CRS for accurate area/distance calculations
 def get_best_utm_crs_from_gdf(gdf: gpd.GeoDataFrame) -> str:
     """Get the best UTM CRS for the given GeoDataFrame."""
     mean_lon = gdf.geometry.unary_union.centroid.x
