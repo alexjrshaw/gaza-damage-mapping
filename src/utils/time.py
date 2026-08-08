@@ -4,6 +4,7 @@ Timing utilities and decorators for pipeline performance logging.
 import time
 
 
+# Timing decorator
 def timeit(func):
     def wrapper(*args, **kwargs):
         start = time.time()

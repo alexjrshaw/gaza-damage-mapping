@@ -13,6 +13,7 @@ from src.constants import ASSETS_PATH, DATA_PATH
 # Local data
 
 
+# Label loading
 def load_unosat_labels(
     aoi: str | list[str] | None = None,
     labels_to_keep: list[int] = [1, 2],
@@ -91,6 +92,7 @@ def load_unosat_aois() -> gpd.GeoDataFrame:
     return gpd.read_file(aoi_fp)
 
 
+# AOI geometry loading
 def load_unosat_geo(aoi: str) -> Polygon:
     """
     Get the geometry of the given AOI.
@@ -531,6 +533,7 @@ def upload_gaza_unosat_to_gee(aois: list[str] | None = None) -> None:
     print("\nAll uploads complete.")
 
 
+# Entry point
 if __name__ == "__main__":
     import sys
 

@@ -5,6 +5,7 @@ Adapted from Dietrich et al.'s (2025a) reducer utilities.
 import ee
 
 
+# SAR statistical reducers
 def get_reducers(names: list) -> ee.Reducer:
     """Get a reducer that combines all the individual Reducers"""
 

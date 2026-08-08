@@ -42,6 +42,7 @@ from src.data.utils import read_fp_within_geo
 
 # Paths
 
+# Paths
 ABLATION_DIR = DATA_PATH / "ablation_runs" / "pixel_level"
 PROB_RASTERS_BASE = DATA_PATH / "probability_rasters_ablation"
 MERGED_RASTERS_BASE = DATA_PATH / "merged_probability_rasters_ablation"
@@ -52,6 +53,7 @@ ABLATION_DIR.mkdir(parents=True, exist_ok=True)
 
 # Orbits / feature config
 
+# Configuration
 ORBITS = [87, 94, 160]
 ALL_REDUCERS = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
 THRESHOLD_TARGET = 0.670
@@ -61,6 +63,7 @@ SPATIAL_WINDOW = 3
 # Results input/output
 
 
+# Results input/output
 def load_results() -> dict:
     if RESULTS_JSON.exists():
         with open(RESULTS_JSON) as f:
@@ -77,6 +80,7 @@ def save_results(results: dict) -> None:
 # Training
 
 
+# Model training
 def train_variant(
     variant_name: str,
     n_trees: int = 50,
@@ -163,6 +167,7 @@ def train_variant(
 # Inference
 
 
+# Tile classification
 def classify_tile_variant(data, band_names, clf, feature_cols):
     """Classify one tile with variant feature set."""
     n_bands, H, W = data.shape
@@ -183,6 +188,7 @@ def classify_tile_variant(data, band_names, clf, feature_cols):
     return prob_flat.reshape(H, W)
 
 
+# Pixel inference
 def run_inference_variant(
     variant_name: str,
     clf,
@@ -243,6 +249,7 @@ def run_inference_variant(
 # Merge tiles
 
 
+# Tile merging
 def merge_tiles_variant(variant_name: str, force_recreate: bool = False) -> list:
     """Merge quadkey tiles - Gaza-wide GeoTIFFs for this variant."""
     from osgeo import gdal
@@ -273,6 +280,7 @@ def merge_tiles_variant(variant_name: str, force_recreate: bool = False) -> list
 # Pixel sampling
 
 
+# Raster sampling
 def extract_with_window(point, raster, window=3, agg="max"):
     """Sample raster at point location using a spatial window. Mirrors Dietrich et al. (2025a) evaluation methodology."""
     if window == 1:
@@ -287,6 +295,7 @@ def extract_with_window(point, raster, window=3, agg="max"):
     return patch.max().item() if agg == "max" else patch.mean().item()
 
 
+# UNOSAT point sampling
 def sample_rasters_at_unosat_points(
     variant_name: str,
     merged_fps: list,
@@ -361,6 +370,7 @@ def _safe_extract(pt, raster):
 # Evaluation
 
 
+# Evaluation
 def evaluate_variant(gdf_points: gpd.GeoDataFrame, threshold: float = THRESHOLD_TARGET) -> dict:
     """
     Compute F1, precision, recall, AUC at given threshold.
@@ -401,6 +411,7 @@ def evaluate_variant(gdf_points: gpd.GeoDataFrame, threshold: float = THRESHOLD_
 # Full variant pipeline
 
 
+# Full variant pipeline
 def run_variant_full(
     variant_name: str,
     n_trees: int = 50,
@@ -455,6 +466,7 @@ def run_variant_full(
 # OOB study (training-time only, no inference)
 
 
+# OOB study
 def run_oob_study(results: dict) -> dict:
     """OOB error vs n_trees and vs max_features. No inference needed."""
     if "oob_n_trees" in results:
@@ -511,6 +523,7 @@ def run_oob_study(results: dict) -> dict:
 
 # Main
 
+# Entry point
 if __name__ == "__main__":
     results = load_results()
 

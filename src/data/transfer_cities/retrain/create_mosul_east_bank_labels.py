@@ -18,11 +18,13 @@ and saves them as a new labels file, referenced by a new
 see note printed at the end of this script).
 
 Usage:
+# Apply spatial split
     python3 src/data/transfer_cities/retrain/create_mosul_east_bank_labels.py
 """
 
 import geopandas as gpd
 
+# Spatial split configuration
 LON_SPLIT = 43.1262  # must match main_local_mosul_retrain.py exactly
 
 INPUT_FP = "test_sites/processed/mos/unosat_labels.geojson"
@@ -61,5 +63,6 @@ def main():
     )
 
 
+# Entry point
 if __name__ == "__main__":
     main()

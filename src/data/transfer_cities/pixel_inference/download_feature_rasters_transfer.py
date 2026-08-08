@@ -26,6 +26,7 @@ LOCAL_BASE = DATA_PATH / "transfer_cities" / "feature_rasters"
 DELETE_AFTER_DOWNLOAD = True
 
 
+# Download
 def download_city(city_id: str, delete: bool = DELETE_AFTER_DOWNLOAD) -> None:
     cfg = TRANSFER_CITIES[city_id]
     pre_period = cfg["pre_period"]
@@ -82,6 +83,7 @@ def download_city(city_id: str, delete: bool = DELETE_AFTER_DOWNLOAD) -> None:
     print(f"\nDone: {n_downloaded} downloaded, {n_skipped} skipped.")
 
 
+# Entry point
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--city", type=str, required=True)

@@ -86,6 +86,7 @@ def already_downloaded(window_str: str, orbit_str: str, filename: str) -> bool:
     return fp.exists() and fp.stat().st_size > 0
 
 
+# Download
 def download_orbit_folder(
     window_str: str,
     orbit_str: str,
@@ -158,6 +159,7 @@ def run_download_loop() -> None:
         time.sleep(POLL_INTERVAL)
 
 
+# Entry point
 if __name__ == "__main__":
     try:
         run_download_loop()

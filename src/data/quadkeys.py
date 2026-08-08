@@ -27,6 +27,7 @@ MIN_LON = -180
 MAX_LON = 180
 
 
+# GEE quadkey loading
 def load_gaza_quadkeys_gee(zoom: int) -> ee.FeatureCollection:
     """
     Load quadkeys grid for Gaza at a specified zoom level from a GEE asset.

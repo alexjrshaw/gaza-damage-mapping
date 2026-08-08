@@ -35,6 +35,7 @@ GOVERNORATE_ALIASES = {
 }
 
 
+# Helper functions
 def normalise_governorate_name(name):
     return GOVERNORATE_ALIASES.get(name.lower().strip(), name.lower().strip())
 
@@ -79,6 +80,7 @@ PANEL_LABELS = [
     "Dec 2025",
 ]
 
+# Colour configuration
 COLOUR_OLD = "#377eb8"
 COLOUR_NEW = "#ff7f00"
 
@@ -226,5 +228,6 @@ def main():
     print(f"\nSaved to {OUT_FP}")
 
 
+# Entry point
 if __name__ == "__main__":
     main()

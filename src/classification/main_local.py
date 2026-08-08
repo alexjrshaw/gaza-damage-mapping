@@ -44,6 +44,7 @@ RUNS_DIR.mkdir(exist_ok=True, parents=True)
 
 
 @timeit
+# Main pipeline
 def full_pipeline_local(cfg: DictConfig, force_recreate: bool = False) -> dict:
     """
     Full local pipeline from config to metrics.
@@ -141,6 +142,7 @@ def full_pipeline_local(cfg: DictConfig, force_recreate: bool = False) -> dict:
     return result_metrics
 
 
+# Classifier loading
 def load_or_create_classifier_local(
     cfg: DictConfig,
     force_recreate: bool = False,
@@ -163,6 +165,7 @@ def load_or_create_classifier_local(
     return clf
 
 
+# Model training
 def get_classifier_trained_local(cfg: DictConfig, verbose: int = 1) -> object:
     """
     Train classifier from config.
@@ -251,6 +254,7 @@ def get_sat_from_cfg_local(cfg: DictConfig) -> str:
     s1 = "s1" if cfg.data.s1 else None
 
 
+# Entry point
 if __name__ == "__main__":
     from src.constants import AOIS_TEST, DATA_PATH
 

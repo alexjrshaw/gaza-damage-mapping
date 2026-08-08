@@ -15,6 +15,7 @@ from omegaconf import OmegaConf
 from sklearn.ensemble import RandomForestClassifier
 from tqdm.auto import tqdm
 
+# Paths
 from src.constants import DATA_PATH, PRE_PERIOD
 from src.classification.dataset_local import get_dataset_ready_local
 from src.classification.utils import get_features_names

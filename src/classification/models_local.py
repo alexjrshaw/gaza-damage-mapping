@@ -14,6 +14,7 @@ from pathlib import Path
 from sklearn.ensemble import RandomForestClassifier
 
 
+# Classifier factory
 def classifier_factory_local(
     model_name: str = "random_forest",
     seed: int = 0,
@@ -54,6 +55,7 @@ def classifier_factory_local(
     return clf
 
 
+# Save and load helpers
 def save_classifier_local(clf: RandomForestClassifier, fp: Path) -> None:
     """
     Save classifier to disk as pickle.

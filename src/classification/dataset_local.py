@@ -13,6 +13,7 @@ FEATURES_DIR = DATA_PATH / "features_ready"
 EXTRACT_WIND = "1x1"
 
 
+# Dataset preparation
 def get_dataset_ready_local(
     sat: str = "s1",
     split: str = "train",

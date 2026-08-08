@@ -253,5 +253,6 @@ def run_local_inference(
 
 # Main
 
+# Entry point
 if __name__ == "__main__":
     run_local_inference(force_recreate=True)

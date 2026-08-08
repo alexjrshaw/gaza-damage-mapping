@@ -17,21 +17,26 @@ from src.classification.ablation.ablation_pixel_level import sample_rasters_at_u
 from src.classification.metrics import get_metrics
 from src.constants import DATA_PATH, AOIS_TEST
 
+# Paths
 MERGED_DIR = DATA_PATH / "merged_probability_rasters"
+# Load merged rasters
 merged_fps = sorted(MERGED_DIR.glob("gaza_w*.tif"))
 print(f"Found {len(merged_fps)} merged rasters (should be 20)")
 
+# Sample at UNOSAT points
 gdf_points = sample_rasters_at_unosat_points(
     variant_name="current_verified",
     merged_fps=merged_fps,
     force_recreate=True,
 )
 
+# Filter to test set
 gdf_test = gdf_points[gdf_points.aoi.isin(AOIS_TEST)].copy()
 gdf_test = gdf_test[gdf_test.damage.isin([1, 2])].copy()
 gdf_test["date"] = pd.to_datetime(gdf_test["date"])
 
 print(f"\nSweeping thresholds (step=0.005) against {len(gdf_test):,} test points...")
+# Threshold sweep
 results = []
 for t in np.arange(0.0, 1.005, 0.005):
     m = get_metrics(gdf_test, threshold=t, method="date-wise", print_classification_report=False)
@@ -41,6 +46,7 @@ for t in np.arange(0.0, 1.005, 0.005):
             f"  t={t:.3f}: precision={m['precision']:.3f}, recall={m['recall']:.3f}, f1={m['f1']:.3f}  <-- near 90% precision"
         )
 
+# Find optimal threshold
 df_results = pd.DataFrame(results)
 df_results.to_csv(DATA_PATH / "threshold_sweep_current_results.csv", index=False)
 

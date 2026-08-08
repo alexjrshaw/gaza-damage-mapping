@@ -29,6 +29,7 @@ import pandas as pd
 
 from src.constants import DATA_PATH, GAZA_WAR_START
 
+# Threshold
 THRESHOLD = int(
     0.670 * 255
 )  # = Gaza calibrated threshold (t=0.670; 90% precision target)
@@ -36,6 +37,7 @@ INPUT_FP = DATA_PATH / "pixel_postprocessing/buildings_preds.parquet"
 OUTPUT_FP = DATA_PATH / "pixel_postprocessing/buildings_damage.parquet"
 
 
+# Equation 3 application
 def apply_equation3(threshold: int = THRESHOLD) -> pd.DataFrame:
     """
     Apply Dietrich et al. Equation 3 to produce binary building damage.
@@ -95,5 +97,6 @@ def apply_equation3(threshold: int = THRESHOLD) -> pd.DataFrame:
     return result
 
 
+# Entry point
 if __name__ == "__main__":
     apply_equation3()

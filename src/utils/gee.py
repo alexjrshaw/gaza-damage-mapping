@@ -114,6 +114,7 @@ def create_folders_recursively(full_path: str, last_one_is_asset: bool = False):
 # Functions moved from src/inference/dense_inference.py (now deleted). See git history for original.
 
 
+# Feature computation
 def col_to_features(
     col: ee.ImageCollection,
     reducer_names: list[str],
@@ -157,6 +158,7 @@ def col_to_features(
     return s1_features
 
 
+# Orbit selection
 def find_orbits(
     s1: ee.FeatureCollection,
     time_periods: dict[str, tuple[str, str]],

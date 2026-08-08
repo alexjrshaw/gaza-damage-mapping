@@ -18,11 +18,13 @@ import pandas as pd
 
 from src.constants import DATA_PATH
 
+# Paths
 DAMAGE_FP = DATA_PATH / "pixel_postprocessing/buildings_damage.parquet"
 RAW_HOTOSM_FP = DATA_PATH / "raw/hotosm_pse_buildings_polygons_geojson.geojson"
 MIN_BUILDINGS_PER_TYPE = 20  # exclude very small categories from the headline table
 
 
+# Main
 def main():
     print("Loading building damage classifications...")
     damage = pd.read_parquet(DAMAGE_FP)
@@ -66,5 +68,6 @@ def main():
     print(f"\nSaved to {out_fp}")
 
 
+# Entry point
 if __name__ == "__main__":
     main()

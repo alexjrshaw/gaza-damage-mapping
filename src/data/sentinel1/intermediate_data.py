@@ -56,6 +56,7 @@ def create_fc_aoi_orbit(
     )
     s1 = fill_nan_with_mean(s1)
 
+# Time series extraction
     def extract_image(img):
         """Extract VV and VH at all points for one image using reduceRegions."""
         return (
@@ -82,6 +83,7 @@ def create_fc_aoi_orbit(
     return fc_extracted
 
 
+# Entry point
 if __name__ == "__main__":
     from src.data.utils import aoi_orbit_iterator
 

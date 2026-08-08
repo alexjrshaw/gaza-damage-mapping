@@ -92,6 +92,7 @@ CITIES = [
 ]
 
 
+# Preprocessing
 def preprocess_city(city: dict) -> None:
     city_id = city["city_id"]
     city_name = city["city_name"]
@@ -202,5 +203,6 @@ def main() -> None:
             print(f"  {city['city_name']:<12} MISSING")
 
 
+# Entry point
 if __name__ == "__main__":
     main()

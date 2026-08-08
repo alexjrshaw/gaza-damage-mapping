@@ -42,6 +42,7 @@ def load_country_boundaries(country: str) -> tuple[Polygon, MultiPolygon]:
     return gpd.read_file(fp).iloc[0].geometry
 
 
+# Boundary download
 def download_gaza_admin_boundaries() -> None:
     """
     Download Gaza/Palestine admin boundaries from OCHA HDX if not already present.
@@ -68,6 +69,7 @@ def download_gaza_admin_boundaries() -> None:
     print("Done")
 
 
+# Boundary loading
 def load_gaza_admin_polygons(adm_level: int = 2) -> gpd.GeoDataFrame:
     """
     Load Gaza Strip admin polygons at the specified level.

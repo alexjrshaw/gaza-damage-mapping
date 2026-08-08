@@ -9,6 +9,7 @@ from sklearn import metrics
 from src.constants import GAZA_WAR_START
 
 
+# Evaluation metrics
 def get_metrics(
     gdf: gpd.GeoDataFrame,
     threshold: float = 0.5,

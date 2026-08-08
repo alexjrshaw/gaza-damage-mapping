@@ -11,6 +11,7 @@ import xarray as xr
 from src.constants import DATA_PATH
 
 
+# Pixel vectorisation helper
 def vectorise_xarray_3d(xa: xr.DataArray, dates: list[str]) -> gpd.GeoDataFrame:
     """
     Vectorise a 3D xarray.DataArray to a GeoDataFrame.

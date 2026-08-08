@@ -6,6 +6,7 @@ import ee
 from src.constants import S1_BANDS
 
 
+# Image collection
 def get_s1_collection(geo=None, start="1900-01-01", end="2099-12-31", orbit=None):
     # Load Sentinel-1 collection
     s1 = (

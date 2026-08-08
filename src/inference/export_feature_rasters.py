@@ -46,6 +46,7 @@ init_gee(project="gaza-damage-mapping")
 
 
 RUN_NAME = "gaza_feature_rasters"
+# Configuration
 QUADKEY_ZOOM = 12  # Same quadkey zoom as Dietrich et al. original pipeline - ~2.4km² tiles
 SCALE = 10  # 10m resolution - same as Dietrich et al.
 ORBITS = [87, 94, 160]  # Gaza S1 orbits
@@ -56,6 +57,7 @@ LOCAL_BASE = DATA_PATH / "feature_rasters"
 
 
 
+# Feature raster export
 def export_feature_rasters_for_window(
     post_period: tuple[str, str],
     window_str: str,
@@ -138,6 +140,7 @@ def _filter_existing(ids: list[str], drive_folder: str, local_dir: Path = None) 
 
 
 
+# Entry point
 if __name__ == "__main__":
     # All 20 windows: 1 pre-period baseline + 19 post windows
     # Window 1 (w01) = PRE_PERIOD post window - label=0 reference

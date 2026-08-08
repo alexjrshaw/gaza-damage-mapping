@@ -19,6 +19,7 @@ def aoi_orbit_iterator():
             yield aoi, orbit
 
 
+# AOI helpers
 def get_all_aois():
     """Return all AOIs"""
     from src.constants import AOIS
@@ -26,6 +27,7 @@ def get_all_aois():
     return AOIS
 
 
+# Raster reading
 def read_fp_within_geo(fp: Path, geo: shapely.GeometryType) -> xr.DataArray:
     """Read a raster file within a given geometry."""
     fp = Path(fp) if isinstance(fp, str) else fp

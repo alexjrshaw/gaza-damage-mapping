@@ -19,6 +19,7 @@ HOTOSM_RAW_FP = DATA_PATH / "raw/hotosm_pse_buildings_polygons_geojson.geojson"
 
 
 @timeit
+# Download
 def download_hotosm_buildings() -> None:
     """
     Download HOTOSM building footprints for Palestine from HDX.

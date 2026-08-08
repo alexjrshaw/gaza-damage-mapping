@@ -38,6 +38,7 @@ REDUCER_NAMES = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
 ALL_AOIS = list(AOIS_TRAIN) + list(AOIS_TEST)
 
 
+# Statistical feature computation
 def compute_stats(series: pd.Series) -> dict:
     return {
         "mean": series.mean(),
@@ -50,6 +51,7 @@ def compute_stats(series: pd.Series) -> dict:
     }
 
 
+# Feature computation per window
 def compute_features_for_window(
     df: pd.DataFrame,
     pre_period: tuple[str, str],
@@ -179,6 +181,7 @@ def extract_features_local(
     return result
 
 
+# Entry point
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--split_strategy", default="aoi", choices=["aoi", "random_per_aoi"])

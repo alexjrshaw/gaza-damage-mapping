@@ -132,5 +132,6 @@ def main():
     print(f"\nSaved full data to {OUT_FP}")
 
 
+# Entry point
 if __name__ == "__main__":
     main()

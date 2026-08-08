@@ -210,6 +210,7 @@ def export_feature_rasters_city(
         print("Run download script while tasks complete to free Drive space.")
 
 
+# Entry point
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--city", type=str, required=True)

@@ -51,6 +51,7 @@ def sample_merged_raster(tiles: list, gdf: gpd.GeoDataFrame) -> np.ndarray:
         merged[merged == 0] = np.nan
         half = WINDOW_SIZE // 2
 
+# Threshold sweep
         results = []
         for geom in gdf.geometry:
             col, row = ~transform * (geom.x, geom.y)
@@ -164,6 +165,7 @@ def report(label: str, city_id: str):
         print(f"    {k}: {v}")
 
 
+# Entry point
 if __name__ == "__main__":
     report(
         "MOSUL - RETRAINED (trained on west bank, evaluated on east bank)",

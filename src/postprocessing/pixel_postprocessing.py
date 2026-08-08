@@ -369,5 +369,6 @@ def pixel_postprocessing(force_recreate: bool = False) -> pd.DataFrame:
     return aggregate_all_preds()
 
 
+# Entry point
 if __name__ == "__main__":
     pixel_postprocessing()

@@ -90,6 +90,7 @@ def load_tile(fp: Path) -> tuple[np.ndarray, list[str], dict]:
 # Classification
 
 
+# Tile classification
 def classify_tile(
     data: np.ndarray,
     band_names: list[str],
@@ -117,6 +118,7 @@ def classify_tile(
     return prob_flat.reshape(H, W)
 
 
+# Orbit aggregation
 def aggregate_orbits(
     probs: list[np.ndarray],
     method: str = "mean",
@@ -308,5 +310,6 @@ def run_local_inference(
 
 # Main
 
+# Entry point
 if __name__ == "__main__":
     run_local_inference(force_recreate=True)

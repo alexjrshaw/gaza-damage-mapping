@@ -86,6 +86,7 @@ def download_intermediate_asset(aoi: str, orbit: int, force: bool = False) -> Pa
     return fp
 
 
+# Entry point
 if __name__ == "__main__":
     print("Downloading all intermediate assets to local cache...")
     print(f"Cache directory: {CACHE_DIR}")

@@ -13,6 +13,7 @@ AOIS = AOIS_TRAIN + AOIS_TEST
 
 S1_BANDS = ["VV", "VH"]
 
+# Key dates
 GAZA_WAR_START = "2023-10-07"
 
 # Time periods
@@ -48,6 +49,7 @@ SRC_PATH = constants_path.parent
 PROJECT_PATH = SRC_PATH.parent
 
 SECRETS_PATH = PROJECT_PATH / "secrets"
+# Paths
 DATA_PATH = PROJECT_PATH / "data"
 OVERTURE_PATH = DATA_PATH / "hotosm_buildings"
 

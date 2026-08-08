@@ -46,11 +46,13 @@ from src.data.transfer_cities.constants_transfer import TRANSFER_CITIES
 
 TRANSFER_PROB_BASE = DATA_PATH / "transfer_cities" / "probability_rasters"
 TRANSFER_RUNS_DIR = DATA_PATH / "transfer_cities" / "runs"
+# Configuration
 WINDOW_SIZE = 3  # 3×3 pixel window, mirrors Dietrich et al.
 THRESHOLDS = [0.5, 0.670]  # 0.5 default; 0.670 Gaza-calibrated (90% precision target)
 USABLE_THRESHOLD_PCT = 50.0
 
 
+# Raster sampling
 def sample_merged_raster(tiles: list, gdf: gpd.GeoDataFrame) -> np.ndarray:
     """
     Merge quadkey tiles and sample at UNOSAT points with 3x3 window.
@@ -214,6 +216,7 @@ def evaluate_pixel_city(city_id: str) -> dict:
     return results
 
 
+# Entry point
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--city", type=str, default="RAQ")

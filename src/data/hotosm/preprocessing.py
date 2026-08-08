@@ -230,5 +230,6 @@ def add_admin_info() -> None:
     print(gdf_all["adm2_name"].value_counts().to_string())
 
 
+# Entry point
 if __name__ == "__main__":
     process_hotosm()
