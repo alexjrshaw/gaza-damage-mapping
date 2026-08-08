@@ -12,7 +12,7 @@ in evaluation would inflate its apparent performance relative to the
 zero-shot result, which is tested on points it never saw.
 
 This script filters Mosul's UNOSAT labels to east-bank points only
-(lon >= 43.1262, the same split boundary used in main_local_mosul_retrain.py)
+(lon >= 43.1262°E, the same split boundary used in main_local_mosul_retrain.py)
 and saves them as a new labels file, referenced by a new
 "MOS_RETRAINED_EAST_ONLY" entry in constants_transfer.py (added manually;
 see note printed at the end of this script).
