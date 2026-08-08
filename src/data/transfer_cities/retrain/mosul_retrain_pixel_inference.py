@@ -47,13 +47,13 @@ from src.constants import DATA_PATH, PRE_PERIOD
 # Adaptation 1: Mosul's orbits, not Gaza's (87, 94, 160).
 ORBITS = [72, 145, 152]
 
-# Adaptation 3: Mosul's existing transfer-city raster folders.
+# Adaptation 2: Mosul's existing transfer-city raster folders.
 FEATURE_RASTERS_DIR = DATA_PATH / "transfer_cities" / "feature_rasters" / "MOS"
 PROBABILITY_RASTERS_DIR = (
     DATA_PATH / "transfer_cities" / "probability_rasters" / "MOS_RETRAINED_EAST_ONLY"
 )
 
-# Adaptation 2: the Mosul-retrained model, not Gaza's baseline model.
+# Adaptation 3: the Mosul-retrained model, not Gaza's baseline model.
 MODEL_FP = DATA_PATH / "transfer_cities" / "runs" / "MOS_retrained" / "model.pkl"
 
 # Unchanged from local_pixel_inference.py: same feature config, same

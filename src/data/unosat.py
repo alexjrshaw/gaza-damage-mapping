@@ -436,7 +436,7 @@ def upload_gaza_unosat_to_gee(aois: list[str] | None = None) -> None:
         print(f"  Uploading {len(gdf)} features -> {asset_id.split('/')[-1]}")
         while not asset_exists(asset_id):
             time.sleep(5)
-        print(f"  ✓ Done")
+        print(f"  Done")
 
     def upload_chunked(gdf, asset_id, description, chunk_size=5000):
         """Upload a large GeoDataFrame in chunks, then merge into one asset."""
@@ -482,7 +482,7 @@ def upload_gaza_unosat_to_gee(aois: list[str] | None = None) -> None:
         # Clean up temporary chunks
         for chunk_id in chunk_ids:
             ee.data.deleteAsset(chunk_id)
-        print(f"  ✓ Done ({n} features merged)")
+        print(f"  Done ({n} features merged)")
 
     # Feature count threshold above which I use chunked upload
     CHUNK_THRESHOLD = 30000

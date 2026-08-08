@@ -68,7 +68,7 @@ def first_damaged_window_index(
     """
     max_pre = row[pre_cols].max()
     if max_pre >= THRESHOLD:
-        return None  # excluded by Equation 3's pre-war condition -- never "damaged"
+        return None  # excluded by Equation 3's pre-war condition - never "damaged"
     for i, col in enumerate(post_cols):
         if row[col] >= THRESHOLD:
             return i

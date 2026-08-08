@@ -2,7 +2,7 @@
 Preprocess HOTOSM building footprints for Gaza.
 
 Replaces the Overture Maps pipeline used for Ukraine (overture/preprocessing.py),
-following Scher & Van Den Hoek (2025) who identify HOTOSM as the most
+following Scher and Van Den Hoek (2025b) who identify HOTOSM as the most
 comprehensive pre-conflict building footprint dataset for Gaza.
 
 The structure and logic follows Dietrich et al. (2025) exactly, with three
@@ -47,7 +47,7 @@ def process_hotosm() -> None:
         3. Add admin info
     """
 
-    # Step 1 - Download if needed
+    # Download if needed
     download_hotosm_buildings()
 
     # Keep only buildings within Gaza Strip and relevant properties

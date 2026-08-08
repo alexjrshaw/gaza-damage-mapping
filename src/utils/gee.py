@@ -127,7 +127,7 @@ def col_to_features(
         col (ee.ImageCollection): The collection to convert.
         reducer_names (list[str]): The reducer names.
         time_periods (dict[str, tuple[str, str]]): The time periods. ({pre: (start, end), post: (start, end)})
-        extract_window (str): The window to extract, eg 1x1.
+        extract_window (str): The window to extract, e.g. 1x1.
 
     Returns:
         ee.Image: The image with all features.
@@ -139,7 +139,7 @@ def col_to_features(
     original_col_names = [f"{b}_{r}" for b in ["VV", "VH"] for r in reducer_names]
 
     if int(extract_window[0]) > 1:
-        # convolve (similar to looking at a larger window) with radius (eg 15m for 3x3 window)
+        # convolve (similar to looking at a larger window) with radius (e.g. 15m for 3x3 window)
         col = convolve_collection(col, 10 * int(extract_window[0]) // 2, "square", "meters")
 
     # Extract features for each time period
@@ -167,7 +167,7 @@ def find_orbits(
     for _, (start, end) in time_periods.items():
         s1_ = s1.filterDate(start, end)
         orbits_counts = s1_.aggregate_histogram("relativeOrbitNumber_start")
-        # At least 5 images per orbit (two months of data)
+        # At least min_number images per orbit across the time period
         orbits_counts = orbits_counts.map(
             lambda k, v: ee.Algorithms.If(ee.Number(v).gte(min_number), k, None)
         )

@@ -11,16 +11,16 @@ import xarray as xr
 from src.constants import DATA_PATH
 
 
-def vectorize_xarray_3d(xa: xr.DataArray, dates: list[str]) -> gpd.GeoDataFrame:
+def vectorise_xarray_3d(xa: xr.DataArray, dates: list[str]) -> gpd.GeoDataFrame:
     """
-    Vectorize a 3D xarray.DataArray to a GeoDataFrame.
+    Vectorise a 3D xarray.DataArray to a GeoDataFrame.
 
     Essentially, creates a square polygon around each pixel, and assign the values of each band to the polygon.
     Probably not the most optimal way to do it, but it works.
 
     Args:
         xa (xr.DataArray): The 3D xarray.
-        dates (list[str]): The dates to vectorize.
+        dates (list[str]): The dates to vectorise.
 
     Returns:
         gpd.GeoDataFrame: The GeoDataFrame.

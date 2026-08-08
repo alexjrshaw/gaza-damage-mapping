@@ -2,7 +2,7 @@
 Download HOTOSM building footprints for Gaza from HDX.
 
 Source: Humanitarian OpenStreetMap Team (HOTOSM)
-Reference: Scher & Van Den Hoek (2025) identify HOTOSM as the most
+Reference: Scher and Van Den Hoek (2025b) identify HOTOSM as the most
 comprehensive pre-conflict building footprint dataset for Gaza.
 URL: https://data.humdata.org/dataset/hotosm_pse_buildings
 """
