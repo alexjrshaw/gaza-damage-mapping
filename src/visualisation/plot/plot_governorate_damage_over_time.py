@@ -107,7 +107,7 @@ for gov in govs:
             color=s["color"], linestyle=s["ls"], linewidth=s["lw"],
             marker="o", markersize=3, zorder=3, label=gov)
 
-# End-of-line labels — staggered to avoid overlap
+# End-of-line labels - staggered to avoid overlap
 last_date = df["Date"].iloc[-1]
 # Sort by final value to assign staggered y offsets
 final_vals = {gov: df[gov].iloc[-1] for gov in govs}

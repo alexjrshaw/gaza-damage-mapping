@@ -179,7 +179,7 @@ def main():
     )
     axes_flat = axes.flat
 
-    # Plot each assessment window as a panel — blue = previously damaged, orange = newly detected
+    # Plot each assessment window as a panel - blue = previously damaged, orange = newly detected
     for i, label in enumerate(PANEL_LABELS):
         ax = axes_flat[i]
 
