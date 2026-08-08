@@ -1,5 +1,4 @@
 """
-# Cumulative count: once classified as damaged, always damaged in subsequent windows
 Per-governorate cumulative damage over time. Mirrors the kind of governorate-by-
 governorate, date-by-date figures Scher and Van Den Hoek (2025b) report for Gaza.
 
@@ -79,6 +78,7 @@ def first_damaged_window_index(
 
 def main():
     print("Loading building predictions...")
+    # Load building-level damage classifications (output of classify_building_damage.py)
     df = pd.read_parquet(PREDS_FP)
     print(f"  {len(df):,} buildings")
     print(f"  Governorates: {sorted(df['adm2_name'].unique())}")
@@ -86,6 +86,7 @@ def main():
     print(
         "Finding first-detected window index per building (Equation 3, pre-war exclusion applied)..."
     )
+    # Find the first conflict-period window in which each building crosses the threshold
     df["first_idx"] = df.apply(
         lambda row: first_damaged_window_index(row, PRE_WINDOW_COLS, POST_WINDOW_COLS), axis=1
     )
@@ -96,6 +97,7 @@ def main():
     )
     print("  (Should match Table 1's total: 151,368 / 220,820 = 68.5%)")
 
+    # Compute cumulative percentage damaged for each governorate and window
     governorates = sorted(df["adm2_name"].unique())
     results = []
 
@@ -103,6 +105,7 @@ def main():
         gov_df = df[df["adm2_name"] == gov]
         n_total = len(gov_df)
         for i, end_date in enumerate(WINDOW_END_DATES):
+            # Cumulative: once damaged in any previous window, remains damaged
             n_damaged = (gov_df["first_idx"] <= i).sum()
             # Express as percentage of total buildings studied in each governorate
             pct = n_damaged / n_total * 100
@@ -118,6 +121,7 @@ def main():
 
     results_df = pd.DataFrame(results)
 
+    # Pivot to wide format for inspection and export
     pivot = results_df.pivot(
         index="governorate", columns="window_end_date", values="pct_damaged_cumulative"
     )

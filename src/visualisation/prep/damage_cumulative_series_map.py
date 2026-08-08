@@ -125,10 +125,12 @@ def boundary_xy_parts(geom):
 
 def main():
     print("Loading building predictions...")
+    # Load building-level damage predictions (all windows)
     df = pd.read_parquet(PREDS_FP)
     print(f"  {len(df):,} buildings")
 
     print("Finding first-detected window per building (full Equation 3)...")
+    # Find first conflict-period window where each building crosses the threshold (Equation 3)
     df["first_idx"] = df.apply(
         lambda row: first_damaged_window_index(row, PRE_WINDOW_COLS, POST_WINDOW_COLS),
         axis=1,
@@ -137,6 +139,7 @@ def main():
     print(f"  {n_damaged:,} damaged ({n_damaged/len(df)*100:.1f}%)")
 
     print("Building GeoDataFrame, reprojecting to UTM...")
+    # Reconstruct building centroids from WKB geometry and reproject to UTM for plotting
     df["geometry"] = df["geometry_wkb"].apply(lambda x: wkb_loads(bytes(x)))
     gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326").to_crs(UTM_CRS)
 
@@ -149,6 +152,7 @@ def main():
     gaza_boundary = admin2.dissolve().geometry.iloc[0]
     print(f"  {len(admin2)} governorates matched")
 
+    # Rotate points so Gaza Strip runs north-south on the page
     print("Computing north-up rotation...")
     centroids = np.array([(g.centroid.x, g.centroid.y) for g in gdf.geometry])
     rotation_deg = compute_rotation_angle(centroids)
@@ -175,6 +179,7 @@ def main():
     )
     axes_flat = axes.flat
 
+    # Plot each assessment window as a panel — blue = previously damaged, orange = newly detected
     for i, label in enumerate(PANEL_LABELS):
         ax = axes_flat[i]
 
