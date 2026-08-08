@@ -41,8 +41,6 @@ from src.data.unosat import load_unosat_labels
 from src.data.utils import read_fp_within_geo
 
 # Paths
-
-# Paths
 ABLATION_DIR = DATA_PATH / "ablation_runs" / "pixel_level"
 PROB_RASTERS_BASE = DATA_PATH / "probability_rasters_ablation"
 MERGED_RASTERS_BASE = DATA_PATH / "merged_probability_rasters_ablation"
@@ -368,8 +366,6 @@ def _safe_extract(pt, raster):
 
 # Evaluation
 
-
-# Evaluation
 def evaluate_variant(gdf_points: gpd.GeoDataFrame, threshold: float = THRESHOLD_TARGET) -> dict:
     """
     Compute F1, precision, recall, AUC at given threshold.
@@ -409,8 +405,6 @@ def evaluate_variant(gdf_points: gpd.GeoDataFrame, threshold: float = THRESHOLD_
 
 # Full variant pipeline
 
-
-# Full variant pipeline
 def run_variant_full(
     variant_name: str,
     n_trees: int = 50,

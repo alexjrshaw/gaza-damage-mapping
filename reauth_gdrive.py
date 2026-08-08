@@ -1,5 +1,5 @@
 """
-One-off re-authorization for Google Drive access, using CommandLineAuth
+One-off re-authorisation for Google Drive access, using CommandLineAuth
 instead of LocalWebserverAuth. No port forwarding or local webserver
 needed. Just visit the printed URL on any device, approve access and
 paste the verification code back here.
@@ -16,7 +16,7 @@ from src.constants import SECRETS_PATH
 GoogleAuth.DEFAULT_SETTINGS["client_config_file"] = str(SECRETS_PATH / "client_secrets.json")
 gauth = GoogleAuth(settings_file=str(SECRETS_PATH / "pydrive_settings.yaml"))
 
-print("Starting command-line authorization...")
+print("Starting command-line authorisation...")
 print("A URL will appear below. Open it on any device's browser, sign in,")
 print("approve access, then copy the verification code shown and paste it here.")
 print()
@@ -24,5 +24,5 @@ print()
 gauth.CommandLineAuth()
 
 print()
-print("Authorization successful. Credentials saved to:")
+print("Authorisation successful. Credentials saved to:")
 print(f"  {SECRETS_PATH / 'pydrive_credentials.json'}")

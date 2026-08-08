@@ -62,8 +62,7 @@ def load_and_split_mosul() -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Load Mosul features, join geometry, apply east/west spatial split.
 
-    Adaptation 2 (see module docstring): spatial split on longitude,
-    not Gaza's AOI-based split, since Mosul has no AOI subdivisions.
+    Spatial split on longitude, not Gaza's AOI-based split, since Mosul has no AOI subdivisions.
 
     Returns (df_train, df_test). df_test is retained here only to report
     its size; pixel-level test-set geometry filtering happens later, in
