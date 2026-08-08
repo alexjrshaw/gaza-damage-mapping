@@ -2,7 +2,7 @@
 
 **Alex Shaw, MSc GIS, University of Edinburgh**
 
-This repository adapts the open-source war damage mapping pipeline developed by [Dietrich et al. (2025)](https://www.nature.com/articles/s43247-025-02183-7) for Ukraine to the Gaza Strip, and tests whether the Gaza-trained model generalises to three further conflicts (Mosul, Raqqa, Aleppo) without retraining.
+This repository adapts the open-source war damage mapping model developed by [Dietrich et al. (2025)](https://www.nature.com/articles/s43247-025-02183-7) for Ukraine to the Gaza Strip, and tests whether the Gaza-trained model generalises to three further conflicts (Mosul, Raqqa, Aleppo) without retraining.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -222,15 +222,15 @@ python3 src/data/hotosm/preprocessing.py
 
 **Admin boundaries**: downloaded automatically from OCHA HDX.
 
-**Sentinel-1**: processed via Google Earth Engine (see pipeline below).
+**Sentinel-1**: processed via Google Earth Engine (see workflow below).
 
 ---
 
-## Running the pipeline
+## Running the workflow
 
-### A. Gaza (main pipeline)
+### A. Gaza (main workflow)
 
-Steps 1–4 require internet access and should run interactively on the login node in a persistent `screen` session.
+Steps requiring internet access (1, 2, 5, 6) should run interactively on the login node.
 
 **1. Extract Sentinel-1 time series (GEE)**
 ```bash
@@ -322,7 +322,7 @@ python3 src/data/transfer_cities/retrain/mosul_optimal_threshold.py
 
 ### D. Ablation study
 
-Run after Step 4 of the Gaza pipeline.
+Run after Steps 4–6 of the Gaza workflow.
 
 **1. Pixel-level ablation (number of trees, polarisation, SAR statistics)**
 ```bash
