@@ -54,53 +54,92 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 ---
 ## Project structure
 ```
+aligned = """```
 gaza-damage-mapping/
-├── check_environment.py              # Verifies all required packages are installed
-├── reauth_gdrive.py                  # Refreshes Google Drive credentials
-├── requirements.txt                  # Pinned direct dependencies
-├── setup.py / setup.cfg / pyproject.toml  # Package metadata
-├── LICENSE / README.md / .gitignore  # Licence, docs, ignored paths
-├── secrets/.gitkeep                  # Placeholder for gitignored credentials
+├── check_environment.py                                  # Verifies all required packages are installed
+├── reauth_gdrive.py                                      # Refreshes Google Drive credentials
+├── requirements.txt                                      # Pinned direct dependencies
+├── setup.py / setup.cfg / pyproject.toml                 # Package metadata
+├── LICENSE / README.md / .gitignore                      # Licence, docs, ignored paths
+├── secrets/.gitkeep                                      # Placeholder for gitignored credentials
 │
 ├── src/
-│   ├── constants.py                  # Study areas, time periods, paths, thresholds
+│   ├── constants.py                                      # Study areas, time periods, paths, thresholds
 │   │
-│   ├── classification/               # Model training, evaluation and ablation
-│   │   ├── main_local.py             # Trains the production Random Forest
-│   │   ├── models_local.py           # scikit-learn classifier factory
-│   │   ├── dataset_local.py          # Train/test splits by governorate AOI
-│   │   ├── metrics.py                # Shared evaluation metrics
-│   │   ├── reducers.py               # SAR statistical reducers
-│   │   ├── utils.py                  # Run name and feature name helpers
-│   │   └── ablation/                 # Ablation and threshold calibration
-│   │       ├── ablation_pixel_level.py  # n_trees, polarisation, statistics ablation
-│   │       ├── ablation_mtry.py         # Full mtry sweep on complete training set
-│   │       └── threshold_sweep.py       # Gaza threshold calibration (90% precision)
+│   ├── classification/                                   # Model training, evaluation and ablation
+│   │   ├── main_local.py                                 # Trains the Random Forest; evaluates on test set
+│   │   ├── models_local.py                               # scikit-learn classifier factory
+│   │   ├── dataset_local.py                              # Train/test splits by AOI or random strategy
+│   │   ├── metrics.py                                    # Precision, recall, F1, balanced accuracy
+│   │   ├── reducers.py                                   # Pandas reimplementation of GEE SAR reducers
+│   │   ├── utils.py                                      # Run name and feature name helpers
+│   │   └── ablation/
+│   │       ├── ablation_pixel_level.py                   # n_trees, polarisation, statistics ablation
+│   │       ├── ablation_mtry.py                          # mtry sweep on the full training set
+│   │       └── threshold_sweep.py                        # Find lowest threshold achieving 90% precision
 │   │
-│   ├── data/                         # Data preparation and feature extraction
-│   │   ├── unosat.py                 # Label loading, epoch combining
-│   │   ├── quadkeys.py               # Quadkey tiling grid for GEE export
-│   │   ├── utils.py                  # AOI and data helpers
-│   │   ├── hotosm/                   # HOTOSM footprint download and filtering (2 scripts)
-│   │   ├── sentinel1/                # S1 collection, time series extraction (5 scripts)
-│   │   └── transfer_cities/          # Transfer city data and evaluation
-│   │       ├── constants_transfer.py    # Transfer city settings and orbits
-│   │       ├── preprocess_transfer_unosat.py  # Standardise UNOSAT fields
-│   │       ├── pixel_inference/         # Zero-shot inference and evaluation (4 scripts)
-│   │       └── retrain/                 # Mosul local retraining (5 scripts)
+│   ├── data/
+│   │   ├── unosat.py                                     # Load UNOSAT labels; combine multi-epoch records
+│   │   ├── quadkeys.py                                   # Zoom-12 quadkey tiling grid for GEE export
+│   │   ├── utils.py                                      # AOI loading and raster reading helpers
+│   │   ├── hotosm/
+│   │   │   ├── download.py                               # Download HOTOSM Gaza building footprints
+│   │   │   └── preprocessing.py                          # Filter footprints >= 50 m2
+│   │   ├── sentinel1/
+│   │   │   ├── collection.py                             # Sentinel-1 GEE image collection builder
+│   │   │   ├── orbits.py                                 # Orbit metadata and filtering utilities
+│   │   │   ├── intermediate_data.py                      # VV/VH time series at UNOSAT locations
+│   │   │   ├── download_intermediate_assets.py           # GEE exports to Forth
+│   │   │   └── extract_features_local.py                 # 28 SAR features via pandas
+│   │   └── transfer_cities/
+│   │       ├── constants_transfer.py                     # City settings: orbits, periods, windows
+│   │       ├── preprocess_transfer_unosat.py             # Standardise UNOSAT fields
+│   │       ├── pixel_inference/
+│   │       │   ├── export_feature_rasters_transfer.py    # GEE raster export
+│   │       │   ├── download_feature_rasters_transfer.py  # Drive to Forth
+│   │       │   ├── pixel_inference_transfer.py           # Apply Gaza model
+│   │       │   └── evaluate_pixel_transfer.py            # Metrics at UNOSAT points
+│   │       └── retrain/
+│   │           ├── create_mosul_east_bank_labels.py      # Split at 43.1262 degrees E
+│   │           ├── main_local_mosul_retrain.py           # Train Mosul Random Forest
+│   │           ├── mosul_optimal_threshold.py            # 90% precision threshold
+│   │           ├── mosul_retrain_pixel_inference.py      # Apply Mosul model
+│   │           └── mos_zeroshot_at_044.py                # Zero-shot at t=0.44
 │   │
-│   ├── inference/                    # Gaza pixel-level inference (3 scripts)
-│   ├── postprocessing/               # Building-level classification (3 scripts)
-│   ├── utils/                        # GEE, Drive, geometry, timing helpers (4 scripts)
-│   └── visualisation/                # Figure generation
-│       ├── plot/                     # Chart scripts (5 scripts)
-│       └── prep/                     # Data preparation for figures (4 scripts)
+│   ├── inference/
+│   │   ├── export_feature_rasters.py                     # Export 28-band rasters from GEE
+│   │   ├── download_feature_rasters.py                   # Download rasters from Drive to Forth
+│   │   └── local_pixel_inference.py                      # Apply model; produce probability rasters
+│   │
+│   ├── postprocessing/
+│   │   ├── pixel_postprocessing.py                       # Area-weighted probability per building
+│   │   ├── classify_building_damage.py                   # Apply Equation 3 at t=0.670
+│   │   └── utils.py                                      # Shared postprocessing helpers
+│   │
+│   ├── utils/
+│   │   ├── gee.py                                        # GEE authentication and helpers
+│   │   ├── gdrive.py                                     # Google Drive input/output utilities
+│   │   ├── geo.py                                        # Boundary loading and geometry helpers
+│   │   └── time.py                                       # Timing decorator
+│   │
+│   └── visualisation/
+│       ├── plot/
+│       │   ├── plot_ablation_summary.py                  # Ablation balanced accuracy chart
+│       │   ├── plot_governorate_damage_over_time.py      # Damage by governorate
+│       │   ├── plot_oob_mtry.py                          # OOB error vs mtry
+│       │   ├── plot_oob_ntrees.py                        # OOB error vs n_trees
+│       │   └── plot_threshold_sweeps.py                  # Metrics vs threshold
+│       └── prep/
+│           ├── damage_by_building_type.py                # Damage by OSM building type
+│           ├── damage_by_governorate_over_time.py        # Cumulative damage by governorate
+│           ├── damage_cumulative_series_map.py           # 7x2 cumulative damage map series
+│           └── export_damaged_buildings.py               # Export damage to GeoPackage
 │
 └── test_sites/
-    └── processed/                    # Preprocessed UNOSAT labels and AOIs
-        ├── alp/                      # Aleppo
-        ├── mos/                      # Mosul (includes east-bank split)
-        └── raq/                      # Raqqa
+    └── processed/
+        ├── alp/                                          # Aleppo: UNOSAT labels and AOI boundary
+        ├── mos/                                          # Mosul: UNOSAT labels, AOI, east-bank split
+        └── raq/                                          # Raqqa: UNOSAT labels and AOI boundary
 ```
 ---
 
