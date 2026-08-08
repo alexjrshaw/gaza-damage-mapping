@@ -31,8 +31,8 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 **Training areas (Gaza):** North Gaza, Gaza City  
 **Test areas (Gaza):** Deir al-Balah, Khan Yunis, Rafah
 
-**Training areas (Mosul retrain):** West bank (lon < 43.1262°E), 6,184 points  
-**Test areas (Mosul retrain):** East bank (lon ≥ 43.1262°E), 7,250 points
+**Training areas (Mosul retrain):** West bank (longitude < 43.1262°E), 6,184 points  
+**Test areas (Mosul retrain):** East bank (longitude ≥ 43.1262°E), 7,250 points
 
 ---
 
@@ -48,7 +48,7 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 | Feature extraction, training and inference moved to local HPC | Gaza's data volume exceeded GEE processing limits |
 | scikit-learn Random Forest instead of GEE SMILE | Required for local model execution; same hyperparameters retained |
 | Pixel-level ablation instead of point-level | Allows direct comparison with main results |
-| Transfer evaluation (Mosul, Raqqa, Aleppo) | Tests Dietrich et al.'s (2025) claim their model "will adapt well to new areas" |
+| Transfer evaluation (Mosul, Raqqa, Aleppo) | Tests Dietrich et al.'s (2025: 5) claim their model "will adapt well to new areas" |
 | Mosul local retraining comparison | Tests whether local retraining improves on zero-shot transfer |
 
 ---
