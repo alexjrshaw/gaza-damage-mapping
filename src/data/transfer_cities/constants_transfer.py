@@ -2,7 +2,7 @@
 Constants for zero-shot transfer city evaluation.
 
 Mirrors src/constants.py structure for Gaza, adapted for three
-conflict cities from the Ballinger et al. PWTT dataset.
+conflict cities from the Ballinger (2025) PWTT dataset.
 
 Cities:
     ALP - Aleppo, Syria       assessed 2016-09-18 (UNOSAT product 1118)
