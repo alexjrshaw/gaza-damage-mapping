@@ -53,6 +53,7 @@ def apply_equation3(threshold: int = THRESHOLD) -> pd.DataFrame:
 
     # Identify date columns
     date_cols = [c for c in df.columns if isinstance(c, str) and len(c) == 10 and c[4] == "-"]
+    # Identify pre-conflict and conflict-period windows
     pre_cols = [c for c in date_cols if c < GAZA_WAR_START]
     post_cols = [c for c in date_cols if c >= GAZA_WAR_START]
 
@@ -62,7 +63,9 @@ def apply_equation3(threshold: int = THRESHOLD) -> pd.DataFrame:
 
     # Equation 3
     max_post = df[post_cols].max(axis=1)
+    # Maximum probability in any pre-conflict window
     max_pre = df[pre_cols].max(axis=1)
+    # Equation 3: damaged if max_post crosses threshold AND max_pre does not
     damaged = ((max_post >= threshold) & (max_pre < threshold)).astype(int)
 
     # Build output

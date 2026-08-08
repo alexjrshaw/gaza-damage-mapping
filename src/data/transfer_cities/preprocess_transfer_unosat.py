@@ -63,6 +63,7 @@ CITIES = [
             "_static_unosat_filesystem_1118_UNOSAT_CE20130604SYR_Syria_Damage_Assessment_2016_shp"
             "/6_Damage_Sites_Aleppo_SDA.shp"
         ),
+        # Field names differ across products: DmgCls_4 (Aleppo), DaSitCl5 (Raqqa), Main_Damag (Mosul)
         "damage_field": "DmgCls_4",  # most recent epoch column
     },
     {

@@ -48,6 +48,7 @@ TRANSFER_PROB_BASE = DATA_PATH / "transfer_cities" / "probability_rasters"
 TRANSFER_RUNS_DIR = DATA_PATH / "transfer_cities" / "runs"
 # Configuration
 WINDOW_SIZE = 3  # 3×3 pixel window, mirrors Dietrich et al.
+# Evaluate at default (t=0.5) and Gaza-calibrated (t=0.670) thresholds
 THRESHOLDS = [0.5, 0.670]  # 0.5 default; 0.670 Gaza-calibrated (90% precision target)
 USABLE_THRESHOLD_PCT = 50.0
 
@@ -63,10 +64,12 @@ def sample_merged_raster(tiles: list, gdf: gpd.GeoDataFrame) -> np.ndarray:
     try:
         merged, transform = merge(srcs)
         merged = merged[0].astype(np.float32)
+        # Convert nodata (0) to NaN to exclude from aggregation
         merged[merged == 0] = np.nan
 
         # Get CRS and transform from first tile
         crs = srcs[0].crs
+        # = 1, giving a 3×3 patch centred on each UNOSAT point
         half = WINDOW_SIZE // 2  # = 1, giving a 3×3 patch
 
         results = []
@@ -82,6 +85,7 @@ def sample_merged_raster(tiles: list, gdf: gpd.GeoDataFrame) -> np.ndarray:
             c_end = min(merged.shape[1], col + half + 1)
 
             patch = merged[r_start:r_end, c_start:c_end]
+            # Take maximum valid probability within the 3×3 window
             val = np.nanmax(patch) if patch.size > 0 else np.nan
             results.append(val)  # keep NaN as missing; do not coerce to 0.0
 

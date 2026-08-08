@@ -84,6 +84,7 @@ def only_in_gaza_and_relevant_properties() -> None:
 
     # Compute area and centroid
     gdf_proj = gdf.to_crs("EPSG:32636")
+    # Calculate building area in square metres (EPSG:32636 for accurate area in metres)
     gdf["area_m2"] = gdf_proj.geometry.area
     centroids = gdf_proj.geometry.centroid.to_crs("EPSG:4326")
     gdf["lon"] = centroids.x

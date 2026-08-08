@@ -16,7 +16,9 @@ from src.constants import ASSETS_PATH, DATA_PATH
 # Label loading
 def load_unosat_labels(
     aoi: str | list[str] | None = None,
+    # Filter to class 1 (Destroyed) and class 2 (Severely damaged) only
     labels_to_keep: list[int] = [1, 2],
+    # Combine multiple assessment epochs into a single record per building
     combine_epoch: bool = "last",
 ) -> gpd.GeoDataFrame:
     """
@@ -26,6 +28,7 @@ def load_unosat_labels(
         aoi (str | list[str] | None): Which AOIs to keep. Default to None (all)
         labels_to_keep (list[int]): Which labels to keep. Default to [1,2] (destroyed, major damage)
         combine_epoch (bool): For points that have multiple observations, I keep only one label.
+            # Gaza adaptation: find earliest epoch where damage was class 1 or 2
             Either the 'last' one, the 'min' one (e.g. the strongest label), or 'first_severe'
             (earliest epoch where damage is class 1 or 2 - Gaza adaptation). Default to 'last'
 
@@ -35,6 +38,7 @@ def load_unosat_labels(
     labels_fp = DATA_PATH / "unosat_labels.geojson"
     assert labels_fp.exists(), "The GeoDataFrame has not been created yet."
 
+    # Load raw UNOSAT geodatabase
     gdf = gpd.read_file(labels_fp).set_index("unosat_id")
 
     if combine_epoch is not None:
@@ -176,6 +180,7 @@ def preprocess_gaza_unosat(
     label assignment per Dietrich et al. equation 1:
 
         y = 0 if end_post <= conflict_start
+        # Record the date severe damage was first confirmed by UNOSAT (t_UNOSAT, Equation 1)
         y = 1 if end_post > tunosat  (= date_first_severe here)
         y = -1 otherwise (discard)
 

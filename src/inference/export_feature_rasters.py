@@ -48,6 +48,7 @@ init_gee(project="gaza-damage-mapping")
 RUN_NAME = "gaza_feature_rasters"
 # Configuration
 QUADKEY_ZOOM = 12  # Same quadkey zoom as Dietrich et al. original pipeline - ~2.4km² tiles
+# 10 m resolution - matches Sentinel-1 GRD native resolution
 SCALE = 10  # 10m resolution - same as Dietrich et al.
 ORBITS = [87, 94, 160]  # Gaza S1 orbits
 REDUCER_NAMES = ["mean", "stdDev", "median", "min", "max", "skew", "kurtosis"]
@@ -81,6 +82,7 @@ def export_feature_rasters_for_window(
     ids = grids.aggregate_array("qk").getInfo()
     print(f"  {len(ids)} quadkey tiles")
 
+    # Export separately for each of the three Gaza orbits (87, 94, 160)
     for orbit in ORBITS:
         drive_folder = f"{drive_folder_base}/{window_str}/orbit{orbit}"
 
@@ -108,6 +110,7 @@ def export_feature_rasters_for_window(
             if len(description) > 100:
                 description = description[:100]
 
+            # Export to Google Drive as Float32 GeoTIFF
             task = ee.batch.Export.image.toDrive(
                 image=feature_img.toFloat(),
                 description=description,

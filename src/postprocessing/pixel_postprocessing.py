@@ -328,6 +328,7 @@ def aggregate_all_preds() -> pd.DataFrame:
     # Summary
     post_war_cols = [c for c in df_preds.columns if c >= GAZA_WAR_START]
     if post_war_cols:
+        # Maximum probability across all conflict-period windows (any window can trigger damage)
         df_buildings_with_preds["max_post_war"] = df_buildings_with_preds[post_war_cols].max(axis=1)
         summary = (
             df_buildings_with_preds.groupby("adm2_name")

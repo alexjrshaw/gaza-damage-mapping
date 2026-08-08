@@ -80,6 +80,7 @@ def full_pipeline_local(cfg: DictConfig, force_recreate: bool = False) -> dict:
 
         # Load test features.
         print("\nLoading test features...")
+        # Load held-out test features (Deir al-Balah, Khan Yunis, Rafah)
         df_test = get_dataset_ready_local(
             sat=get_sat_from_cfg_local(cfg),
             split="test",
@@ -98,12 +99,14 @@ def full_pipeline_local(cfg: DictConfig, force_recreate: bool = False) -> dict:
         # Predict probabilities.
         print("Classifying test set...")
         X_test = df_test[feature_cols].values
+        # Predict damage probability for each test point
         y_prob = clf.predict_proba(X_test)[:, 1]
         df_test = df_test.copy()
         df_test["prob"] = y_prob
 
         # Format predictions to match main.py output.
         print("Formatting predictions...")
+        # Format predictions to match get_metrics() input format
         gdf = _format_predictions(df_test, cfg)
 
         # Save predictions.
@@ -117,6 +120,7 @@ def full_pipeline_local(cfg: DictConfig, force_recreate: bool = False) -> dict:
 
     # Compute metrics using existing metrics.py.
     print("\nComputing metrics...")
+    # Compute precision, recall, F1, balanced accuracy at t=0.5
     result_metrics = get_metrics(
         gdf,
         threshold=0.5,

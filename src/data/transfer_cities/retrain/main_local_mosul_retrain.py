@@ -37,6 +37,7 @@ import geopandas as gpd
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 
+# Apply spatial train/test split at the Tigris River (lon=43.1262°E)
 LON_SPLIT = 43.1262  # approximate Tigris River line
 
 FEATURES_FP = "data/transfer_cities/features_ready/MOS_features.parquet"
@@ -121,6 +122,7 @@ def train_classifier(df_train: pd.DataFrame, feature_cols: list[str]) -> RandomF
         verbose=1,
     )
     print("Fitting Random Forest...")
+    # Train on west-bank features and labels
     clf.fit(X_train, y_train)
     print("Training complete.")
     return clf

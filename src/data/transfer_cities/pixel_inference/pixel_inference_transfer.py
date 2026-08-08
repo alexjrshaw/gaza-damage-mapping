@@ -59,6 +59,7 @@ FEATURE_COLS = get_features_names(CFG)
 
 def load_model():
     with open(GAZA_MODEL_FP, "rb") as f:
+        # Load Gaza-trained Random Forest - no retraining or fine-tuning
         clf = pickle.load(f)
     print(f"Loaded Gaza model: {GAZA_MODEL_FP.parent.name}")
     return clf
@@ -161,6 +162,7 @@ def run_pixel_inference_city(city_id: str, force: bool = False) -> None:
             stack = np.stack(orbit_probs, axis=0)
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
+                # Average predictions across orbits, ignoring NaN (matches Gaza pipeline)
                 prob_agg = np.nanmean(stack, axis=0)
 
             save_probability_tile(prob_agg, ref_profile, fp_out)

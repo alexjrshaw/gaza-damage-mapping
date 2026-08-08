@@ -63,6 +63,7 @@ def compute_features_for_window(
     df["date_first_severe"] = df["date_first_severe"].astype(str)
 
     end_post = post_period[1]
+    # Assign label 0 (undamaged) to pre-conflict windows, label 1 to post-conflict windows
     if end_post <= GAZA_WAR_START:
         label = 0
     else:
@@ -74,6 +75,7 @@ def compute_features_for_window(
     if len(df) == 0:
         return pd.DataFrame()
 
+    # Compute statistics separately for pre- and post-conflict periods
     prefix_pre = f"pre_{EXTRACT_WINDOW}"
     prefix_post = f"post_{EXTRACT_WINDOW}"
 
@@ -109,6 +111,7 @@ def compute_features_for_window(
                     kurtosis=lambda x: x.kurtosis(),
                 )
                 stats.columns = [f"{band}_{prefix}_{s}" for s in REDUCER_NAMES]
+                # Join computed statistics to building metadata
                 results = results.merge(stats, on="unosat_id", how="left")
             else:
                 for stat in REDUCER_NAMES:

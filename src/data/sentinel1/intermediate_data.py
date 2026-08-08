@@ -25,6 +25,7 @@ def create_fc_aoi_orbit(
     Creates a feature collection with all Sentinel-1 band values
     for each date and each UNOSAT point (one row per point per image).
 
+    # Process all locations in a single GEE request (replaces reduceRegion - 28,000x fewer API calls)
     Uses ee.Image.reduceRegions() instead of nested map for performance.
     This reduces GEE operations from ~52.6 million to ~1,870 for Gaza-scale data
     (140,604 points × 374 images -> 15 AOI-orbit pairs × ~125 images each).
@@ -66,6 +67,7 @@ def create_fc_aoi_orbit(
                 reducer=ee.Reducer.mean(),
                 scale=scale,
             )
+            # Preserve acquisition date for time series assembly
             .map(lambda f: f.set("system:time_start", img.get("system:time_start")))
         )
 

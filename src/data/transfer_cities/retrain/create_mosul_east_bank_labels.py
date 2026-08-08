@@ -36,6 +36,7 @@ def main():
     gdf = gpd.read_file(INPUT_FP)
     print(f"  {len(gdf):,} total points")
 
+    # East-bank points: used for testing only (never seen during training)
     east_bank = gdf[gdf.geometry.x >= LON_SPLIT].copy()
     print(f"  {len(east_bank):,} east-bank points (lon >= {LON_SPLIT}) retained")
     print(f"  {len(gdf) - len(east_bank):,} west-bank points excluded (used for training)")

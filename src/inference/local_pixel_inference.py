@@ -102,6 +102,7 @@ def classify_tile(
     # Reorder bands to match model's expected feature order
     band_index = {name: i for i, name in enumerate(band_names)}
     try:
+        # Reorder bands to match model's expected feature order (GEE does not guarantee export order)
         order = [band_index[col] for col in feature_cols]
     except KeyError as e:
         raise ValueError(f"Band {e} not found in GeoTIFF. Available: {band_names}")
@@ -109,6 +110,7 @@ def classify_tile(
 
     # Predict damage probability for each pixel
     X = data.reshape(n_bands, -1).T
+    # Mask out pixels with missing values in any band
     valid_mask = ~np.any(np.isnan(X), axis=1)
     prob_flat = np.full(H * W, np.nan, dtype=np.float32)
     if valid_mask.any():

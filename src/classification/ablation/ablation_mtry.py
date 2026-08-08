@@ -58,6 +58,7 @@ else:
     assert X.shape[1] == 28, f"Expected 28 features, found {X.shape[1]} - check reducer_names/config"
 
     for mtry in tqdm(missing, desc="mtry sweep (resuming)"):
+        # Train RF with this mtry value and record OOB error
         clf = RandomForestClassifier(
             n_estimators=50,
             min_samples_leaf=3,

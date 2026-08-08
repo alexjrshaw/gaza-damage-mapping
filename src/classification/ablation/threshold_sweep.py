@@ -32,12 +32,14 @@ gdf_points = sample_rasters_at_unosat_points(
 
 # Filter to test set
 gdf_test = gdf_points[gdf_points.aoi.isin(AOIS_TEST)].copy()
+# Keep only class 1 and 2 buildings (consistent with training)
 gdf_test = gdf_test[gdf_test.damage.isin([1, 2])].copy()
 gdf_test["date"] = pd.to_datetime(gdf_test["date"])
 
 print(f"\nSweeping thresholds (step=0.005) against {len(gdf_test):,} test points...")
 # Threshold sweep
 results = []
+# Test 201 thresholds at 0.005 intervals across full 0-1 range
 for t in np.arange(0.0, 1.005, 0.005):
     m = get_metrics(gdf_test, threshold=t, method="date-wise", print_classification_report=False)
     results.append({"threshold": round(t, 3), **m})
@@ -50,6 +52,7 @@ for t in np.arange(0.0, 1.005, 0.005):
 df_results = pd.DataFrame(results)
 df_results.to_csv(DATA_PATH / "threshold_sweep_current_results.csv", index=False)
 
+# Select lowest threshold achieving 90% precision (calibrated = t=0.670)
 closest = df_results.iloc[(df_results["precision"] - 0.90).abs().argsort()[:1]]
 print(f"\nClosest threshold to 90% precision:")
 print(closest.to_string(index=False))

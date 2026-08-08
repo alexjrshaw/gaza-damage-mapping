@@ -40,6 +40,7 @@ def download_hotosm_buildings() -> None:
         "3382a75a-91e3-413d-af09-ab04191725df/download/"
         "hotosm_pse_buildings_polygons_geojson.zip"
     )
+    # Fetch GeoJSON from HOTOSM API
     r = requests.get(url, stream=True)
     z = zipfile.ZipFile(io.BytesIO(r.content))
     z.extractall(HOTOSM_RAW_FP.parent)
