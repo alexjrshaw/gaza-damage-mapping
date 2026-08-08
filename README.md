@@ -188,8 +188,8 @@ Update `ASSETS_PATH` in `src/constants.py` to point to your own GEE project if n
 
 Required for downloading GEE feature raster exports.
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com) → Enable **Google Drive API**
-2. Create an OAuth client ID (Desktop app) → download `client_secrets.json`
+1. Go to [Google Cloud Console](https://console.cloud.google.com) and enable **Google Drive API**
+2. Create an OAuth client ID (Desktop app) and download `client_secrets.json`
 3. Place `client_secrets.json` in `secrets/`
 4. Create `secrets/pydrive_settings.yaml`:
 
@@ -208,21 +208,21 @@ Run `python3 reauth_gdrive.py` once on the login node to trigger the OAuth flow 
 
 ### 6. Data
 
-**UNOSAT labels** — download all 14 Gaza releases from [unosat.org](https://unosat.org) (product IDs 3714–4213) and place GDB files in `data/raw/`. Then run:
+**UNOSAT labels**: download all 14 Gaza releases from [unosat.org](https://unosat.org) (product IDs 3714–4213) and place GDB files in `data/raw/`. Then run:
 
 ```bash
 python3 src/data/unosat.py
 ```
 
-**HOTOSM buildings** — downloaded automatically:
+**HOTOSM buildings**: downloaded automatically:
 
 ```bash
 python3 src/data/hotosm/preprocessing.py
 ```
 
-**Admin boundaries** — downloaded automatically from OCHA HDX.
+**Admin boundaries**: downloaded automatically from OCHA HDX.
 
-**Sentinel-1** — processed via Google Earth Engine (see pipeline below).
+**Sentinel-1**: processed via Google Earth Engine (see pipeline below).
 
 ---
 
@@ -324,7 +324,7 @@ python3 src/data/transfer_cities/retrain/mosul_optimal_threshold.py
 
 Run after Step 4 of the Gaza pipeline.
 
-**1. Pixel-level ablation (n_trees, polarisation, SAR statistics)**
+**1. Pixel-level ablation (number of trees, polarisation, SAR statistics)**
 ```bash
 python3 src/classification/ablation/ablation_pixel_level.py
 ```
@@ -366,4 +366,4 @@ If you use this code, please cite the original Ukraine methodology:
 
 ## Licence
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT. See [LICENSE](LICENSE) for details.
