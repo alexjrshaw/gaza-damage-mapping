@@ -226,7 +226,7 @@ def add_admin_info() -> None:
     print(f"  Buildings with governorate assigned: {gdf_all['adm2_name'].notna().sum():,}")
 
     # Summary
-    print("\n── Buildings per governorate ──")
+    print("\nBuildings per governorate:")
     print(gdf_all["adm2_name"].value_counts().to_string())
 
 
