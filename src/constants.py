@@ -17,7 +17,7 @@ S1_BANDS = ["VV", "VH"]
 GAZA_WAR_START = "2023-10-07"
 
 # Time periods
-# One year pre-conflict baseline (Oct 2021 - Oct 2022), consistent with Dietrich et al. (2025)
+# One year pre-conflict baseline (Oct 2021 - Oct 2022), consistent with Dietrich et al. (2025a)
 PRE_PERIOD = ("2021-10-07", "2022-10-06")  # shifted back one year
 
 # 19 x 2-month post-conflict windows covering full conflict period, plus some pre-war for backscatter comparison
