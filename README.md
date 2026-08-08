@@ -54,7 +54,6 @@ This repository adapts the open-source war damage mapping pipeline developed by 
 ---
 ## Project structure
 ```
-aligned = """```
 gaza-damage-mapping/
 ├── check_environment.py                                  # Verifies all required packages are installed
 ├── reauth_gdrive.py                                      # Refreshes Google Drive credentials
