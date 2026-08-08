@@ -63,7 +63,6 @@ SPATIAL_WINDOW = 3
 # Results input/output
 
 
-# Results input/output
 def load_results() -> dict:
     if RESULTS_JSON.exists():
         with open(RESULTS_JSON) as f:

@@ -1,4 +1,5 @@
 """
+# Cumulative count: once classified as damaged, always damaged in subsequent windows
 Per-governorate cumulative damage over time. Mirrors the kind of governorate-by-
 governorate, date-by-date figures Scher and Van Den Hoek (2025b) report for Gaza.
 
@@ -66,6 +67,7 @@ def first_damaged_window_index(
     pre-war maximum stays below threshold, then the first post-war window
     crossing the threshold.
     """
+    # Maximum pre-conflict probability per building (used to exclude false positives)
     max_pre = row[pre_cols].max()
     if max_pre >= THRESHOLD:
         return None  # excluded by Equation 3's pre-war condition - never "damaged"
@@ -102,6 +104,7 @@ def main():
         n_total = len(gov_df)
         for i, end_date in enumerate(WINDOW_END_DATES):
             n_damaged = (gov_df["first_idx"] <= i).sum()
+            # Express as percentage of total buildings studied in each governorate
             pct = n_damaged / n_total * 100
             results.append(
                 {

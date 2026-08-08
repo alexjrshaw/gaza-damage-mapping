@@ -32,7 +32,7 @@ from src.utils.time import timeit
 # Output path - mirrors OVERTURE_PROCESSED_FP in Ukraine pipeline
 HOTOSM_PROCESSED_FP = OVERTURE_PATH / "gaza_buildings.parquet"
 
-# Minimum building area - matches Dietrich et al. (2025)
+# Minimum building area - matches Dietrich et al. (2025a)
 MIN_BUILDING_AREA_M2 = 50
 
 
@@ -90,7 +90,7 @@ def only_in_gaza_and_relevant_properties() -> None:
     gdf["lon"] = centroids.x
     gdf["lat"] = centroids.y
 
-    # Filter small buildings - matches Dietrich et al. (2025)
+    # Filter small buildings - matches Dietrich et al. (2025a)
     gdf = gdf[gdf["area_m2"] >= MIN_BUILDING_AREA_M2].copy()
     print(f"  Buildings >= {MIN_BUILDING_AREA_M2}m2: {len(gdf):,}")
 

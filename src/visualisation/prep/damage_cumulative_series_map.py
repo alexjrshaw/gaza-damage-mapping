@@ -144,6 +144,7 @@ def main():
     admin2_raw = gpd.read_file(ADMIN2_FP).to_crs(UTM_CRS)
     name_col = [c for c in admin2_raw.columns if "name" in c.lower() and "ar" not in c.lower()][0]
     gov_names = set(gdf["adm2_name"].apply(normalise_governorate_name))
+    # Load Gaza governorate boundaries for map overlay
     admin2 = admin2_raw[admin2_raw[name_col].apply(normalise_governorate_name).isin(gov_names)]
     gaza_boundary = admin2.dissolve().geometry.iloc[0]
     print(f"  {len(admin2)} governorates matched")
@@ -165,6 +166,7 @@ def main():
     first_idx_arr = df["first_idx"].values
 
     print("Plotting 7×2 series (A4 landscape)...")
+    # Create 7×2 grid of subplots (one per conflict-period assessment window)
     fig, axes = plt.subplots(
         2,
         7,
@@ -223,6 +225,7 @@ def main():
     fig.suptitle("Gaza: cumulative building damage by assessment window", fontsize=13, y=0.99)
 
     OUT_FP.parent.mkdir(exist_ok=True, parents=True)
+    # Save figure
     fig.savefig(OUT_FP, dpi=200, bbox_inches="tight")
     plt.close(fig)
     print(f"\nSaved to {OUT_FP}")
