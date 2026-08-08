@@ -25,7 +25,7 @@ def load_unosat_labels(
         aoi (str | list[str] | None): Which AOIs to keep. Default to None (all)
         labels_to_keep (list[int]): Which labels to keep. Default to [1,2] (destroyed, major damage)
         combine_epoch (bool): For points that have multiple observations, I keep only one label.
-            Either the 'last' one, the 'min' one (eg the strongest label), or 'first_severe'
+            Either the 'last' one, the 'min' one (e.g. the strongest label), or 'first_severe'
             (earliest epoch where damage is class 1 or 2 - Gaza adaptation). Default to 'last'
 
     Returns:

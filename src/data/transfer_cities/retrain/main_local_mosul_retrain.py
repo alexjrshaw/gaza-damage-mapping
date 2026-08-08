@@ -27,7 +27,7 @@ classified rasters). Instead:
            feature rasters with this model)
         -> evaluate_pixel_transfer.py (unmodified; the same script used
            for the zero-shot Mosul result, run on east-bank test points
-           only -- see usage note in that script's call)
+           only - see usage note in that script's call)
 
 Usage:
     python3 src/data/transfer_cities/retrain/main_local_mosul_retrain.py

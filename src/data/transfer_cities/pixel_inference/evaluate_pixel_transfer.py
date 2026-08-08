@@ -109,7 +109,7 @@ def evaluate_pixel_city(city_id: str) -> dict:
     post_periods = cfg["post_periods"]
     all_periods = [pre_period] + list(post_periods)
 
-    pred_cols = {}  # keyed by UNIQUE window_str -- avoids collisions when
+    pred_cols = {}  # keyed by UNIQUE window_str - avoids collisions when
     # two windows share the same end-date (e.g. w02/w08)
     window_meta = {}  # window_str -> (end_post, valid_pct)
 
@@ -147,7 +147,7 @@ def evaluate_pixel_city(city_id: str) -> dict:
     print(f"  label=1 windows: {len(col_pos)} -> {sorted(col_pos)}")
     print(f"  Usable windows (>={USABLE_THRESHOLD_PCT}% valid): {sorted(usable_windows)}")
     print(
-        f"  Excluded windows (<{USABLE_THRESHOLD_PCT}% valid -- insufficient SAR "
+        f"  Excluded windows (<{USABLE_THRESHOLD_PCT}% valid - insufficient SAR "
         f"temporal density for skew/kurtosis): {sorted(unusable_windows)}"
     )
 

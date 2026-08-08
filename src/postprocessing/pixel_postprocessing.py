@@ -32,7 +32,7 @@ import xarray as xr
 from osgeo import gdal
 
 from src.constants import DATA_PATH, GAZA_WAR_START
-from src.postprocessing.utils import vectorize_xarray_3d
+from src.postprocessing.utils import vectorise_xarray_3d
 from src.utils.time import timeit
 
 # Constants
@@ -134,7 +134,7 @@ def create_buildings_with_preds_for_admin(
     Mirrors Dietrich et al. create_gdf_overture_with_preds() logic, adapted for HOTOSM footprints:
         1. Load buildings for admin unit
         2. Read and stack prediction rasters
-        3. Vectorize pixels -> polygons
+        3. Vectorise pixels -> polygons
         4. Intersect with building polygons
         5. Compute area-weighted mean and max per building per date
         6. Save as GeoJSON
@@ -181,10 +181,10 @@ def create_buildings_with_preds_for_admin(
     if verbose:
         print(f"  {adm2_name}: rasters stacked {preds.shape}")
 
-    # Vectorize pixels - reuses Dietrich et al.'s vectorize_xarray_3d unchanged
-    gdf_pixels = vectorize_xarray_3d(preds, post_dates)
+    # Vectorise pixels - reuses Dietrich et al.'s vectorise_xarray_3d unchanged
+    gdf_pixels = vectorise_xarray_3d(preds, post_dates)
     if verbose:
-        print(f"  {adm2_name}: {len(gdf_pixels):,} pixels vectorized")
+        print(f"  {adm2_name}: {len(gdf_pixels):,} pixels vectorised")
 
     # Intersect buildings with pixels - identical to Dietrich et al.
     overlap = gpd.overlay(gdf_buildings.reset_index(), gdf_pixels, how="intersection").set_index(

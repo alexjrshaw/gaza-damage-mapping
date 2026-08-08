@@ -35,7 +35,7 @@ GOVERNORATE_ALIASES = {
 }
 
 
-def normalize_governorate_name(name):
+def normalise_governorate_name(name):
     return GOVERNORATE_ALIASES.get(name.lower().strip(), name.lower().strip())
 
 
@@ -141,8 +141,8 @@ def main():
     print("Loading and dissolving Gaza boundary...")
     admin2_raw = gpd.read_file(ADMIN2_FP).to_crs(UTM_CRS)
     name_col = [c for c in admin2_raw.columns if "name" in c.lower() and "ar" not in c.lower()][0]
-    gov_names = set(gdf["adm2_name"].apply(normalize_governorate_name))
-    admin2 = admin2_raw[admin2_raw[name_col].apply(normalize_governorate_name).isin(gov_names)]
+    gov_names = set(gdf["adm2_name"].apply(normalise_governorate_name))
+    admin2 = admin2_raw[admin2_raw[name_col].apply(normalise_governorate_name).isin(gov_names)]
     gaza_boundary = admin2.dissolve().geometry.iloc[0]
     print(f"  {len(admin2)} governorates matched")
 
