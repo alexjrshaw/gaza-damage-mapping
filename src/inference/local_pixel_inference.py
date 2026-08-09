@@ -102,7 +102,6 @@ def classify_tile(
     # Reorder bands to match model's expected feature order
     band_index = {name: i for i, name in enumerate(band_names)}
     try:
-        # Reorder bands to match model's expected feature order (GEE does not guarantee export order)
         order = [band_index[col] for col in feature_cols]
     except KeyError as e:
         raise ValueError(f"Band {e} not found in GeoTIFF. Available: {band_names}")
