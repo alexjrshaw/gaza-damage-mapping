@@ -38,7 +38,7 @@ baseline_val = 88.9
 group_colours = {
     "baseline": "#dc2626",
     "trees":    "#1d4ed8",
-    "bands":    "#16a34a",
+    "bands":    "#e69f00",
     "stats":    "#9333ea",
 }
 
