@@ -39,7 +39,7 @@ group_colours = {
     "baseline": "#dc2626",
     "trees":    "#1d4ed8",
     "bands":    "#e69f00",
-    "stats":    "#9333ea",
+    "stats":    "#8b4513",
 }
 
 labels, values, colours = [], [], []

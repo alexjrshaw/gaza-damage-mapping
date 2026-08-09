@@ -27,7 +27,7 @@ gz  = gz.rename(columns={"roc_auc": "balanced_accuracy"})
 # Metrics to plot
 metrics = {
     "balanced_accuracy":  {"label": "Balanced accuracy",   "color": "#000000", "ls": "-"},
-    "f1":                 {"label": "F1",                  "color": "#0072B2", "ls": "--"},
+    "f1":                 {"label": "F1",                  "color": "#8B4513", "ls": "--"},
     "precision":          {"label": "Precision",           "color": "#E69F00", "ls": "-."},
     "recall":             {"label": "Recall",              "color": "#CC79A7", "ls": (0,(5,1))},
     "accuracy":           {"label": "Overall accuracy",    "color": "#56B4E9", "ls": (0,(3,1,1,1))},
@@ -131,7 +131,7 @@ make_threshold_chart(
     title="Gaza's threshold is too cautious for Mosul",
     subtitle="Performance by damage classification threshold, Mosul retrained model",
     vlines=[
-        (0.44, "Mosul optimal:\n0.44",   "#009E73", 15),
+        (0.44, "Mosul optimal:\n0.44",   "#0072B2", 15),
         (0.5,  "Default:\n0.5",          "#6b7280", 53),
         (0.67, "Gaza calibrated:\n0.67", "#dc2626", 37),
     ],
