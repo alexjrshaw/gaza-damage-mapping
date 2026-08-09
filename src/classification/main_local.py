@@ -120,10 +120,10 @@ def full_pipeline_local(cfg: DictConfig, force_recreate: bool = False) -> dict:
 
     # Compute metrics using existing metrics.py.
     print("\nComputing metrics...")
-    # Compute precision, recall, F1, balanced accuracy at t=0.5
+    # Compute precision, recall, F1, balanced accuracy at t=0.67
     result_metrics = get_metrics(
         gdf,
-        threshold=0.5,
+        threshold=0.67,
         method="date-wise",
         print_classification_report=True,
         only_2022_for_pos=False,
