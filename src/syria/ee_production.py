@@ -267,7 +267,13 @@ def cmd_plan(args):
     if args.city:
         windows, key, conflict_start = city_windows(args.city)
         if args.baseline and args.baseline.upper() != key:
-            sys.exit(f"{args.city} uses baseline {key}; drop --baseline or use --baseline {key}.")
+            alt = args.baseline.upper()
+            first = min(w["start"] for w in windows)
+            if first <= BASELINES[alt][1]:
+                sys.exit(f"{args.city} uses baseline {key}. Baseline {alt} could only replace it if every window started after {BASELINES[alt][1]}, "
+                         f"but {args.city}'s windows start {first}. Drop --baseline or use --baseline {key}.")
+            print(f"Note: using baseline {alt} {BASELINES[alt]} instead of {args.city}'s own baseline {key}.")
+            key = alt
     else:
         windows, key = year_windows(args.years or DEFAULT_YEARS), (args.baseline or "A").upper()
     check_survey_periods(args.survey, key, windows, bool(args.city))

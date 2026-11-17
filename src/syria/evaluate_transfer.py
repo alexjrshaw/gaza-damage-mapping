@@ -12,7 +12,8 @@ Pixel-level evaluation of a region run, done exactly like the local transfer wor
 The difference is where the probabilities come from: the Earth Engine region run (per-tile orbits,
 all tiles of the region) instead of the local rasters. If the numbers agree with the earlier local
 result (data/transfer_cities/runs/<city>/metrics_pixel.json), running in Earth Engine over a region
-changes nothing. It also shows the best threshold by F1 for this window set.
+changes nothing. It also shows the threshold chosen the way Gaza's 0.670 was (lowest threshold with 90% precision, sweep step 0.005), and the best by F1 and by balanced accuracy (AUCbin). F1 favours flagging everything when
+about half the samples are positive, so the balanced-accuracy row is the one to read for a threshold.
 
   python3 src/syria/evaluate_transfer.py --city ALP --tag alp --download
   python3 src/syria/evaluate_transfer.py --city ALP --tag alp           # tiles already downloaded
@@ -52,13 +53,27 @@ def metrics_at(y_true, y_score, t_u8):
     return out
 
 
-def best_threshold(y_true, y_score, grid=np.arange(0.30, 0.91, 0.01)):
+def best_threshold(y_true, y_score, key="f1", grid=np.arange(0.30, 0.91, 0.01)):
+    """Threshold on the grid that maximises key: 'f1', or 'auc_binary' (= balanced accuracy at that threshold)."""
     best = None
     for t in grid:
         m = metrics_at(y_true, y_score, t * 255)
-        if best is None or m["f1"] > best[1]["f1"]:
+        if best is None or m[key] > best[1][key]:
             best = (float(t), m)
     return best
+
+
+def threshold_for_precision(y_true, y_score, target=0.90, step=0.005):
+    """
+    The way Gaza's t = 0.670 and Mosul's own threshold were chosen (threshold_sweep.py, mosul_optimal_threshold.py):
+    sweep 0 to 1 in steps of 0.005 and take the LOWEST threshold at which precision reaches the target.
+    Returns (threshold, metrics) or None if no threshold on the sweep reaches it.
+    """
+    for t in np.arange(0.0, 1.0 + step / 2, step):
+        m = metrics_at(y_true, y_score, t * 255)
+        if m["precision"] >= target and (y_score >= t * 255).any():
+            return float(t), m
+    return None
 
 
 def split_windows(names, ends, conflict_start):
@@ -85,6 +100,11 @@ def evaluate(df, ends, conflict_start):
         res[f"t{t}"] = dict(threshold=t, n_pos=int(len(pv)), n_neg=int(len(nv)), **metrics_at(y_true, y_score, t * 255))
     bt, bm = best_threshold(y_true, y_score)
     res["best_f1"] = dict(threshold=round(bt, 2), n_pos=int(len(pv)), n_neg=int(len(nv)), **bm)
+    hit = threshold_for_precision(y_true, y_score)
+    if hit is not None:
+        res["prec90"] = dict(threshold=round(hit[0], 3), n_pos=int(len(pv)), n_neg=int(len(nv)), **hit[1])
+    bt, bm = best_threshold(y_true, y_score, key="auc_binary")
+    res["best_balacc"] = dict(threshold=round(bt, 2), n_pos=int(len(pv)), n_neg=int(len(nv)), **bm)
     return res, notes
 
 
@@ -150,7 +170,7 @@ def main(argv=None):
     local = json.loads(local_f.read_text()) if local_f.exists() else {}
     print(f"\n  {'':<14}{'t':>7}{'F1':>8}{'Prec':>8}{'Rec':>8}{'AUCbin':>8}{'AUCcont':>9}{'n_pos':>9}{'n_neg':>9}")
     for key, r in res.items():
-        tag_ = "best F1" if key == "best_f1" else "Syria run"
+        tag_ = {"best_f1": "best F1", "best_balacc": "best bal.acc", "prec90": "90% precision"}.get(key, "Syria run")
         print(f"  {tag_:<14}{r['threshold']:>7.3f}{r['f1']:>8.3f}{r['precision']:>8.3f}{r['recall']:>8.3f}{r['auc_binary']:>8.3f}{r['auc_continuous']:>9.3f}{r['n_pos']:>9,}{r['n_neg']:>9,}")
         if key in local:
             lr = local[key]
