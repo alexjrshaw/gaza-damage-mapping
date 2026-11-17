@@ -17,7 +17,13 @@ bounding box covers (at least the pixel under its centre). Overture footprints a
 only, so this is a slightly generous stand-in for "inside the footprint"; use --footprint 3x3 for the
 3 x 3 pixels around the centre, the stand-in used at the UNOSAT points. A pixel with value 0 is no data.
 
+Buildings with a footprint (box) area under --min-area-m2 (default 50, the minimum Gaza's footprint set used) are not
+assessed: at 10 m resolution they are smaller than a pixel or two and their value mostly reflects their neighbours.
+The area is that of the bounding box, which is at least the true footprint area, so a few buildings a little under
+50 m2 are kept. Use --min-area-m2 0 to keep every building.
+
 Reasons for not_assessed:
+    below_min_area       : the building is smaller than --min-area-m2
     tile_below_threshold : the building lies in a z14 tile with fewer than --min-buildings buildings, which
                            the run does not classify by design (the tiles are inside the task rectangles)
     no_valid_window      : every window is no data at the building (no usable orbit, or off the raster)
@@ -29,6 +35,7 @@ all task rectangles (other parts of the country, z13 tiles without a populated z
   python3 src/syria/classify_buildings.py --tag aleppo --download       # fetch them from Drive first (copies stay in Drive)
   python3 src/syria/classify_buildings.py --tag aleppo --threshold 0.670
   python3 src/syria/classify_buildings.py --tag aleppo --footprint 3x3
+  python3 src/syria/classify_buildings.py --tag aleppo --min-area-m2 0       # keep every building, however small
 
 Writes <run folder>/buildings_classified.parquet (one row per building: lon, lat, tile, class, reason, n_valid,
 n_above, and the maximum for every window), summary_by_class.csv, and with --points-gpkg a GeoPackage of the
@@ -49,6 +56,13 @@ DEFAULT_THRESHOLD = 0.670  # Gaza's calibrated value (170 of 255)
 CONFIRM_WINDOWS = 2
 TASK_ZOOM = 13
 SPARSE_ZOOM = 14
+MIN_AREA_M2 = 50.0  # Gaza's minimum building area
+
+
+def box_area_m2(xmin, ymin, xmax, ymax):
+    """Area of the bounding boxes in square metres (degrees converted at each box's latitude)."""
+    lat = (np.asarray(ymin) + np.asarray(ymax)) / 2
+    return (np.asarray(xmax) - np.asarray(xmin)) * 111320.0 * np.cos(np.radians(lat)) * (np.asarray(ymax) - np.asarray(ymin)) * 110574.0
 
 
 def classify_values(values, t_u8, confirm=CONFIRM_WINDOWS):
@@ -119,6 +133,7 @@ def main(argv=None):
     p.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD, help="probability threshold, default Gaza's 0.670")
     p.add_argument("--confirm-windows", type=int, default=CONFIRM_WINDOWS, help="windows needed for 'confirmed'")
     p.add_argument("--footprint", choices=["bbox", "3x3"], default="bbox")
+    p.add_argument("--min-area-m2", type=float, default=MIN_AREA_M2, help="buildings with a smaller box area are not assessed (default 50, as in Gaza; 0 keeps all)")
     p.add_argument("--min-buildings", type=int, default=10, help="the z14 tile threshold used in the plan")
     p.add_argument("--tiles-csv", default="data/syria/footprints/tiles_z14.csv")
     p.add_argument("--buildings", default="data/syria/footprints/overture_buildings_bbox.parquet")
@@ -154,7 +169,8 @@ def main(argv=None):
     t_u8 = args.threshold * 255
     z14 = pd.read_csv(args.tiles_csv, dtype={"quadkey": str})
     good14 = z14[z14.n_buildings >= args.min_buildings].quadkey.to_numpy()
-    print(f"Threshold {args.threshold:g} ({t_u8:.0f} of 255); 'confirmed' needs {args.confirm_windows} windows; footprint mode {args.footprint}")
+    print(f"Threshold {args.threshold:g} ({t_u8:.0f} of 255); 'confirmed' needs {args.confirm_windows} windows; footprint mode {args.footprint}; "
+          f"minimum building area {args.min_area_m2:g} m2")
 
     frames = []
     for k, z in enumerate(have, 1):
@@ -169,14 +185,17 @@ def main(argv=None):
         x14, y14 = ft.lonlat_to_tile(cx, cy, SPARSE_ZOOM)
         q14 = np.array(list(map(str, ft.quadkeys(x14, y14, SPARSE_ZOOM))))
         in_good = np.isin(q14, good14)
+        area = box_area_m2(xmin, ymin, xmax, ymax)
+        small = area < args.min_area_m2
+        assess = in_good & ~small
         vals = np.full((len(cx), len(names)), np.nan)
-        if in_good.any():
-            sel = np.where(in_good)[0]
+        if assess.any():
+            sel = np.where(assess)[0]
             vals[sel] = building_window_max(tiles_dir / f"qk_{z}.tif", len(names), cx[sel], cy[sel], xmin[sel], ymin[sel], xmax[sel], ymax[sel], args.footprint)
         n_valid, n_above, cls, reason = classify_values(vals, t_u8, args.confirm_windows)
-        cls = np.where(in_good, cls, "not_assessed").astype(object)
-        reason = np.where(in_good, reason, "tile_below_threshold").astype(object)
-        df = pd.DataFrame({"lon": cx, "lat": cy, "z13": z, "z14": q14, "class": cls, "reason": reason,
+        cls = np.where(assess, cls, "not_assessed").astype(object)
+        reason = np.where(~in_good, "tile_below_threshold", np.where(small, "below_min_area", reason)).astype(object)
+        df = pd.DataFrame({"lon": cx, "lat": cy, "z13": z, "z14": q14, "area_m2": area, "class": cls, "reason": reason,
                            "n_valid": n_valid, "n_above": n_above})
         for i, w in enumerate(names):
             df[w] = vals[:, i]
