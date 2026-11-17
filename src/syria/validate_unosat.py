@@ -17,6 +17,15 @@ with the best threshold (Youden's J) next to the Gaza value (0.670 = 170 of 255)
   python3 src/syria/validate_unosat.py --download      # fetch the needed tiles from Drive first (kept there)
   python3 src/syria/validate_unosat.py                 # use tiles already in data/syria/ee_run/tiles/
   python3 src/syria/validate_unosat.py --cities ALP --window-year 2016
+  python3 src/syria/validate_unosat.py --tag aleppo --cities ALP --all-windows
+                                                        # every window in turn: does the background rise with the window year?
+
+--all-windows prints one line per window: how well damaged is ranked above undamaged (AUC), the share of damaged
+and of undamaged buildings at or above Gaza's 0.670, the best threshold for that window (Youden), and the AUC of a
+RELATIVE score (the building's value minus the median value of the assumed-undamaged buildings in the same
+z13 tile, so a shift that affects the whole area cancels). If the undamaged buildings flagged at 0.670 (FPR) rise
+with the window year while the AUC holds, the cause is background drift. Caveat: the undamaged set was assumed
+at the UNOSAT date, so damage that happened to those buildings later counts against the later windows.
 
 Writes data/syria/ee_run/validation_<city>.csv (one row per sampled building).
 """
@@ -117,6 +126,43 @@ def values_for(ft, lon, lat, year, years, tiles_dir):
     return out, ids
 
 
+def relative_values(vals, ids, ref_vals, ref_ids):
+    """vals minus the median of ref_vals in the same tile; NaN where the tile has no reference value or vals is NaN."""
+    out = np.full(len(vals), np.nan)
+    for z in np.unique(ids):
+        r = ref_vals[(ref_ids == z) & ~np.isnan(ref_vals)]
+        if len(r) == 0:
+            continue
+        sel = ids == z
+        out[sel] = vals[sel] - np.median(r)
+    return out
+
+
+def drift_row(year, pv, nv, pids, nids):
+    """One line of the all-windows table."""
+    pos, neg = pv[~np.isnan(pv)], nv[~np.isnan(nv)]
+    row = dict(window=f"w{year}", n_pos=len(pos), n_neg=len(neg))
+    if len(pos) == 0 or len(neg) == 0:
+        return row
+    t = roc_table(pos, neg)
+    best = t.loc[t.youden.idxmax()]
+    g = t[t.threshold_u8 == GAZA_U8].iloc[0]
+    rel_p, rel_n = relative_values(pv, pids, nv, nids), relative_values(nv, nids, nv, nids)
+    row.update(med_neg=float(np.median(neg) / 255), med_pos=float(np.median(pos) / 255), auc=auc(pos, neg),
+               tpr=float(g.tpr), fpr=float(g.fpr), best_t=float(best.threshold), auc_rel=auc(rel_p[~np.isnan(rel_p)], rel_n[~np.isnan(rel_n)]))
+    return row
+
+
+def print_drift_table(city, rows):
+    print(f"\n=== {city}: all windows (Gaza threshold 0.670) ===")
+    print(f"  {'window':<8}{'damaged':>9}{'undamaged':>11}{'med dam':>9}{'med undam':>11}{'AUC':>7}{'found':>8}{'FPR':>8}{'best t':>8}{'AUC rel':>9}")
+    for r in rows:
+        if "auc" not in r:
+            print(f"  {r['window']:<8}{r['n_pos']:>9,}{r['n_neg']:>11,}   no data")
+            continue
+        print(f"  {r['window']:<8}{r['n_pos']:>9,}{r['n_neg']:>11,}{r['med_pos']:>9.2f}{r['med_neg']:>11.2f}{r['auc']:>7.3f}{r['tpr']:>8.1%}{r['fpr']:>8.1%}{r['best_t']:>8.3f}{r['auc_rel']:>9.3f}")
+
+
 def report(city, year, pos, neg, n_pos_all, n_neg_all):
     print(f"\n=== {city}  window w{year} ===")
     print(f"  damaged buildings with a value: {len(pos):,} of {n_pos_all:,};  undamaged (assumed): {len(neg):,} of {n_neg_all:,}")
@@ -138,7 +184,9 @@ def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__.strip().split("\n\n")[0])
     p.add_argument("--cities", nargs="+", default=["ALP", "RAQ"])
     p.add_argument("--window-year", type=int, help="override the window (default: ALP 2016, RAQ 2017)")
-    p.add_argument("--tiles-dir", default=str(OUT_DIR / "tiles"))
+    p.add_argument("--tiles-dir", default=None, help="default: <run folder>/tiles")
+    p.add_argument("--tag", default="", help="a tagged run (default: the main run)")
+    p.add_argument("--all-windows", action="store_true", help="score every window of the plan and print one line each")
     p.add_argument("--buildings", default="data/syria/footprints/overture_buildings_bbox.parquet")
     p.add_argument("--download", action="store_true", help="fetch the needed tiles from Drive first (copies stay in Drive)")
     p.add_argument("--max-negatives", type=int, default=200000)
@@ -146,24 +194,42 @@ def main(argv=None):
 
     from src.syria import footprint_tiles as ft
 
+    global OUT_DIR
+    tag = args.tag.strip().lower()
+    if tag:
+        OUT_DIR = Path("data/syria/ee_run_" + tag)
     plan = pd.read_csv(OUT_DIR / "plan.csv", dtype=str).fillna("")
     years = sorted(int(c.split("_w")[1]) for c in plan.columns if c.startswith("orbits_w"))
-    tiles_dir = Path(args.tiles_dir)
+    tiles_dir = Path(args.tiles_dir) if args.tiles_dir else OUT_DIR / "tiles"
     for city in args.cities:
         year = args.window_year or CITY_YEAR[city]
-        if year not in years:
+        if year not in years and not args.all_windows:
             sys.exit(f"Window {year} is not in the plan ({years}).")
         pl, pb, nl, nb = read_city(ft, city, years, args)
         if len(nl) > args.max_negatives:
             idx = np.random.default_rng(0).choice(len(nl), args.max_negatives, replace=False)
             nl, nb = nl[idx], nb[idx]
         if args.download:
+            from src.syria import check_tiles
             from src.syria.check_tiles import download_tiles
 
+            check_tiles.DRIVE_FOLDER = "syria_run" + (f"_{tag}" if tag else "")
             need = sorted(set(tile_ids(ft, pl, pb)) | set(tile_ids(ft, nl, nb)))
             need = [z for z in need if z in set(plan.z13)]
             missing = download_tiles(need, tiles_dir, delete=False)
             print(f"{city}: {len(need) - len(missing)} tiles downloaded, {len(missing)} not in Drive yet")
+        if args.all_windows:
+            rows, cols = [], {}
+            for y in years:
+                pv, pids = values_for(ft, pl, pb, y, years, tiles_dir)
+                nv, nids = values_for(ft, nl, nb, y, years, tiles_dir)
+                rows.append(drift_row(y, pv, nv, pids, nids))
+                cols[f"p_{y}"] = np.r_[pv, nv]
+            print_drift_table(city, rows)
+            OUT_DIR.mkdir(parents=True, exist_ok=True)
+            pd.DataFrame({"lon": np.r_[pl, nl], "lat": np.r_[pb, nb], "damaged": np.r_[np.ones(len(pl)), np.zeros(len(nl))], **cols}).to_csv(
+                OUT_DIR / f"validation_{city.lower()}_all_windows.csv", index=False)
+            continue
         pv, _ = values_for(ft, pl, pb, year, years, tiles_dir)
         nv, _ = values_for(ft, nl, nb, year, years, tiles_dir)
         OUT_DIR.mkdir(parents=True, exist_ok=True)
