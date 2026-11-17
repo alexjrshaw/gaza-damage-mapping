@@ -22,12 +22,18 @@ Commands (run from the repository root on Forth):
   python3 src/syria/ee_classify.py eecu
         Lists those tasks with state, run time and EECU-seconds (the compute cost).
 
+  python3 src/syria/ee_classify.py pilot --extent z12 --windows all
+        Cost pilot: ONE task that holds many windows as bands (one band per window) over a
+        chosen extent (the whole z12 tile, one z14 child, or the populated z14 children).
+        Compare its EECU-seconds with the single-window tasks to see how cost scales.
+
   python3 src/syria/ee_classify.py compare --city ALP --windows w02 w11 w14
         Downloads the finished tiles (and deletes them from Drive) and compares them with
         data/transfer_cities/probability_rasters/<city>/<window>/qk_<id>.tif, the output of
         the local pipeline. Prints how many pixels agree and how the disagreements look.
 """
 import argparse
+import math
 import sys
 from pathlib import Path
 
@@ -142,6 +148,90 @@ def cmd_export(args):
     print(f"\n{n} tasks started. Watch https://code.earthengine.google.com/tasks ; when they have finished run:")
     print(f"  python3 src/syria/ee_classify.py eecu\n  python3 src/syria/ee_classify.py compare --city {city}"
           f" --windows {' '.join(a for a in args.windows)}" + "".join(f" --qk {q}" for q in args.qk))
+
+
+def quadkey_bounds(qk):
+    """(west, south, east, north) in degrees of a Web-Mercator quadkey tile."""
+    z, x, y = len(qk), 0, 0
+    for i, ch in enumerate(qk):
+        bit = z - 1 - i
+        d = int(ch)
+        x |= (d & 1) << bit
+        y |= ((d >> 1) & 1) << bit
+    n = 2**z
+    lat = lambda yy: math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * yy / n))))
+    return x / n * 360 - 180, lat(y + 1), (x + 1) / n * 360 - 180, lat(y)
+
+
+def _ring(b):
+    w, s, e, n = b
+    return [[w, s], [e, s], [e, n], [w, n], [w, s]]
+
+
+def pilot_region(ee, grids, args):
+    """(region geometry, number of z14 tiles, needs clip) for the chosen extent."""
+    qk = args.qk[0]
+    if args.extent == "z12":
+        return grids.filter(ee.Filter.eq("qk", qk)).geometry(), 1, False
+    if args.extent == "z14":
+        b = quadkey_bounds(qk + args.child)
+        return ee.Geometry.Rectangle([b[0], b[1], b[2], b[3]], proj="EPSG:4326", geodesic=False), 1, False
+    import pandas as pd
+
+    if not args.tiles_csv:
+        sys.exit("--extent built needs --tiles-csv (the tiles_z14.csv written by footprint_tiles.py `tiles`). "
+                 "Find it with: find data -name 'tiles_z14.csv'")
+    df = pd.read_csv(args.tiles_csv, dtype={"quadkey": str, "parent_z12": str})
+    df = df[(df["parent_z12"] == qk) & (df["n_buildings"] >= args.min_buildings)]
+    if df.empty:
+        sys.exit(f"No z14 tiles under {qk} with at least {args.min_buildings} buildings in {args.tiles_csv}.")
+    rings = [[_ring((r.west, r.south, r.east, r.north))] for r in df.itertuples()]
+    region = ee.Geometry.MultiPolygon(rings, proj="EPSG:4326", geodesic=False).dissolve(maxError=1)
+    return region, len(df), True
+
+
+def cmd_pilot(args):
+    import ee
+
+    from src.data.sentinel1.collection import get_s1_collection
+    from src.data.transfer_cities.constants_transfer import TRANSFER_CITIES, TRANSFER_GEE_FOLDER
+    from src.syria.forest_to_gee import classifier_from_table
+    from src.utils.gdrive import create_drive_folder
+    from src.utils.gee import init_gee
+
+    init_gee()
+    city = args.city.upper()
+    cfg = TRANSFER_CITIES[city]
+    windows = window_table(city) if args.windows == ["all"] else pick_windows(city, args.windows)
+    qk = args.qk[0]
+
+    grids = ee.FeatureCollection(TRANSFER_GEE_FOLDER + f"quadkeys/{city}_zoom{QUADKEY_ZOOM}")
+    if qk not in set(grids.aggregate_array("qk").getInfo()):
+        sys.exit(f"Tile {qk} is not in the {city} grid.")
+    region, n_tiles, clip = pilot_region(ee, grids, args)
+
+    classifier = classifier_from_table(ee.FeatureCollection(FOREST_ASSET), args.n_trees)
+    s1 = get_s1_collection(grids.geometry(), cfg["gee_start"], cfg["gee_end"])
+    bands = []
+    for window_str, post in windows:
+        prob = window_probability(ee, classifier, s1, cfg["orbits"], cfg["pre_period"], post)
+        bands.append(prob.multiply(255).toUint8().rename(window_str[:3]))
+    image = ee.Image.cat(bands)
+    if clip:
+        image = image.clip(region)
+
+    tag = f"{args.extent}_{len(windows)}w"
+    drive_folder = f"syria_pilot/{city}/{tag}"
+    for folder in (f"syria_pilot/{city}", drive_folder):
+        try:
+            create_drive_folder(folder)
+        except Exception:
+            pass
+    desc = f"pilot_{city}_{tag}_{qk}"
+    start_export(ee, image, desc, drive_folder, f"qk_{qk}_{args.extent}", region)
+    print(f"Started {desc}: {len(windows)} windows as bands, extent {args.extent} ({n_tiles} z14 tile(s)).")
+    print(f"Drive: {drive_folder}/qk_{qk}_{args.extent}.tif")
+    print("When it has finished:  python3 src/syria/ee_classify.py eecu --prefix pilot_")
 
 
 def cmd_eecu(args):
@@ -312,10 +402,20 @@ def main(argv=None):
         else:
             sp.add_argument("--no-download", action="store_true", help="use files already downloaded")
             sp.add_argument("--keep", action="store_true", help="keep the files on Drive after downloading")
+    sp = sub.add_parser("pilot")
+    sp.add_argument("--city", default="ALP")
+    sp.add_argument("--qk", nargs=1, default=[DEFAULT_QK], help="the z12 tile")
+    sp.add_argument("--windows", nargs="+", default=["all"], help="'all' or window prefixes, e.g. w02 w14")
+    sp.add_argument("--extent", choices=["z12", "z14", "built"], default="z12",
+                    help="z12 = the whole tile; z14 = one child (see --child); built = z14 children from --tiles-csv")
+    sp.add_argument("--child", default="11", help="two digits appended to the z12 quadkey to name one z14 child")
+    sp.add_argument("--tiles-csv", help="tiles_z14.csv from footprint_tiles.py, for --extent built")
+    sp.add_argument("--min-buildings", type=int, default=1, help="with --extent built: z14 tiles need this many buildings")
+    sp.add_argument("--n-trees", type=int, default=N_TREES)
     sp = sub.add_parser("eecu")
     sp.add_argument("--prefix", default=TASK_PREFIX, help="task description prefix to list")
     args = ap.parse_args(argv)
-    {"export": cmd_export, "compare": cmd_compare, "eecu": cmd_eecu}[args.cmd](args)
+    {"export": cmd_export, "compare": cmd_compare, "eecu": cmd_eecu, "pilot": cmd_pilot}[args.cmd](args)
 
 
 if __name__ == "__main__":
