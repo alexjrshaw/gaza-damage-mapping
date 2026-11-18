@@ -7,6 +7,9 @@ It runs the Gaza forest unchanged (same code path as the Aleppo parity test), wi
   * baseline : A = 2014-10-06 .. 2015-10-05 (default, Aleppo's) or B = 2015-10-21 .. 2016-10-20 (Raqqa's)
   * windows  : 2-month windows 7 Aug .. 6 Oct of the years in --years, OR the window list of a
                transfer city (--city ALP / RAQ: the same windows as the local transfer workflow)
+  * annual   : --annual N: N consecutive ONE-YEAR windows straight after baseline A with no gap (t01 = 2015-10-06 ..
+               2016-10-05, t02, ...), the first --n-pre (default 2) marked role "pre" (pre-escalation: the best Syria has,
+               since Sentinel-1 starts in Oct 2014) and the rest "conflict". Modelled on Dietrich et al.'s T0 + T1..Tn.
   * region   : optional --boundary FILE [--where FIELD=VALUE] (an administrative layer) or --bbox W S E N keeps only that area (a region trial)
   * orbits   : per z13 tile and window, from orbit_survey.py --zoom 13:
                valid = >= 10 baseline images covering the tile; used in a window if it
@@ -16,7 +19,7 @@ It runs the Gaza forest unchanged (same code path as the Aleppo parity test), wi
 
 Commands (run from the repository root on Forth):
 
-  python3 src/syria/ee_production.py plan [--years 2016 2017 ... | --city ALP] [--baseline A|B] [--boundary FILE --where FIELD=VALUE | --bbox W S E N]
+  python3 src/syria/ee_production.py plan [--years 2016 2017 ... | --city ALP | --annual 11 --n-pre 2] [--baseline A|B] [--boundary FILE --where FIELD=VALUE | --bbox W S E N]
         No Earth Engine. Builds the task list (data/syria/ee_run/plan.csv) and prints the number
         of tasks and z14 tiles, tiles skipped, and the expected cost in EECU-hours.
 
@@ -85,6 +88,28 @@ def year_windows(years):
     for y in years:
         name, (a, b) = window_for_year(y)
         out.append(dict(name=name, period=f"win{y}", start=a, end=b))
+    return out
+
+
+def annual_windows(n, n_pre=2, first_start="2015-10-06"):
+    """
+    n consecutive one-year windows with no gaps, the first starting the day after baseline A ends
+    (t01 = 2015-10-06 .. 2016-10-05). The first n_pre carry role 'pre', the rest 'conflict'.
+    """
+    import datetime
+
+    if n < 2:
+        sys.exit("--annual needs at least 2 windows.")
+    if not 0 <= n_pre < n:
+        sys.exit(f"--n-pre must be between 0 and {n - 1} (some window has to be left as a conflict window).")
+    y0 = int(first_start[:4])
+    out = []
+    for i in range(1, n + 1):
+        end = f"{y0 + i}-10-05"
+        if end > datetime.date.today().isoformat():
+            sys.exit(f"Window t{i:02d} would end {end}, in the future. The last complete year ends "
+                     f"{y0 + i - 1}-10-05: use --annual {i - 1} or fewer.")
+        out.append(dict(name=f"t{i:02d}", period=f"yr{i:02d}", start=f"{y0 + i - 1}-10-06", end=end, role="pre" if i <= n_pre else "conflict"))
     return out
 
 
@@ -264,7 +289,14 @@ def cmd_plan(args):
     if survey.tile.str.len().iloc[0] != TASK_ZOOM:
         sys.exit(f"{args.survey} is not a z{TASK_ZOOM} survey. Run: python3 src/syria/orbit_survey.py --zoom {TASK_ZOOM} ...")
     conflict_start = ""
-    if args.city:
+    annual = getattr(args, "annual", None)
+    if annual and (args.city or args.years):
+        sys.exit("--annual replaces --years and --city; use only one of them.")
+    if annual and args.baseline and args.baseline.upper() != "A":
+        sys.exit("--annual windows follow baseline A directly (no gap); drop --baseline or use --baseline A.")
+    if annual:
+        windows, key = annual_windows(annual, getattr(args, "n_pre", 2)), "A"
+    elif args.city:
         windows, key, conflict_start = city_windows(args.city)
         if args.baseline and args.baseline.upper() != key:
             alt = args.baseline.upper()
@@ -281,7 +313,7 @@ def cmd_plan(args):
     missing = [p for p in [f"base{key}"] + [w["period"] for w in windows] if p not in have]
     if missing:
         sys.exit(f"The survey {args.survey} has no data for {missing}. Re-run orbit_survey.py with the same "
-                 f"{'--city ' + args.city if args.city else '--windows'} and --zoom {TASK_ZOOM}.")
+                 f"{'--city ' + args.city if args.city else ('--annual ' + str(annual) if annual else '--windows')} and --zoom {TASK_ZOOM}.")
     bbox = tuple(args.bbox) if args.bbox else None
     boundary, where = getattr(args, "boundary", None), getattr(args, "where", None)
     region = load_region(boundary, where) if boundary else None
@@ -292,7 +324,8 @@ def cmd_plan(args):
     plan.to_csv(OUT_DIR / "plan.csv", index=False)
     skipped.to_csv(OUT_DIR / "skipped.csv", index=False)
     save_windows(dict(baseline=list(BASELINES[key]), baseline_key=key, windows=windows, city=(args.city or "").upper(),
-                      conflict_start=conflict_start, bbox=list(bbox) if bbox else None,
+                      conflict_start=conflict_start, scheme=("annual" if annual else ("city" if args.city else "years")),
+                      bbox=list(bbox) if bbox else None,
                       boundary=(str(boundary) if boundary else None), where=list(where or [])))
     n_z14 = int(plan.n_z14.sum())
     lo, hi = cost_range(n_z14, len(windows))
@@ -303,6 +336,10 @@ def cmd_plan(args):
         print(f"Boundary: {boundary}{'  where ' + ', '.join(where) if where else ''}")
     print(f"Skipped (no valid baseline orbit): {len(skipped):,} z13 tiles, {int(skipped.n_z14.sum()) if len(skipped) else 0:,} z14 tiles")
     print(f"Expected cost: {lo:,.0f} to {hi:,.0f} EECU-hours  (Contributor quota: 1,000 per month)")
+    if annual:
+        print("  NOTE: that cost model comes from 2-month windows. A one-year window holds about six times as many images, so treat it as a LOWER bound\n"
+              "  and measure the real cost on a few tiles (submit --limit 5 and status) before running anything large.")
+        print("  Windows: " + ", ".join(f"{w['name']} {w['start']}..{w['end']} ({w['role']})" for w in windows))
     for c in [c for c in plan.columns if c.startswith("orbits_")]:
         print(f"  {c}: tasks with no usable orbit in this window: {(plan[c] == '').sum():,}")
     print(f"\nWrote {OUT_DIR / 'plan.csv'}, skipped.csv and windows.json")
@@ -562,6 +599,8 @@ def main(argv=None):
     sp.add_argument("--min-buildings", type=int, default=10)
     sp.add_argument("--years", nargs="+", type=int, help=f"window years (default {DEFAULT_YEARS})")
     sp.add_argument("--city", help="use this transfer city's windows and baseline (ALP or RAQ) instead of --years")
+    sp.add_argument("--annual", type=int, metavar="N", help="N consecutive one-year windows after baseline A, no gaps (t01 ... tNN) instead of --years")
+    sp.add_argument("--n-pre", type=int, default=2, help="with --annual: how many of the first windows are marked 'pre' (default 2)")
     sp.add_argument("--baseline", choices=["A", "B", "a", "b"], help="A = Oct 2014-Oct 2015 (default), B = Oct 2015-Oct 2016")
     sp.add_argument("--bbox", nargs=4, type=float, metavar=("W", "S", "E", "N"), help="keep only tasks inside this box")
     sp.add_argument("--boundary", help="keep only z14 tiles touching this boundary file (an administrative layer)")

@@ -150,6 +150,7 @@ def main(argv=None):
     p.add_argument("--min-buildings", type=int, default=10)
     p.add_argument("--windows", nargs="+", type=int, default=[2016, 2017, 2018, 2020, 2023, 2025])
     p.add_argument("--city", help="survey the window list of a transfer city (ALP or RAQ) instead of --windows")
+    p.add_argument("--annual", type=int, metavar="N", help="survey N consecutive one-year windows after baseline A (yr01 ... yrNN), as in ee_production.py plan --annual N")
     p.add_argument("--bbox", nargs=4, type=float, metavar=("W", "S", "E", "N"),
                    help="survey only tiles inside this box (a region trial); the image query is limited to it too")
     p.add_argument("--boundary", help="survey only tiles touching this boundary file (an administrative layer)")
@@ -180,7 +181,14 @@ def main(argv=None):
     print(f"{len(tiles):,} z{args.zoom} tiles hold z14 tiles with >= {args.min_buildings} buildings.")
 
     periods = dict(BASELINES)
-    if args.city:
+    if args.annual:
+        from src.syria.ee_production import annual_windows
+
+        wl = annual_windows(args.annual)
+        for wdict in wl:
+            periods[wdict["period"]] = (wdict["start"], wdict["end"])
+        windows = [wdict["period"] for wdict in wl]
+    elif args.city:
         from src.syria.ee_production import city_windows
 
         for wdict in city_windows(args.city)[0]:

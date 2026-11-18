@@ -1,48 +1,47 @@
 #!/usr/bin/env python3
 """
-Building-level damage classes from the finished tiles of a run (the Syria version of Equation 3).
+Binary building damage from the finished tiles of a run: Equation 3 of Dietrich et al. (2025a), exactly as the Gaza
+pipeline applies it (src/postprocessing/classify_building_damage.py):
 
-Gaza (classify_building_damage.py) calls a building damaged when its highest pixel probability after the
-war start reaches t and before it stays below t. The Syria run has no pre-war windows (the baseline is
-Oct 2014 - Oct 2015, the windows are 2016 ... 2025), so the same threshold t is applied to every window and
-the building is classed by HOW MANY windows reach it:
+    damaged = 1  if  max(post windows) >= t  AND  max(pre windows) < t,     else 0        t = int(0.670 x 255) = 170
 
-    confirmed    : the building reaches t in 2 or more windows
-    possible     : the building reaches t in exactly 1 window
-    not_damaged  : no window with data reaches t
-    not_assessed : the building could not be assessed (see "reason")
+and the window values are taken the way the Gaza pipeline takes them (create_buildings_with_preds_for_admin, then
+process_admin_file, which uses "weighted_mean"): for every building polygon and window, the AREA-WEIGHTED MEAN of the pixel
+probabilities, each pixel weighted by the area of its overlap with the polygon. The maximum in Equation 3 is the maximum
+over the windows, not over the pixels. A pixel value of 0 is no data and counts as 0, as in Gaza. Buildings under --min-area-m2 (default 50, as in
+Gaza) are left out, using the true polygon area in an equal-area projection.
 
-For every building and window the value is the maximum probability over the pixels that the building's
-bounding box covers (at least the pixel under its centre). Overture footprints are held here as boxes
-only, so this is a slightly generous stand-in for "inside the footprint"; use --footprint 3x3 for the
-3 x 3 pixels around the centre, the stand-in used at the UNOSAT points. A pixel with value 0 is no data.
+Pre windows: the windows whose role in windows.json is "pre" (set by `ee_production.py plan --annual N --n-pre K`), or
+the ones you name with --pre-windows. Every other window is a post window. There is no other rule: no counting of
+windows, no extra classes.
 
-Buildings with a footprint (box) area under --min-area-m2 (default 50, the minimum Gaza's footprint set used) are not
-assessed: at 10 m resolution they are smaller than a pixel or two and their value mostly reflects their neighbours.
-The area is that of the bounding box, which is at least the true footprint area, so a few buildings a little under
-50 m2 are kept. Use --min-area-m2 0 to keep every building.
+Missing data is handled exactly as in Gaza. A pixel with no data (0) counts as 0 in the weighted mean and keeps its area in
+the weights. So a building with no data in every pre window has max_pre = 0 and is damaged if max_post >= t, and one with
+no data in every post window has max_post = 0 and is not damaged. Only a building that overlaps no pixel of its tile at
+all is NaN, which makes the comparison False (not damaged). The `reason` column flags no_valid_pre / no_valid_post (no
+pixel above 0 in that group) so you can count these cases; it never changes the result.
 
-Reasons for not_assessed:
-    below_min_area       : the building is smaller than --min-area-m2
-    tile_below_threshold : the building lies in a z14 tile with fewer than --min-buildings buildings, which
-                           the run does not classify by design (the tiles are inside the task rectangles)
-    no_valid_window      : every window is no data at the building (no usable orbit, or off the raster)
+Buildings are left out of the assessment (class not_assessed, damaged missing) only when
+    tile_below_threshold : it lies in a z14 tile with fewer than --min-buildings buildings, which the run does not classify
+                           (a Syria cost-saving rule; Gaza ran every tile)
+    below_min_area       : its polygon is smaller than --min-area-m2 (Gaza drops these buildings too)
 
-Buildings are taken from every task rectangle of the plan whose tile is finished and local. Buildings outside
-all task rectangles (other parts of the country, z13 tiles without a populated z14 tile) are not in the output.
+The buildings file must hold polygons (a `geometry` column, WKB). The box-only file made by `footprint_tiles.py download`
+without --extra-columns geometry is refused.
 
-  python3 src/syria/classify_buildings.py --tag aleppo                  # tiles already in data/syria/ee_run_aleppo/tiles/
-  python3 src/syria/classify_buildings.py --tag aleppo --download       # fetch them from Drive first (copies stay in Drive)
-  python3 src/syria/classify_buildings.py --tag aleppo --threshold 0.670
-  python3 src/syria/classify_buildings.py --tag aleppo --footprint 3x3
-  python3 src/syria/classify_buildings.py --tag aleppo --min-area-m2 0       # keep every building, however small
+  python3 src/syria/classify_buildings.py --tag annual                      # pre windows from windows.json
+  python3 src/syria/classify_buildings.py --tag aleppo --pre-windows w2016  # a run planned with --years: name them
+  python3 src/syria/classify_buildings.py --tag annual --download           # fetch finished tiles from Drive first (copies stay in Drive)
+  python3 src/syria/classify_buildings.py --tag annual --threshold 0.670 --points-gpkg
 
-Writes <run folder>/buildings_classified.parquet (one row per building: lon, lat, tile, class, reason, n_valid,
-n_above, and the maximum for every window), summary_by_class.csv, and with --points-gpkg a GeoPackage of the
-confirmed and possible buildings (centre points) for QGIS.
+Writes <run folder>/buildings_classified.parquet (one row per building: lon, lat, z13, z14, area_m2, class, reason,
+damaged 1/0, max_pre, max_post (maxima over windows) and the weighted mean of every window), summary_by_class.csv, and with --points-gpkg a GeoPackage
+of the damaged buildings (centre points) for QGIS. Buildings outside every task rectangle are not in the output.
 """
 import argparse
+import json
 import sys
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -52,94 +51,194 @@ REPO = Path(__file__).resolve().parents[2]
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
-DEFAULT_THRESHOLD = 0.670  # Gaza's calibrated value (170 of 255)
-CONFIRM_WINDOWS = 2
+DEFAULT_THRESHOLD = 0.670  # Gaza's calibrated value
+MIN_AREA_M2 = 50.0  # Gaza's minimum building area
 TASK_ZOOM = 13
 SPARSE_ZOOM = 14
-MIN_AREA_M2 = 50.0  # Gaza's minimum building area
+NO_GEOMETRY = ("The buildings file {path} has no polygon geometry (columns: {cols}), so the area-weighted mean inside the building polygon, "
+               "the method Gaza uses, cannot be computed. Download polygons:\n"
+               "  python3 -m src.syria.footprint_tiles download --extra-columns geometry --out data/syria/footprints/overture_buildings_geom.parquet\n"
+               "and pass it with --buildings.")
 
 
-def box_area_m2(xmin, ymin, xmax, ymax):
-    """Area of the bounding boxes in square metres (degrees converted at each box's latitude)."""
-    lat = (np.asarray(ymin) + np.asarray(ymax)) / 2
-    return (np.asarray(xmax) - np.asarray(xmin)) * 111320.0 * np.cos(np.radians(lat)) * (np.asarray(ymax) - np.asarray(ymin)) * 110574.0
+def threshold_u8(t):
+    """Gaza: THRESHOLD = int(0.670 * 255) = 170 (truncated, not rounded)."""
+    return int(t * 255)
 
 
-def classify_values(values, t_u8, confirm=CONFIRM_WINDOWS):
-    """
-    values: (n_buildings, n_windows) array of 0-255 maxima, NaN = no data.
-    Returns (n_valid, n_above, cls, reason) with cls an array of strings.
-    """
+def window_extremes(values, pre):
+    """max over the pre windows and over the post windows of an (n_buildings, n_windows) array (NaN = no data). NaN when a group has no data."""
     v = np.asarray(values, float)
-    valid = ~np.isnan(v)
-    n_valid = valid.sum(axis=1)
-    n_above = np.where(valid, v >= t_u8, False).sum(axis=1)
-    cls = np.full(len(v), "not_damaged", dtype=object)
-    cls[n_above >= 1] = "possible"
-    cls[n_above >= confirm] = "confirmed"
-    reason = np.full(len(v), "", dtype=object)
-    none = n_valid == 0
-    cls[none] = "not_assessed"
-    reason[none] = "no_valid_window"
-    return n_valid, n_above, cls, reason
+    pre = list(pre)
+    post = [i for i in range(v.shape[1]) if i not in pre]
+    if not pre or not post:
+        raise ValueError("need at least one pre window and one post window")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        return np.nanmax(v[:, pre], axis=1), np.nanmax(v[:, post], axis=1)
 
 
-def building_window_max(path, n_bands, cx, cy, xmin, ymin, xmax, ymax, mode="bbox"):
+def equation3(max_pre, max_post, t, valid_pre=None, valid_post=None):
     """
-    (n_buildings, n_bands) maxima over each building's pixels. mode 'bbox': pixels the box covers, at least the
-    centre pixel; '3x3': the 3 x 3 pixels around the centre. NaN where the building is off the raster or every
-    pixel is 0 (no data).
+    Gaza's rule, unchanged: damaged = (max_post >= t) & (max_pre < t), as 0/1. NaN compares False, so missing data gives 0,
+    as in Gaza. Returns (damaged, flag) where flag marks no_valid_pre / no_valid_post (no window of that group has a pixel above 0 at the building) for information only.
+    """
+    max_pre, max_post = np.asarray(max_pre, float), np.asarray(max_post, float)
+    with np.errstate(invalid="ignore"):
+        damaged = ((max_post >= t) & (max_pre < t)).astype(int)
+    flag = np.full(len(max_pre), "", dtype=object)
+    no_pre = np.isnan(max_pre) if valid_pre is None else ~np.asarray(valid_pre, bool)
+    no_post = np.isnan(max_post) if valid_post is None else ~np.asarray(valid_post, bool)
+    flag[no_pre] = "no_valid_pre"
+    flag[no_post] = "no_valid_post"  # takes precedence when both are missing
+    return damaged, flag
+
+
+def polygon_area_m2(geoms):
+    """Polygon areas in square metres (EPSG:6933, equal-area)."""
+    import shapely
+    from pyproj import Transformer
+
+    tr = Transformer.from_crs(4326, 6933, always_xy=True)
+    proj = shapely.transform(np.asarray(geoms, dtype=object), lambda c: np.column_stack(tr.transform(c[:, 0], c[:, 1])))
+    return shapely.area(proj)
+
+
+def valid_polygons(geoms):
+    """Repair invalid polygons (Overture has a few) so intersections do not fail."""
+    import shapely
+
+    geoms = np.asarray(geoms, dtype=object)
+    bad = ~shapely.is_valid(geoms)
+    if bad.any():
+        geoms = geoms.copy()
+        geoms[bad] = shapely.make_valid(geoms[bad])
+    return geoms
+
+
+def polygon_window_wmean(path, n_bands, geoms, block=20000):
+    """
+    Returns (values, has_data), both (n_buildings, n_bands).
+    values: for each polygon the AREA-WEIGHTED MEAN of each band over the pixels it overlaps, with the overlap area of
+    polygon and pixel square as the weight. This is what the Gaza pipeline puts in buildings_preds.parquet
+    (create_buildings_with_preds_for_admin: gpd.overlay of buildings and pixel squares, weights = intersection area,
+    process_admin_file pivots "weighted_mean"). Areas are in the raster's own units (degrees squared), as there.
+    A pixel value of 0 (no data) contributes 0 to the sum but keeps its area in the weights, exactly as in Gaza, where
+    NaN pixels are skipped in the numerator of the groupby sum but their area stays in the denominator. NaN only where
+    the polygon overlaps no pixel of the tile (Gaza: the building drops out of the overlay and is NaN).
+    has_data: True where at least one overlapped pixel is above 0. It is information only; it never enters the result.
     """
     import rasterio
+    import shapely
 
-    out = np.full((len(cx), n_bands), np.nan)
     with rasterio.open(path) as src:
         if src.count < n_bands:
             raise ValueError(f"{path} has {src.count} bands, expected {n_bands}")
         arr = src.read()[:n_bands]
         tr = src.transform
-        rc, cc = rasterio.transform.rowcol(tr, cx, cy)
-        if mode == "bbox":
-            r0, c0 = rasterio.transform.rowcol(tr, xmin, ymax)  # top-left
-            r1, c1 = rasterio.transform.rowcol(tr, xmax, ymin)  # bottom-right
-    rc, cc = np.asarray(rc), np.asarray(cc)
-    h, w = arr.shape[1:]
-    if mode == "bbox":
-        r0, r1, c0, c1 = (np.asarray(a) for a in (r0, r1, c0, c1))
-        r0, r1 = np.minimum(r0, rc), np.maximum(r1, rc)  # the centre pixel is always included
-        c0, c1 = np.minimum(c0, cc), np.maximum(c1, cc)
-    else:
-        r0, r1, c0, c1 = rc - 1, rc + 1, cc - 1, cc + 1
-    for i in range(len(cx)):
-        if rc[i] < 0 or cc[i] < 0 or rc[i] >= h or cc[i] >= w:
+    H, W = arr.shape[1:]
+    geoms = valid_polygons(geoms)
+    out = np.full((len(geoms), n_bands), np.nan)
+    has = np.zeros((len(geoms), n_bands), dtype=bool)
+    for k in range(0, len(geoms), block):
+        g = geoms[k:k + block]
+        n = len(g)
+        bb = shapely.bounds(g)
+        c0 = np.clip(np.floor((bb[:, 0] - tr.c) / tr.a).astype(int), 0, W)
+        c1 = np.clip(np.floor((bb[:, 2] - tr.c) / tr.a).astype(int), -1, W - 1)
+        r0 = np.clip(np.floor((bb[:, 3] - tr.f) / tr.e).astype(int), 0, H)  # tr.e < 0: the northern edge is the smaller row
+        r1 = np.clip(np.floor((bb[:, 1] - tr.f) / tr.e).astype(int), -1, H - 1)
+        nc = np.maximum(c1 - c0 + 1, 0)
+        nr = np.maximum(r1 - r0 + 1, 0)
+        cnt = nr * nc
+        total = int(cnt.sum())
+        if total == 0:
             continue
-        a, b, c, d = max(r0[i], 0), min(r1[i], h - 1), max(c0[i], 0), min(c1[i], w - 1)
-        sl = arr[:, a:b + 1, c:d + 1].reshape(n_bands, -1)
-        mx = sl.max(axis=1)
-        out[i] = np.where(mx > 0, mx, np.nan)
-    return out
+        idx = np.repeat(np.arange(n), cnt)
+        start = np.cumsum(cnt) - cnt
+        j = np.arange(total) - np.repeat(start, cnt)
+        rr = r0[idx] + j // nc[idx]
+        cc = c0[idx] + j % nc[idx]
+        x0 = tr.c + cc * tr.a
+        ytop = tr.f + rr * tr.e
+        squares = shapely.box(x0, ytop + tr.e, x0 + tr.a, ytop)
+        w = shapely.area(shapely.intersection(g[idx], squares))
+        v = arr[:, rr, cc].T.astype(float)  # (pairs, bands)
+        ok = v > 0
+        den = np.bincount(idx, weights=w, minlength=n)
+        for band in range(n_bands):
+            num = np.bincount(idx, weights=w * v[:, band], minlength=n)
+            with np.errstate(invalid="ignore", divide="ignore"):
+                out[k:k + n, band] = np.where(den > 0, num / den, np.nan)
+            has[k:k + n, band] = np.bincount(idx, weights=w * ok[:, band], minlength=n) > 0
+    return out, has
 
 
-def read_buildings(ft, path, bbox):
-    parts = list(ft.iter_bounds(Path(path), window=bbox))
-    if not parts:
-        return (np.zeros(0),) * 4
-    return tuple(np.concatenate([p[i] for p in parts]) for i in range(4))
+def iter_polygon_chunks(path, tile_boxes, ft, chunk=100):
+    """
+    Yields (z13, geometries) for every task tile: the building polygons whose bounding-box centre lies in the task
+    rectangle. Reads the file once per chunk of tiles, using the box columns to skip what is far away.
+    tile_boxes: {z13: (west, south, east, north)}.
+    """
+    import pyarrow.compute as pc
+    import pyarrow.dataset as ds
+    import shapely
+
+    dataset = ds.dataset(str(path), format="parquet")
+    names = dataset.schema.names
+    if "geometry" not in names:
+        raise SystemExit(NO_GEOMETRY.format(path=path, cols=", ".join(names)))
+    flat = all(f in names for f in ("xmin", "ymin", "xmax", "ymax"))
+    struct = "bbox" in names
+    tiles = sorted(tile_boxes)
+    for k in range(0, len(tiles), chunk):
+        ids = tiles[k:k + chunk]
+        W = min(tile_boxes[z][0] for z in ids); S = min(tile_boxes[z][1] for z in ids)
+        E = max(tile_boxes[z][2] for z in ids); N = max(tile_boxes[z][3] for z in ids)
+        if flat:
+            expr = (pc.field("xmax") >= W) & (pc.field("xmin") <= E) & (pc.field("ymax") >= S) & (pc.field("ymin") <= N)
+        elif struct:
+            expr = ((pc.field("bbox", "xmax") >= W) & (pc.field("bbox", "xmin") <= E)
+                    & (pc.field("bbox", "ymax") >= S) & (pc.field("bbox", "ymin") <= N))
+        else:
+            expr = None
+        found = {z: [] for z in ids}
+        for batch in dataset.to_batches(columns=["geometry"], filter=expr, batch_size=200_000):
+            if batch.num_rows == 0:
+                continue
+            geoms = shapely.from_wkb(batch.column("geometry").to_numpy(zero_copy_only=False))
+            geoms = geoms[~shapely.is_missing(geoms) & ~shapely.is_empty(geoms)]
+            if len(geoms) == 0:
+                continue
+            bb = shapely.bounds(geoms)
+            cx, cy = (bb[:, 0] + bb[:, 2]) / 2, (bb[:, 1] + bb[:, 3]) / 2
+            x, y = ft.lonlat_to_tile(cx, cy, TASK_ZOOM)
+            q = np.array(list(map(str, ft.quadkeys(x, y, TASK_ZOOM))))
+            for z in np.unique(q):
+                if z not in found:
+                    continue
+                w, s, e, n = tile_boxes[z]
+                sel = (q == z) & (cx >= w) & (cx <= e) & (cy >= s) & (cy <= n)
+                if sel.any():
+                    found[z].append(geoms[sel])
+        for z in ids:
+            yield z, (np.concatenate(found[z]) if found[z] else np.array([], dtype=object))
 
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__.strip().split("\n\n")[0])
     p.add_argument("--tag", default="", help="a tagged run (default: the main run)")
-    p.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD, help="probability threshold, default Gaza's 0.670")
-    p.add_argument("--confirm-windows", type=int, default=CONFIRM_WINDOWS, help="windows needed for 'confirmed'")
-    p.add_argument("--footprint", choices=["bbox", "3x3"], default="bbox")
-    p.add_argument("--min-area-m2", type=float, default=MIN_AREA_M2, help="buildings with a smaller box area are not assessed (default 50, as in Gaza; 0 keeps all)")
+    p.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD, help="probability threshold; the value used is int(threshold x 255), as in Gaza (default 0.670 -> 170)")
+    p.add_argument("--pre-windows", nargs="+", metavar="WINDOW", default=["auto"],
+                   help="window names to treat as pre; default 'auto' = the windows with role 'pre' in windows.json")
+    p.add_argument("--min-area-m2", type=float, default=MIN_AREA_M2, help="smaller buildings are not assessed (default 50, as in Gaza; 0 keeps all)")
     p.add_argument("--min-buildings", type=int, default=10, help="the z14 tile threshold used in the plan")
     p.add_argument("--tiles-csv", default="data/syria/footprints/tiles_z14.csv")
-    p.add_argument("--buildings", default="data/syria/footprints/overture_buildings_bbox.parquet")
+    p.add_argument("--buildings", default="data/syria/footprints/overture_buildings_geom.parquet", help="Overture buildings WITH polygon geometry")
+    p.add_argument("--chunk-tiles", type=int, default=100, help="task tiles per pass over the buildings file")
     p.add_argument("--download", action="store_true", help="fetch finished tiles that are not local yet (copies stay in Drive)")
     p.add_argument("--allow-missing", action="store_true", help="go on when some planned tiles are not finished or not local")
-    p.add_argument("--points-gpkg", action="store_true", help="also write confirmed and possible buildings as points to a GeoPackage")
+    p.add_argument("--points-gpkg", action="store_true", help="also write the damaged buildings as points to a GeoPackage")
     args = p.parse_args(argv)
 
     from src.syria import check_tiles, footprint_tiles as ft
@@ -150,6 +249,22 @@ def main(argv=None):
     check_tiles.DRIVE_FOLDER = "syria_run" + (f"_{tag}" if tag else "")
     plan = check_tiles.read_plan()
     names = check_tiles.window_names(plan)
+
+    if args.pre_windows == ["auto"]:
+        roles = [w.get("role") for w in json.loads((out_dir / "windows.json").read_text())["windows"]]
+        pre_names = [n for n, r in zip(names, roles) if r == "pre"]
+        if not pre_names:
+            sys.exit("No window in windows.json has role 'pre' (the run was not planned with --annual). Name the pre windows, e.g. --pre-windows w2016.")
+    else:
+        unknown = [w for w in args.pre_windows if w not in names]
+        if unknown:
+            sys.exit(f"Unknown window(s) {unknown}; the run's windows are {names}.")
+        pre_names = list(args.pre_windows)
+    if len(pre_names) == len(names):
+        sys.exit("Every window is a pre window: nothing is left for the post windows.")
+    pre_idx = [names.index(w) for w in pre_names]
+    post_names = [n for n in names if n not in pre_names]
+
     led = pd.read_csv(out_dir / "ledger.csv", dtype={"z13": str})
     done = set(led[led.state == "SUCCEEDED"].z13)
     tiles_dir = out_dir / "tiles"
@@ -160,43 +275,49 @@ def main(argv=None):
             print(f"Not found in Drive: {len(miss)} tiles")
     have = [z for z in todo if (tiles_dir / f"qk_{z}.tif").exists()]
     n_missing = len(plan) - len(have)
-    print(f"{len(plan):,} planned tasks, {len(have):,} finished and local, {n_missing:,} not available; windows: {', '.join(names)}")
+    print(f"{len(plan):,} planned tasks, {len(have):,} finished and local, {n_missing:,} not available")
+    print(f"Windows: pre {', '.join(pre_names)}; post {', '.join(post_names)}")
     if not have:
         sys.exit("No finished tiles are local yet. Run ee_production.py status, then add --download.")
     if n_missing and not args.allow_missing:
         sys.exit(f"{n_missing:,} planned tiles are not finished or not local. Wait for the run to finish, or add --allow-missing to classify what is there.")
 
-    t_u8 = args.threshold * 255
+    t = threshold_u8(args.threshold)
     z14 = pd.read_csv(args.tiles_csv, dtype={"quadkey": str})
     good14 = z14[z14.n_buildings >= args.min_buildings].quadkey.to_numpy()
-    print(f"Threshold {args.threshold:g} ({t_u8:.0f} of 255); 'confirmed' needs {args.confirm_windows} windows; footprint mode {args.footprint}; "
-          f"minimum building area {args.min_area_m2:g} m2")
+    print(f"Threshold {args.threshold:g} -> {t} of 255 (Gaza: int(0.670 x 255) = 170); damaged = max(post) >= {t} and max(pre) < {t}; "
+          f"minimum building area {args.min_area_m2:g} m2; building value = area-weighted mean of the pixels the polygon overlaps (as Gaza)")
 
+    boxes = {z: tuple(plan.loc[z, ["west", "south", "east", "north"]].astype(float)) for z in have}
     frames = []
-    for k, z in enumerate(have, 1):
-        row = plan.loc[z]
-        bbox = (row.west, row.south, row.east, row.north)
-        xmin, ymin, xmax, ymax = read_buildings(ft, args.buildings, bbox)
-        cx, cy = (xmin + xmax) / 2, (ymin + ymax) / 2
-        keep = (cx >= bbox[0]) & (cx <= bbox[2]) & (cy >= bbox[1]) & (cy <= bbox[3])
-        xmin, ymin, xmax, ymax, cx, cy = (a[keep] for a in (xmin, ymin, xmax, ymax, cx, cy))
-        if len(cx) == 0:
+    for k, (z, geoms) in enumerate(iter_polygon_chunks(args.buildings, boxes, ft, args.chunk_tiles), 1):
+        if len(geoms) == 0:
             continue
+        import shapely
+
+        bb = shapely.bounds(geoms)
+        cx, cy = (bb[:, 0] + bb[:, 2]) / 2, (bb[:, 1] + bb[:, 3]) / 2
         x14, y14 = ft.lonlat_to_tile(cx, cy, SPARSE_ZOOM)
         q14 = np.array(list(map(str, ft.quadkeys(x14, y14, SPARSE_ZOOM))))
         in_good = np.isin(q14, good14)
-        area = box_area_m2(xmin, ymin, xmax, ymax)
+        area = polygon_area_m2(geoms)
         small = area < args.min_area_m2
         assess = in_good & ~small
-        vals = np.full((len(cx), len(names)), np.nan)
+        vals = np.full((len(geoms), len(names)), np.nan)
+        has = np.zeros((len(geoms), len(names)), dtype=bool)
         if assess.any():
             sel = np.where(assess)[0]
-            vals[sel] = building_window_max(tiles_dir / f"qk_{z}.tif", len(names), cx[sel], cy[sel], xmin[sel], ymin[sel], xmax[sel], ymax[sel], args.footprint)
-        n_valid, n_above, cls, reason = classify_values(vals, t_u8, args.confirm_windows)
-        cls = np.where(assess, cls, "not_assessed").astype(object)
+            vals[sel], has[sel] = polygon_window_wmean(tiles_dir / f"qk_{z}.tif", len(names), geoms[sel])
+        post_idx = [i for i in range(len(names)) if i not in pre_idx]
+        max_pre, max_post = window_extremes(vals, pre_idx)
+        damaged, reason = equation3(max_pre, max_post, t, has[:, pre_idx].any(axis=1), has[:, post_idx].any(axis=1))
+        cls = np.where(damaged == 1, "damaged", "not_damaged").astype(object)
         reason = np.where(~in_good, "tile_below_threshold", np.where(small, "below_min_area", reason)).astype(object)
+        cls[~assess] = "not_assessed"
+        damaged = np.where(assess, damaged, -1)
         df = pd.DataFrame({"lon": cx, "lat": cy, "z13": z, "z14": q14, "area_m2": area, "class": cls, "reason": reason,
-                           "n_valid": n_valid, "n_above": n_above})
+                           "damaged": pd.array(np.where(damaged >= 0, damaged, pd.NA), dtype="Int8"),
+                           "max_pre": max_pre, "max_post": max_post})
         for i, w in enumerate(names):
             df[w] = vals[:, i]
         frames.append(df)
@@ -217,17 +338,22 @@ def main(argv=None):
         print(f"  {label:<46}{r['buildings']:>12,}{r['share']:>9.1%}")
     assessed = res[res["class"] != "not_assessed"]
     if len(assessed):
-        print(f"\nOf {len(assessed):,} assessed buildings: confirmed {(assessed['class'] == 'confirmed').mean():.1%}, possible {(assessed['class'] == 'possible').mean():.1%}")
-        print("Share of assessed buildings at or above the threshold, by window:")
+        print(f"\nOf {len(assessed):,} assessed buildings, {(assessed['class'] == 'damaged').mean():.1%} are damaged (Equation 3).")
+        for fl in ("no_valid_pre", "no_valid_post"):
+            n_fl = int((assessed["reason"] == fl).sum())
+            if n_fl:
+                print(f"  {n_fl:,} assessed buildings ({n_fl / len(assessed):.1%}) have {fl.replace('_', ' ')} (window value 0, as in Gaza)")
+        print(f"Share of assessed buildings with the window value (weighted mean) at or above {t}, by window:")
         for w in names:
             v = assessed[w].dropna()
-            print(f"  {w:<8}{len(v):>12,} with data{(v >= t_u8).mean() if len(v) else float('nan'):>9.1%}")
+            tag_ = "pre " if w in pre_names else "post"
+            print(f"  {w:<8}{tag_}{len(v):>12,} with data{(v >= t).mean() if len(v) else float('nan'):>9.1%}")
     print(f"\nSaved {out} and summary_by_class.csv")
     if args.points_gpkg:
         import geopandas as gpd
 
-        pts = res[res["class"].isin(["confirmed", "possible"])]
-        g = gpd.GeoDataFrame(pts.drop(columns=["lon", "lat"]), geometry=gpd.points_from_xy(pts.lon, pts.lat), crs=4326)
+        pts = res[res["class"] == "damaged"]
+        g = gpd.GeoDataFrame(pts.drop(columns=["lon", "lat", "damaged"]), geometry=gpd.points_from_xy(pts.lon, pts.lat), crs=4326)
         g.to_file(out_dir / "buildings_damaged_points.gpkg", driver="GPKG")
         print(f"Saved {out_dir / 'buildings_damaged_points.gpkg'} ({len(pts):,} points)")
     return 0

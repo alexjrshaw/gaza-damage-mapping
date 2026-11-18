@@ -20,6 +20,10 @@ with the best threshold (Youden's J) next to the Gaza value (0.670 = 170 of 255)
   python3 src/syria/validate_unosat.py --tag aleppo --cities ALP --all-windows
                                                         # every window in turn: does the background rise with the window year?
 
+With a plan made by `ee_production.py plan --annual N` the windows are named t01 ... tNN: pick one with --window t02
+(defaults: ALP t01, RAQ t02) and, to test Equation 3, name the pre-escalation window(s) with --pre t01. It then prints
+the share of damaged and undamaged buildings found at 0.670 with and without the guard "below 0.670 in every pre window".
+
 --all-windows prints one line per window: how well damaged is ranked above undamaged (AUC), the share of damaged
 and of undamaged buildings at or above Gaza's 0.670, the best threshold for that window (Youden), and the AUC of a
 RELATIVE score (the building's value minus the median value of the assumed-undamaged buildings in the same
@@ -44,6 +48,7 @@ OUT_DIR = Path("data/syria/ee_run")
 TASK_ZOOM = 13
 GAZA_U8 = 170
 CITY_YEAR = {"ALP": 2016, "RAQ": 2017}
+CITY_ANNUAL = {"ALP": "t01", "RAQ": "t02"}  # the one-year window that holds the UNOSAT damage (ALP: Oct 2015-Oct 2016, RAQ: Oct 2016-Oct 2017)
 NEG_RADIUS_M = 60.0
 RADIUS_PX = 1  # 3 x 3 pixels
 THRESHOLDS_U8 = list(range(100, 240, 10)) + [GAZA_U8]
@@ -126,6 +131,53 @@ def values_for(ft, lon, lat, year, years, tiles_dir):
     return out, ids
 
 
+def window_items(out_dir, plan):
+    """The run's windows: ints (2016, ...) when they are named w2016 ..., else their names (t01, ...). Read from windows.json, else the plan."""
+    import json
+
+    f = Path(out_dir) / "windows.json"
+    if f.exists():
+        names = [w["name"] for w in json.loads(f.read_text())["windows"]]
+        return [int(n[1:]) for n in names] if all(n.startswith("w") and n[1:].isdigit() for n in names) else names
+    return sorted(int(c.split("_w")[1]) for c in plan.columns if c.startswith("orbits_w") and c.split("_w")[1].isdigit())
+
+
+def resolve_window(args, city, items):
+    """The window to score for a city: --window NAME, else --window-year, else the city's default. Returns an item of `items`."""
+    w = args.window if getattr(args, "window", None) else args.window_year
+    if w is None:
+        w = CITY_ANNUAL[city] if items and isinstance(items[0], str) else CITY_YEAR[city]
+    if isinstance(w, str) and w.isdigit():
+        w = int(w)
+    if w not in items:
+        sys.exit(f"Window {w} is not in the plan ({items}).")
+    return w
+
+
+def eq3_summary(pos_post, neg_post, pos_pre, neg_pre, t=GAZA_U8):
+    """
+    Plain rule (post >= t) against Equation 3 (post >= t and no pre window >= t), on buildings with a post value.
+    pre arrays hold the highest pre-window value per building (NaN = no pre data: the guard cannot apply and the building is not blocked).
+    """
+    ok_p, ok_n = ~np.isnan(pos_post), ~np.isnan(neg_post)
+    pp, pn = pos_post[ok_p], neg_post[ok_n]
+    hp, hn = np.nan_to_num(pos_pre[ok_p], nan=-1) >= t, np.nan_to_num(neg_pre[ok_n], nan=-1) >= t
+    return dict(n_pos=int(len(pp)), n_neg=int(len(pn)),
+                tpr_plain=float((pp >= t).mean()) if len(pp) else float("nan"), fpr_plain=float((pn >= t).mean()) if len(pn) else float("nan"),
+                tpr_eq3=float(((pp >= t) & ~hp).mean()) if len(pp) else float("nan"), fpr_eq3=float(((pn >= t) & ~hn).mean()) if len(pn) else float("nan"),
+                pre_high_pos=float(hp.mean()) if len(pp) else float("nan"), pre_high_neg=float(hn.mean()) if len(pn) else float("nan"),
+                no_pre_pos=float(np.isnan(pos_pre[ok_p]).mean()) if len(pp) else float("nan"))
+
+
+def print_eq3(city, win, pre_names, r):
+    print(f"\n=== {city}  Equation 3: window {win}, pre {', '.join(map(str, pre_names))} (threshold 0.670) ===")
+    print(f"  damaged: {r['n_pos']:,}   undamaged (assumed): {r['n_neg']:,}")
+    print(f"  high in a pre window:   damaged {r['pre_high_pos']:.1%}   undamaged {r['pre_high_neg']:.1%}   (no pre data for {r['no_pre_pos']:.1%} of damaged)")
+    print(f"  {'':<22}{'found (TPR)':>13}{'wrongly flagged (FPR)':>24}")
+    print(f"  {'plain  post >= t':<22}{r['tpr_plain']:>13.1%}{r['fpr_plain']:>24.1%}")
+    print(f"  {'Equation 3 (guarded)':<22}{r['tpr_eq3']:>13.1%}{r['fpr_eq3']:>24.1%}")
+
+
 def relative_values(vals, ids, ref_vals, ref_ids):
     """vals minus the median of ref_vals in the same tile; NaN where the tile has no reference value or vals is NaN."""
     out = np.full(len(vals), np.nan)
@@ -141,7 +193,7 @@ def relative_values(vals, ids, ref_vals, ref_ids):
 def drift_row(year, pv, nv, pids, nids):
     """One line of the all-windows table."""
     pos, neg = pv[~np.isnan(pv)], nv[~np.isnan(nv)]
-    row = dict(window=f"w{year}", n_pos=len(pos), n_neg=len(neg))
+    row = dict(window=year if isinstance(year, str) else f"w{year}", n_pos=len(pos), n_neg=len(neg))
     if len(pos) == 0 or len(neg) == 0:
         return row
     t = roc_table(pos, neg)
@@ -164,7 +216,7 @@ def print_drift_table(city, rows):
 
 
 def report(city, year, pos, neg, n_pos_all, n_neg_all):
-    print(f"\n=== {city}  window w{year} ===")
+    print(f"\n=== {city}  window {year if isinstance(year, str) else 'w' + str(year)} ===")
     print(f"  damaged buildings with a value: {len(pos):,} of {n_pos_all:,};  undamaged (assumed): {len(neg):,} of {n_neg_all:,}")
     if len(pos) == 0 or len(neg) == 0:
         print("  not enough data to score (are the tiles downloaded and the tasks finished?)")
@@ -184,6 +236,8 @@ def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__.strip().split("\n\n")[0])
     p.add_argument("--cities", nargs="+", default=["ALP", "RAQ"])
     p.add_argument("--window-year", type=int, help="override the window (default: ALP 2016, RAQ 2017)")
+    p.add_argument("--window", help="window name to score, e.g. t02 (a plan made with --annual); default ALP t01, RAQ t02")
+    p.add_argument("--pre", nargs="+", metavar="WINDOW", help="pre-escalation window(s) for the Equation 3 test, e.g. t01")
     p.add_argument("--tiles-dir", default=None, help="default: <run folder>/tiles")
     p.add_argument("--tag", default="", help="a tagged run (default: the main run)")
     p.add_argument("--all-windows", action="store_true", help="score every window of the plan and print one line each")
@@ -199,12 +253,14 @@ def main(argv=None):
     if tag:
         OUT_DIR = Path("data/syria/ee_run_" + tag)
     plan = pd.read_csv(OUT_DIR / "plan.csv", dtype=str).fillna("")
-    years = sorted(int(c.split("_w")[1]) for c in plan.columns if c.startswith("orbits_w"))
+    years = window_items(OUT_DIR, plan)
     tiles_dir = Path(args.tiles_dir) if args.tiles_dir else OUT_DIR / "tiles"
     for city in args.cities:
-        year = args.window_year or CITY_YEAR[city]
-        if year not in years and not args.all_windows:
-            sys.exit(f"Window {year} is not in the plan ({years}).")
+        year = resolve_window(args, city, years) if not args.all_windows else None
+        if args.pre:
+            bad = [w for w in args.pre if (int(w) if str(w).isdigit() else w) not in years]
+            if bad:
+                sys.exit(f"Pre window(s) {bad} are not in the plan ({years}).")
         pl, pb, nl, nb = read_city(ft, city, years, args)
         if len(nl) > args.max_negatives:
             idx = np.random.default_rng(0).choice(len(nl), args.max_negatives, replace=False)
@@ -236,6 +292,18 @@ def main(argv=None):
         pd.DataFrame({"lon": np.r_[pl, nl], "lat": np.r_[pb, nb], "damaged": np.r_[np.ones(len(pl)), np.zeros(len(nl))], "p_u8": np.r_[pv, nv]}).to_csv(
             OUT_DIR / f"validation_{city.lower()}.csv", index=False)
         report(city, year, pv[~np.isnan(pv)], nv[~np.isnan(nv)], len(pl), len(nl))
+        if args.pre:
+            pre_items = [int(w) if str(w).isdigit() else w for w in args.pre]
+            def highest_pre(lon, lat):
+                cols = np.vstack([values_for(ft, lon, lat, w, years, tiles_dir)[0] for w in pre_items])
+                with np.errstate(all="ignore"):
+                    out = np.nanmax(cols, axis=0) if cols.size else np.full(len(lon), np.nan)
+                return out
+            import warnings
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+                pre_p, pre_n = highest_pre(pl, pb), highest_pre(nl, nb)
+            print_eq3(city, year, pre_items, eq3_summary(pv, nv, pre_p, pre_n))
     return 0
 
 
