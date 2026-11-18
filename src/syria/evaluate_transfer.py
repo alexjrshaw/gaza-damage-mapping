@@ -140,7 +140,8 @@ def main(argv=None):
     tag = args.tag.strip().lower()
     out_dir = Path("data/syria/ee_run" + (f"_{tag}" if tag else ""))
     meta = json.loads((out_dir / "windows.json").read_text())
-    names = [w["name"] for w in meta["windows"]]
+    all_names = [w["name"] for w in meta["windows"]]  # the band order of the tiles: never filtered
+    names = list(all_names)
     ends = {w["name"]: w["end"] for w in meta["windows"]}
     cfg = TRANSFER_CITIES[city]
     conflict_start = str(cfg["conflict_start"])
@@ -170,7 +171,7 @@ def main(argv=None):
 
     cols = {}
     for w in names:
-        vals, _ = values_for(ft, lon, lat, w, names, tiles_dir)
+        vals, _ = values_for(ft, lon, lat, w, all_names, tiles_dir)  # band = position among ALL windows, not among the selected ones
         cols[w] = vals
     df = pd.DataFrame(cols)
     res, notes = evaluate(df, ends, conflict_start)
