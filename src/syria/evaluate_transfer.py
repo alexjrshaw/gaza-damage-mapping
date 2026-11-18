@@ -76,6 +76,11 @@ def threshold_for_precision(y_true, y_score, target=0.90, step=0.005):
     return None
 
 
+def select_windows(names, ends, until):
+    """Windows that end on or before `until` (YYYY-MM-DD); all of them when until is empty."""
+    return [n for n in names if not until or ends[n] <= until]
+
+
 def split_windows(names, ends, conflict_start):
     neg = [n for n in names if ends[n] <= conflict_start]
     pos = [n for n in names if ends[n] > conflict_start]
@@ -122,6 +127,9 @@ def main(argv=None):
     p.add_argument("--city", required=True)
     p.add_argument("--tag", default="", help="the tagged run to evaluate")
     p.add_argument("--download", action="store_true", help="fetch the needed tiles from Drive first (copies stay in Drive)")
+    p.add_argument("--until", default="", help="leave out windows ending after this date (YYYY-MM-DD), or 'assessment' for the city's UNOSAT date. "
+                   "The transfer-city runs stopped at the assessment date; annual windows run for years beyond it.")
+    p.add_argument("--windows", nargs="+", metavar="WINDOW", help="score only these windows, e.g. t01 t03 (t01 = label 0, t03 = the first window wholly after the damage); applied after --until")
     args = p.parse_args(argv)
 
     from src.data.transfer_cities.constants_transfer import TRANSFER_CITIES
@@ -136,10 +144,19 @@ def main(argv=None):
     ends = {w["name"]: w["end"] for w in meta["windows"]}
     cfg = TRANSFER_CITIES[city]
     conflict_start = str(cfg["conflict_start"])
+    until = str(cfg["assessment_date"]) if args.until == "assessment" else args.until
+    names = select_windows(names, ends, until)
+    if args.windows:
+        unknown = [w for w in args.windows if w not in names]
+        if unknown:
+            sys.exit(f"Window(s) {unknown} are not available (after --until the windows are {names}).")
+        names = [w for w in names if w in args.windows]
+    if not names:
+        sys.exit(f"No window ends on or before {until}.")
     plan = pd.read_csv(out_dir / "plan.csv", dtype=str)
 
     lon, lat = load_points(cfg)
-    print(f"{city}: {len(lon):,} UNOSAT points, {len(names)} windows, conflict start {conflict_start}")
+    print(f"{city}: {len(lon):,} UNOSAT points, {len(names)} windows, conflict start {conflict_start}" + (f", windows ending after {until} left out" if until else ""))
     ids = tile_ids(ft, lon, lat)
     need = sorted(set(ids) & set(plan.z13))
     outside = int((~np.isin(ids, plan.z13)).sum())
